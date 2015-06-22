@@ -1,0 +1,272 @@
+<HTML>
+<HEAD>
+<TITLE>WAVEFLT HELP</TITLE>
+<meta charset="utf-8">
+</HEAD>
+<BODY>
+<a name="top"><font size=5>
+☆ WAVEFLT とは
+</font>
+<br><br>
+「WAVEFLT」は Windows 用ディジタル音声フィルタです。
+<br><br>
+対応フォーマット
+<br><br>
+PCM  形式 WAVE ファイル
+<br>
+内部演算精度  : 64bit double
+<br>
+サンプリングレート : 任意
+<br>
+ビット : 8, 16, 24, 32(long, IEEE float), 64(IEEE float)
+<br>
+データサイズ : 最大 8388608 Tbytes(*)
+<br><br>
+(*) wave フォーマットとして WAVEFLT 独自拡張フォーマットを使用。サイズが
+4G 以上のファイルは WAVEFLT 以外のソフトでは 4G として認識されます。
+<a href="option.htm#noextrahdr" target="main">-noextrahdr</a>も参照してください。
+
+<hr><a name="dosa"><font size=5>
+☆ 動作環境
+</font>
+<br><br>
+Windows 7 以降
+<br><br>
+<hr><a name="tori"><font size=5>
+☆ チュートリアル
+</font>
+<br><br>
+
+はじめにコマンドプロンプトを起動して下さい。
+<br><br>
+
+waveflt | more と打つと書式が表示されます。
+<br><br>
+
+バンドパスフィルタを使って、1000-15000 hz の範囲の音を取り出すには次のように打ちます。
+<br><br>
+
+waveflt -fir_bpf 1000 15000 input.wav out.wav
+<br><br>
+
+設定は設定ファイルに書いておくと便利かもしれません。例えば
+wfltsample.txt に
+<br><br>
+<pre>
+# WAVEFLT サンプル
+# 行の先頭に「#」を付けるとその行はコメントになります
+
+-fir_bpf 1000 15000
+
+# ここまで
+</pre>
+<br><br>
+
+と保存し、コマンドラインで
+<br><br>
+
+waveflt -cfg "wfltsample.txt" input.wav out.wav
+<br><br>
+
+と打つと上のコマンドを実行したのと同じ意味になります。
+その他、詳しくはオプション一覧を参考にしてください。
+
+<br><br>
+<hr><a name="seigen2"><font size=5>
+☆ 注意点
+</font>
+
+<br><br>
+(1) 
+入力に
+<a href="option.htm#input" target="main">stdin</a> を指定したとき、及び
+<a href="option.htm#split" target="main">-split</a>や
+<a href="option.htm#nosound" target="main">-nosound</a>など
+途中で出力ファイルを切り替える処理を行う場合には、
+巻き戻しや再生時間の取得が出来ないために
+ノーマライズ処理(<a href="option.htm#normal" target="main">-normal</a>など)、
+フェードアウト処理(
+<a href="option.htm#fout" target="main">-fout</a>)
+を実行できません。
+
+<br><br>
+(2)
+出力に
+<a href="option.htm#output" target="main">stdout</a>,
+<a href="option.htm#output" target="main">waveout</a>
+を指定した場合は
+<a href="option.htm#split" target="main">-split</a>や
+<a href="option.htm#nosound" target="main">-nosound</a>など
+の途中で出力ファイルを切り替える処理を実行できません。
+
+<br><br>
+(3)
+<a href="option.htm#endless" target="main">-endless</a>
+指定時は再生時間の取得が出来ないために
+フェードアウト処理(<a href="option.htm#fout" target="main">-fout</a>)
+を実行できません。
+
+<br><br>
+(4)
+4G 以上のファイルを出力する場合、
+ wave フォーマットとして WAVEFLT 独自拡張フォーマットを使用します。その際、
+サイズが 4G 以上のファイルは WAVEFLT 以外のソフトでは 4G として認識されます。
+<a href="option.htm#noextrahdr" target="main">-noextrahdr</a>も参照してください。
+
+<br><br>
+(5) 入力ファイルと出力ファイルが同名の場合は入力ファイルを
+*.bkp に変更してから実行します。
+
+<br><br>
+(6) 
+ノーマライズ処理は
+一度全てのデータをフィルタに通してピークや平均値などを取得してから
+入力ファイルを巻き戻して実行されます。従って同じフィルタ処理が 2 回
+実行されることになるので処理時間を短縮したい場合は一度フィルタ処理した
+データをハードディスクに中間ファイルとして出力してから再度ノーマライズ処理のみを実行してください。
+なお、その際に
+<a href="option.htm#bit" target="main">-bit*</a>
+オプションで中間ファイルの bit 数を 24 以上に設定しておけば量子化雑音の影響は最小限に
+抑えられます。
+
+<br><br>
+(7) 入力が 24 bit ファイルか、もしくはフィルタ処理を行った場合で
+出力 bit 数を 16 bit にするときは出来るだけ
+<a href="option.htm#dither" target="main">-dither 0</a>
+を指定するようにしてください。
+
+<br><br>
+<hr><a name="junban"><font size=5>
+☆ データを処理する順番
+</font>
+<br><br>
+入力
+<br>
+→ double 型に変換 
+<br>
+→ DC オフセット手動補正(-ofs)
+<br>
+→ -1 〜 1 の範囲に正規化 
+<br>
+→ DC オフセット自動補正(-autoofs)
+<br>
+→ プレ FIR フィルタ(-nosound_fir)
+<br>
+→ 先頭削除、無音分割(-nosound*)
+<br>
+→ 時間、サイズ分割(-split*)
+<br>
+→ 左右バランス調整(-balance)
+<br>
+→ ファイルミキシング(-mixfile)
+<br>
+→ 左右チャンネルミキシング(-mix)
+<br>
+→ サイン波合成(-addsin)
+<br>
+→ サブバンド・ノイズゲート(-ngate_sb)
+<br>
+→ FIR フィルタ(-fir_*)
+<br>
+→ FIR イコライザ(-fir_eq*)
+<br>
+→ IIR フィルタ(-iir_*)
+<br>
+→ (ディ)エンファシス(-demp)
+<br>
+→ シェルビング EQ low(-sveq_l)
+<br>
+→ シェルビング EQ high(-sveq_h)
+<br>
+→ ピーキング EQ (-pkeq)
+<br>
+→ 位相逆転(-phinv)
+<br>
+→ コンプレッサ(-comp)
+<br>
+→ ボリューム調整(-vol) 
+<br>
+→ フェードイン、アウト(-fin,-fout)
+<br>
+→ ノーマライズ + コンプレッサ(リミッタ) (-normal*)
+<br>
+→ リサンプリング(-rsmp)
+<br>
+→ 出力ビット数に従ってレベルを調整(-bit*)
+<br>
+→ ディザ+ノイズシェイパ(-dither)
+<br>
+→ 量子化 
+<br>
+→ 出力
+
+<br><br>
+<hr>
+<a name="exstr"><font size=5>☆ 置換規則一覧 & 置換例</font>
+<br><br>
+出力ファイル名で指定できる置換文字の一覧です。
+<br><br>
+<b>文字列置換規則表</b>
+<table BORDER=1>
+<tr><td>%d</td><td>出力ファイルのドライブ (例) c:</td></tr>
+<tr><td>%p</td><td>出力ファイルのパス (例) \bin\lockon\</td></tr>
+<tr><td>%f</td><td>出力ファイルのファイル名(拡張子除く) (例) out</td></tr>
+<tr><td>%e</td><td>出力ファイルの拡張子 (例) .wav</td></tr>
+<tr><td>%a</td><td>パスを含むファイル名(%a = %d%p%f%e) (例) c:\tmp\out.wav</td></tr>
+<tr><td>%b</td><td>出力データサイズ(byte) </td></tr>
+<tr><td>%B</td><td>出力ファイル全体のサイズ(= %b + ヘッダサイズ)(byte) </td></tr>
+<tr><td>%%</td><td>% </td></tr>
+<tr><td>%^</td><td>"  </td></tr>
+<tr><td>%1</td><td>%1 -udef1 で指定したユーザー定義文字列</td></tr>
+<tr><td>%2</td><td>%2 -udef2 で指定したユーザー定義文字列</td></tr>
+<tr><td>%3</td><td>%3 -udef3 で指定したユーザー定義文字列</td></tr>
+<tr><td>%Y</td><td>年 (下二桁 例えば 2002 年の場合は 02 に置換)</td></tr>
+<tr><td>%M</td><td>月</td></tr>
+<tr><td>%D</td><td>日</td></tr>
+<tr><td>%H</td><td>時</td></tr>
+<tr><td>%N</td><td>分</td></tr>
+<tr><td>%S</td><td>秒</td></tr>
+<tr><td>%W</td><td>曜日</td></tr>
+</table>
+<br><br>
+<font color="#ff0000">(注意)</font>
+ %Y,%M,…%W などの時刻はwaveflt が起動した時間、または -split や -nosound* などで
+分割が行われた時間がセットされます。
+<br><br>
+(例) 現在時刻が 4:10 の時、waveflt input.wav "%H-%N.wav" を実行すると 4-10.wav が出力される。
+<br><br>
+
+<hr>
+<a name="report"><font size=5>☆ バグレポート等連絡先</font>
+<br><br>
+作者 :  東海林 智也
+<br>
+MAIL :  tmytokai[atmark]yahoo.co.jp
+<br>
+URL  :  <a href="https://github.com/tmytokai" TARGET=_blank>https://github.com/tmytokai</a>
+<br><br>
+<hr><a name="tyosaku"><font size=5>
+☆ 著作権、免責等について
+</font>
+<br><br>
+このプログラムはフリーソフトソフトウェアであり GPL に従って再頒布 または変更することができます。詳細についてはGNU 一般公有使用許諾書 をお読みください。
+<br><br>
+また本プログラムの使用によって生じたいかなる損害、問題等に作者は関 知しない事にします。使用者の責任の上で実行する様にして下さい。
+<br><br>
+Copyright (c) 1999-2015 Tomoya Tokairin
+<br><br>
+<hr><a name="kosin"><font size=5>
+☆ 更新履歴
+</font>
+<pre>
+
+2015/6/22 Ver.22.06.2015
+
+Visual C++ 2008 Express でビルドし直した。
+古いソースコードの見直しと整理をした。
+GitHubでのバージョン管理に移行した。
+</pre>
+</BODY>
+</HTML>
+
+

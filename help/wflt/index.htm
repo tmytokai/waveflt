@@ -1,0 +1,186 @@
+<HEAD>
+<TITLE>目次</TITLE>
+<meta charset="utf-8">
+</HEAD>
+<BODY>
+<CENTER>
+<FONT SIZE=5>WAVEFLT</font>
+<br><br>
+Copyright (c) 1999-2015 Tomoya Tokairin
+<br><br>
+<br>
+<a href="http://github.com/tmytokai" TARGET=_blank>最新版をチェック</a>
+<br><br>
+<font size=5>目次</font>
+</center>
+<br><br>
+<ul>
+<li><a href="wflt.htm#top" target="main">WAVEFLT とは</a>
+<br><br>
+<li><a href="wflt.htm#dosa" target="main">動作環境</a>
+<br><br>
+<li><a href="wflt.htm#tori" target="main">チュートリアル</a>
+<br><br>
+<li><a href="wflt.htm#seigen2" target="main">注意点</a>
+<br><br>
+<li><a href="wflt.htm#junban" target="main">データを処理する順番</a>
+<br><br>
+<li><a href="wflt.htm#exstr" target="main">置換規則一覧  & 置換例</a>
+<br><br>
+<li><a href="wflt.htm#report" target="main">バグレポート等連絡先</a>
+<br><br>
+<li><a href="wflt.htm#tyosaku" target="main">著作権、免責等について</a>
+<br><br>
+<li><a href="wflt.htm#kosin" target="main">更新履歴</a>
+</ul>
+<hr>
+<center>
+<font size=5>オプション一覧</font>
+</center>
+<br><br>
+<ul>
+<li><a href="option.htm#syosiki" target="main">書式</a>
+<br><br>
+<li>設定ファイル指定
+<br><a href="option.htm#f" target="main">-cfg</a>
+<br><br>
+<li>ファイル情報表示
+<br><a href="option.htm#info" target="main">-info</a>
+<br><br>
+<li>基本設定
+<br><a href="option.htm#tstamp" target="main">-tstamp</a>
+<br><a href="option.htm#silent" target="main">-silent</a>
+<br><a href="option.htm#buf" target="main">-buf</a>
+<br><a href="option.htm#headofs" target="main">-headofs</a>
+<br><a href="option.htm#format" target="main">-format</a>
+<br><a href="option.htm#nowavehdr" target="main">-nowavehdr</a>
+<br><a href="option.htm#noextrahdr" target="main">-noextrahdr</a>
+<br><a href="option.htm#endless" target="main">-endless</a>
+<br><a href="option.htm#del" target="main">-del</a>
+<br><a href="option.htm#nochkhdd" target="main">-nochkhdd</a>
+<br><a href="option.htm#nosse2" target="main">-nosse2</a>
+<br><br>
+<li>ボリューム、バランス調整
+<br><a href="option.htm#vol" target="main">-vol</a>
+<br><a href="option.htm#balance" target="main">-balance</a>
+<br><br>
+<li>切り出し、シフト
+<br><a href="option.htm#cut" target="main">-cut</a>
+<br><a href="option.htm#cuttail" target="main">-cuttail</a>
+<br><a href="option.htm#cutm" target="main">-cutm</a>
+<br><a href="option.htm#shift" target="main">-shift</a>
+<br><br>
+<li>DC オフセット補正
+<br><a href="option.htm#ofs" target="main">-ofs</a>
+<br><a href="option.htm#autoofs" target="main">-autoofs</a>
+<br><br>
+<li>LR,ファイルミキシング
+<br><a href="option.htm#mix" target="main">-mix</a>
+<br><a href="option.htm#mixfile" target="main">-mixfile</a>
+<br><br>
+<li>フェードイン、アウト
+<br><a href="option.htm#fin" target="main">-fin</a>
+<br><a href="option.htm#fout" target="main">-fout</a>
+<br><br>
+<li>FIR フィルタ
+<br><a href="option.htm#lpf" target="main">-fir_lpf</a>
+<br><a href="option.htm#lpf" target="main">-fir_hpf</a>
+<br><a href="option.htm#lpf" target="main">-fir_bpf</a>
+<br><a href="option.htm#lpf" target="main">-fir_bsf</a>
+<br><a href="option.htm#firln" target="main">-firln</a>
+<br><a href="option.htm#db" target="main">-firdb</a>
+<br><a href="option.htm#firchr" target="main">-firchr</a>
+<br><br>
+<li> 3,10 bands FIR-EQ
+<br><a href="option.htm#fireq3" target="main">-fir_eq3</a>
+<br><a href="option.htm#fireqdetail3" target="main">-fir_eq3_detail</a>
+<br><a href="option.htm#fireq" target="main">-fir_eq</a>
+<br><a href="option.htm#fireqdetail" target="main">-fir_eq_detail</a>
+<br><br>
+<li>IIR フィルタ
+<br><a href="option.htm#iir_lpf" target="main">-iir_lpf</a>
+<br><a href="option.htm#iir_lpf" target="main">-iir_hpf</a>
+<br><a href="option.htm#iir_lpf" target="main">-iir_bpf</a>
+<br><a href="option.htm#iirchr" target="main">-iirchr</a>
+<br><br>
+<li>(ディ)エンファシス
+<br><a href="option.htm#demp" target="main">-demp</a>
+<br><a href="option.htm#emp" target="main">-emp</a>
+<br><br>
+<li>シェルビング、ピーキング EQ
+<br><a href="option.htm#sveq_l" target="main">-sveq_l</a>
+<br><a href="option.htm#sveq_h" target="main">-sveq_h</a>
+<br><a href="option.htm#pkeq" target="main">-pkeq</a>
+<br><br>
+<li>ディザ + ノイズシェイパ
+<br><a href="option.htm#dither" target="main">-dither</a>
+<br><br>
+<li>リサンプリング、ビット変換
+<br><a href="option.htm#rsmp" target="main">-rsmp</a>
+<br><a href="option.htm#rsmpdetail" target="main">-rsmp_detail</a>
+<br><a href="option.htm#rsmpchr" target="main">-rsmpchr</a>
+<br><a href="option.htm#bit" target="main">-bit8</a>
+<br><a href="option.htm#bit" target="main">-bit16</a>
+<br><a href="option.htm#bit" target="main">-bit24</a>
+<br><a href="option.htm#bit" target="main">-bit32long</a>
+<br><a href="option.htm#bit" target="main">-bit32float</a>
+<br><a href="option.htm#bit" target="main">-bit64</a>
+<br><br>
+<li>位相回転
+<br> <a href="option.htm#phinv" target="main">-phinv</a>
+<p>
+<li>ノーマライザ
+<br><a href="option.htm#normal" target="main">-normal</a>
+<br><a href="option.htm#normalavg" target="main">-normal_avg</a>
+<br><a href="option.htm#normalrms" target="main">-normal_rms</a>
+<br><a href="option.htm#normalcomp" target="main">-normal_comp</a>
+<br><a href="option.htm#normalnolink" target="main">-normal_nolink</a>
+<br><br>
+<li>コンプレッサ
+<br><a href="option.htm#comp" target="main">-comp</a>
+<br><br>
+<li>サブバンド・ノイズゲート
+<br><a href="option.htm#ngate_sb" target="main">-ngate_sb</a>
+<br><br>
+<li>出力ファイル指定
+<br><a href="option.htm#outfile" target="main">-outfile</a>
+<br><br>
+<li>無音分割、カット
+<br><a href="option.htm#headcutting" target="main">-headcutting</a>
+<br><a href="option.htm#nosound" target="main">-nosound</a>
+<br><a href="option.htm#nosound_detail" target="main">-nosound_detail</a>
+<br><a href="option.htm#nosound_fir" target="main">-nosound_fir</a>
+<br><br>
+<li>時間、出力サイズ分割
+<br><a href="option.htm#split" target="main">-split</a>
+<br><a href="option.htm#split2" target="main">-split2</a>
+<br><a href="option.htm#split3" target="main">-split3</a>
+<br><a href="option.htm#splitkbyte" target="main">-splitkbyte</a>
+<br><br>
+<li>無音部付加
+<br><a href="option.htm#addspc" target="main">-addspc</a>
+<br><br>
+<li>サイン波合成
+<br><a href="option.htm#addsin" target="main">-addsin</a>
+<br><br>
+<li>無音ファイル作成
+<br><a href="option.htm#input" target="main">nosignal</a>
+<br><br>
+<li>音声再生
+<br><a href="option.htm#output" target="main">waveout</a>
+<br><a href="option.htm#device" target="main">-device</a>
+<br><br>
+<li>テキスト出力
+<br><a href="option.htm#text" target="main">-text</a>
+<br><br>
+<li>入出力関係
+<br><a href="option.htm#udef1" target="main">-udef1</a>
+<br><a href="option.htm#udef1" target="main">-udef2</a>
+<br><a href="option.htm#udef1" target="main">-udef3</a>
+<br><a href="option.htm#input" target="main">input.wav</a>
+<br><a href="option.htm#input" target="main">stdin</a>
+<br><a href="option.htm#output" target="main">out.wav</a>
+<br><a href="option.htm#output" target="main">stdout</a>
+<br><a href="option.htm#output" target="main">null</a>
+</ul>
+</BODY>
