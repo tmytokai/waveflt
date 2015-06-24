@@ -127,34 +127,34 @@ void EXPORT WriteWaveHeader(FILE* hdWriteFile,LPWAVEFORMATEX lpWaveFmt,LONGLONG 
 
 
 
-const bool IsWaveFormatValid( WAVEFORMATEX* waveformat, 
-						   char* errmsg
-						   )
+const bool IsWaveFormatValid( const WAVEFORMATEX& waveformat, 
+							 char* errmsg
+							 )
 {
 	assert( waveformat );
 	assert( errmsg );
 
-	const unsigned short tag = waveformat->wFormatTag;
+	const unsigned short tag = waveformat.wFormatTag;
 	if( tag != WAVE_FORMAT_IEEE_FLOAT && tag != WAVE_FORMAT_PCM 
 		){
 		strncpy( errmsg, "Not PCM format.\n", CHR_BUF);
 		return false;
 	}
 
-	const unsigned short channels = waveformat->nChannels;  
+	const unsigned short channels = waveformat.nChannels;  
 	if( channels != 1 && channels != 2){
 		_snprintf( errmsg, CHR_BUF ,"'%d channels' is not supported.\n", channels);
 		return false;
 	}	
 
-	const unsigned short bit = waveformat->wBitsPerSample; 
+	const unsigned short bit = waveformat.wBitsPerSample; 
 	if( bit != 8 && bit != 16 && bit != 24 && bit != 32 && bit != 64){
 		_snprintf(errmsg, CHR_BUF, "'%d bit' is not supported.\n", bit);
 		return false;
 	}
 	
-	const unsigned int avgbytes = waveformat->nAvgBytesPerSec; 
-	const unsigned int rate = waveformat->nSamplesPerSec; 
+	const unsigned int avgbytes = waveformat.nAvgBytesPerSec; 
+	const unsigned int rate = waveformat.nSamplesPerSec; 
 	if(avgbytes != channels*rate*bit/8){
 		strncpy(errmsg,"Invalid wave format.\n", CHR_BUF);
 		return false;
@@ -289,7 +289,7 @@ const bool GetWaveFormat(const char* filename, // name or 'stdin'
 			}
 			*offset += byte;  
 			waveformat->cbSize = 0;
-			if(!IsWaveFormatValid(waveformat, errmsg)) goto L_ERR;
+			if(!IsWaveFormatValid(*waveformat, errmsg)) goto L_ERR;
 		}
 		else if( id == ID_wflt ){
 			*offset += 8;
@@ -412,26 +412,29 @@ void WaveLevel(double dLevel[2],  // output of left and right
 
 
 
-//-----------------------------------------------
-// get max level of wave 
-double GetMaxWaveLevel(WAVEFORMATEX waveFmt){
+const double GetMaxWaveLevel(const WAVEFORMATEX& waveformat){
 
-	double dRet;
+	double ret = 0;
 
-	switch(waveFmt.wBitsPerSample){
-	case 8: dRet = 127; break;
-	case 16: dRet = 32767; break;
-	case 24: dRet = 8388607; break;
-	case 64: dRet = 1; break;
+	switch(waveformat.wBitsPerSample){
+
+	case 8: 
+		ret = 127; 
+		break;
+	case 16:
+		ret = 32767; 
+		break;
+	case 24: 
+		ret = 8388607; 
+		break;
+	case 64: 
+		ret = 1; 
+		break;
 	case 32: 
-		if(waveFmt.wFormatTag == WAVE_FORMAT_PCM) dRet = 2147483647;
-		else dRet = 1;
+		if(waveformat.wFormatTag == WAVE_FORMAT_PCM) ret = 2147483647;
+		else ret = 1;
 		break;
 	}
 
-	return dRet;
+	return ret;
 }
-
-
-
-//EOF

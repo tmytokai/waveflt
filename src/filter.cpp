@@ -1,6 +1,7 @@
 // body of filter
 
 #include "filter.h"
+#include "config.h"
 
 
 //--------------------------------------------------------
@@ -518,7 +519,6 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	
 	DWORD i,i2,dwFoo;
 	DWORD dwPointsInBufBeforeSplit; // for RewindBufFIR()
-	double dMaxLevel;
 	BOOL bChangeFile = false;
 	static double dNoiseShape[MAX_CHN]; // buffer of noise shaper
 
@@ -528,15 +528,13 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 			DCOFFSET(lpFilterBuf[i],*lpdwPointsInBuf,lpFDat->dOffset[i]);
 	}
 	
-	// normalize between -1 and 1.
-	dMaxLevel = GetMaxWaveLevel(inWaveFmt);
-	for(i=0;i<inWaveFmt.nChannels;i++){
-		for(i2=0;i2<*lpdwPointsInBuf;i2++) lpFilterBuf[i][i2] /= dMaxLevel;
+	// pre-normalize data between -1 to 1 before filtering
+	if( CONFIG::get().pre_normalization ){
+		const double maxlevel = GetMaxWaveLevel(inWaveFmt);
+		for(i=0;i<inWaveFmt.nChannels;i++){
+			for(i2=0;i2<*lpdwPointsInBuf;i2++) lpFilterBuf[i][i2] /= maxlevel;
+		}
 	}
-	
-	//---------------------------------------------------
-	// notice: 
-	// Wave data is normalized between -1 and 1 from here.
 	
 	// auto adjust DC offset
 	if(lpFDat->bAutoOffset)
@@ -763,10 +761,12 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 			// use '*lpdwRealPointsInBuf' instead of '*lpdwPointsInBuf', and
 			// use 'outWaveFmt' instead of 'inWaveFmt' from here.
 			
-			// up gain 
-			dMaxLevel = GetMaxWaveLevel(outWaveFmt);
-			for(i=0;i<outWaveFmt.nChannels;i++){
-				for(i2=0;i2<*lpdwRealPointsInBuf;i2++) lpFilterBuf[i][i2] *= dMaxLevel;
+			// restore wave level
+			if( CONFIG::get().pre_normalization ){
+				const double maxlevel = GetMaxWaveLevel(outWaveFmt);
+				for(i=0;i<outWaveFmt.nChannels;i++){
+					for(i2=0;i2<*lpdwRealPointsInBuf;i2++) lpFilterBuf[i][i2] *= maxlevel;
+				}
 			}
 			
 			// dither
@@ -783,7 +783,3 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 		*/
 	}
 }
-
-	
-
-//EOF

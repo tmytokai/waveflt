@@ -1,6 +1,7 @@
 // main 
 
 #include "main.h"
+#include "config.h"
 
 //---------------------------------
 // main 
@@ -84,6 +85,7 @@ BOOL ReadOption(int argc, char *argv_org[]){
 
 	// initilize parameters
 	SetDefaultOption(&FDAT);
+	CONFIG::reset();
 
 	memset(SzUserDef,0,sizeof(char)*3*CHR_BUF);
 	memset(&InputWaveFmt,0,sizeof(WAVEFORMATEX));
@@ -131,8 +133,11 @@ BOOL ReadOption(int argc, char *argv_org[]){
 	i2 = 0;
 	for(i=1;i<(unsigned int)argc-2;i++)
 	{
+		const int ret_config = CONFIG::analyze_argv( argv+i );
+		if( ret_config ) i2 += ret_config;
+
 		// silent mode
-		if(strcmp(argv[i],"-silent")==0) 
+		else if(strcmp(argv[i],"-silent")==0) 
 		{
 			BlVerbose = false;
 			i2++;
@@ -1011,7 +1016,7 @@ BOOL SetParam(){
 	}
 	else
 	{ // -format
-		if(!IsWaveFormatValid(&InputWaveFmt,szErr))
+		if(!IsWaveFormatValid(InputWaveFmt,szErr))
 		{
 			fprintf(stderr,"\n");
 			fprintf(stderr,szErr);
@@ -1340,6 +1345,9 @@ BOOL SetParam(){
 	if(BlUseSSE2){
 		if(CheckSSE2()) fprintf(stderr,"SSE2: supported\n");
 	}
+	
+	CONFIG::status();
+
 	/* obsolete
 	if(BlExecCom)fprintf(stderr,"-exec: %s\n",SzExecCmd);	
 	*/

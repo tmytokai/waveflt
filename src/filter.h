@@ -367,9 +367,9 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 
 
 // wave.c
-const bool IsWaveFormatValid( WAVEFORMATEX* waveformat, 
-						   char* errmsg
-						   );
+const bool IsWaveFormatValid( const WAVEFORMATEX& waveformat,
+							 char* errmsg
+							 );
 
 const bool GetWaveFormat(const char* filename, // name or 'stdin'
 				   WAVEFORMATEX* waveformat, 
@@ -395,9 +395,7 @@ void WaveLevel(double dLevel[2],  // output of left and right
 			   WAVEFORMATEX waveFmt);
 // change byte-data to double-data 
 
-double GetMaxWaveLevel(WAVEFORMATEX waveFmt);
-// get max level of wave 
-
+const double GetMaxWaveLevel(const WAVEFORMATEX& waveformat);
 
 
 /* obsolete

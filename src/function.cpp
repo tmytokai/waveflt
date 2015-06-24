@@ -2,6 +2,7 @@
 
 
 #include "filter.h"
+#include "config.h"
 
 
 //-------------------------------------------------------
@@ -304,7 +305,9 @@ void ShowAbout(){
 	fprintf(stdout,"-udef1 \"comment\" : user defined strings 1 (%%1)\n");
 	fprintf(stdout,"-udef2 \"comment\" : user defined strings 2 (%%2)\n");
 	fprintf(stdout,"-udef3 \"comment\" : user defined strings 3 (%%3)\n");
+	fprintf(stdout,"\n");
 
+	CONFIG::usage();
 }
 
 
