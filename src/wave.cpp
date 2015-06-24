@@ -1,7 +1,9 @@
 // common wave function
 
 #include "filter.h"
-
+#include <io.h> // _setmode
+#include <fcntl.h> // _O_BINARY
+#include <assert.h>
 
 //-------------------------------------------------------------------
 // set WAVE format
@@ -125,111 +127,36 @@ void EXPORT WriteWaveHeader(FILE* hdWriteFile,LPWAVEFORMATEX lpWaveFmt,LONGLONG 
 
 
 
+const bool IsWaveFormatValid( WAVEFORMATEX* waveformat, 
+						   char* errmsg
+						   )
+{
+	assert( waveformat );
+	assert( errmsg );
 
-//-------------------------------------
-// search for head of chunk, 
-BOOL SearchChunk(HANDLE hdFile,char* szChunk, DWORD dwSize, 
-				 BOOL bGetChkSize, // get chunk size
-				 BOOL bStdin, // no seek
-				 LPDWORD lpdwChkSize,LPDWORD lpdwOffset){
-
-	DWORD dwPoint;
-	DWORD dwByte;
-	BYTE byteRead;
-	char szCheck[5];
-#ifdef USEWIN32API
-	LARGE_INTEGER LI; 
-#endif
-
-	memset(szCheck,0,5);
-	for(dwPoint = 0; dwPoint < dwSize; dwPoint++){
-		
-		if(!bStdin){
-#ifdef USEWIN32API 
-			LI.QuadPart = dwPoint;
-			SetFilePointer(hdFile,LI.LowPart, &LI.HighPart,FILE_BEGIN);
-#else
-			fseek(hdFile,dwPoint,SEEK_SET);
-#endif
-		}
-		
-#ifdef USEWIN32API 
-		ReadFile(hdFile,&byteRead,1,&dwByte, NULL);
-#else  
-		dwByte = fread(&byteRead,1,1,hdFile);
-#endif
-		if(dwByte != 1) return false;
-		*lpdwOffset += dwByte;  
-
-		if(byteRead == szChunk[0]){
-			
-#ifdef USEWIN32API 
-			ReadFile(hdFile,szCheck,3,&dwByte, NULL);
-#else  
-			dwByte = fread(szCheck,1,3,hdFile);
-#endif
-			if(dwByte != 3) return false;
-			*lpdwOffset += dwByte;  
-			
-			if(strcmp(szCheck,szChunk+1)==0) break;
-		}
-
-	}
-	
-	if(dwPoint == dwSize) return false;
-
-	// chunk size
-	if(bGetChkSize){
-#ifdef USEWIN32API 
-		ReadFile(hdFile,lpdwChkSize,sizeof(DWORD),&dwByte, NULL);
-#else  
-		dwByte = fread(lpdwChkSize,1,sizeof(DWORD),hdFile);
-#endif
-		if(dwByte != sizeof(DWORD)) return false;
-		*lpdwOffset += dwByte;  
-	}
-
-	if(!bStdin){
-		*lpdwOffset = dwPoint + 4;
-		if(bGetChkSize) *lpdwOffset += sizeof(DWORD);
-	}
-
-
-	return true;
-}
-
-
-
-//------------------------------------------------------------------
-// check whether format is valid
-BOOL CheckWaveFormat(LPWAVEFORMATEX lpWaveFmt,char* lpszErr){
-
-	DWORD waveRate,avgByte;	
-	WORD waveChn,waveBit;
-
-	if(lpWaveFmt->wFormatTag != WAVE_FORMAT_IEEE_FLOAT 
-		|| lpWaveFmt->wFormatTag != WAVE_FORMAT_PCM // 
+	const unsigned short tag = waveformat->wFormatTag;
+	if( tag != WAVE_FORMAT_IEEE_FLOAT && tag != WAVE_FORMAT_PCM 
 		){
-		strcpy(lpszErr,"This data is not PCM format.\n");
+		strncpy( errmsg, "Not PCM format.\n", CHR_BUF);
+		return false;
 	}
-	
-	waveChn = lpWaveFmt->nChannels;  
-	waveRate = lpWaveFmt->nSamplesPerSec; 
-	waveBit = lpWaveFmt->wBitsPerSample; 
-	avgByte = lpWaveFmt->nAvgBytesPerSec; 
 
-	if(waveChn != 1 && waveChn != 2){
-		if(lpszErr) wsprintf(lpszErr,"'%d channel' is not supported.\n",waveChn);
+	const unsigned short channels = waveformat->nChannels;  
+	if( channels != 1 && channels != 2){
+		_snprintf( errmsg, CHR_BUF ,"'%d channels' is not supported.\n", channels);
 		return false;
 	}	
 
-	if(waveBit != 8 && waveBit != 16 && waveBit != 24 && waveBit != 32 && waveBit != 64){
-		if(lpszErr) wsprintf(lpszErr,"'%d bit' is not supported.\n",waveBit);
+	const unsigned short bit = waveformat->wBitsPerSample; 
+	if( bit != 8 && bit != 16 && bit != 24 && bit != 32 && bit != 64){
+		_snprintf(errmsg, CHR_BUF, "'%d bit' is not supported.\n", bit);
 		return false;
 	}
 	
-	if(avgByte != waveChn*waveRate*waveBit/8){
-		if(lpszErr) strcpy(lpszErr,"Wave format is broken.\n");
+	const unsigned int avgbytes = waveformat->nAvgBytesPerSec; 
+	const unsigned int rate = waveformat->nSamplesPerSec; 
+	if(avgbytes != channels*rate*bit/8){
+		strncpy(errmsg,"Invalid wave format.\n", CHR_BUF);
 		return false;
 	}
 
@@ -237,175 +164,162 @@ BOOL CheckWaveFormat(LPWAVEFORMATEX lpWaveFmt,char* lpszErr){
 }
 
 
-//-------------------------------------------------------------------
-// get WAVE format and time, etc.   5/18/2002
-BOOL GetWaveFormat(char* lpszFileName, // file name or 'stdin'
-				   LPWAVEFORMATEX lpWaveFmt, 
-				   LONGLONG* lpn64WaveDataSize, // size of data
-				   LONGLONG* lpn64WaveOffset, // offset to data chunk
-				   char* lpszErr 
+
+enum
+{
+	ID_err = 0,
+	ID_riff,
+	ID_wave,
+	ID_fmt,
+	ID_data,
+	ID_fact,
+	ID_bext,
+	ID_cue,
+	ID_list,
+	ID_plst,
+	ID_junk,
+	ID_wflt, // extension
+	ID_unknown
+};
+
+
+const int GetChunkID( FILE* fp,
+					 char* chunk,
+					 unsigned int* chunksize
+					 )
+{
+	assert( fp );
+	assert( chunk );
+	assert( chunksize );
+
+	unsigned int byte;
+	*chunksize = 0;
+
+	byte = fread( chunk, 1, 4, fp);
+	if(byte != 4) return ID_err;
+
+	if( strncmp(chunk,"WAVE",4) ==0 ) return ID_wave;
+
+	byte = fread(chunksize,1,sizeof(unsigned int),fp);
+	if(byte != sizeof(unsigned int)) return ID_err;
+
+	if( strncmp(chunk,"RIFF",4) ==0 ) return ID_riff;
+	if( strncmp(chunk,"fmt ",4) ==0 ) return ID_fmt;
+	if( strncmp(chunk,"data",4) ==0 ) return ID_data;
+	if( strncmp(chunk,"fact",4) ==0 ) return ID_fact;
+	if( strncmp(chunk,"bext",4) ==0 ) return ID_bext;
+	if( strncmp(chunk,"cue ",4) ==0 ) return ID_cue;
+	if( strncmp(chunk,"LIST",4) ==0 ) return ID_list;
+	if( strncmp(chunk,"plst",4) ==0 ) return ID_plst;
+	if( strncmp(chunk,"JUNK",4) ==0 ) return ID_junk;
+	if( strncmp(chunk,"wflt",4) ==0 ) return ID_wflt;
+
+	return ID_unknown;
+}
+
+
+const bool GetWaveFormat(const char* filename, // name or 'stdin'
+				   WAVEFORMATEX* waveformat, 
+				   unsigned long long* datasize, // data size (byte)
+				   unsigned long long* offset, // offset to data chunk (byte)
+				   char* errmsg 
 				   )
 {
-	
-#ifdef USEWIN32API
-	HANDLE hdFile;
-#else
-	FILE* hdFile;
-#endif
-	DWORD dwCkSize; // chunk size
-	DWORD dwByte;
-	DWORD dwOffset; // offset to data
-		
-	char szErr[CHR_BUF];
-	BOOL bStdin = false;
-	LONGLONG n64DataSize;
+	assert( filename );
+	assert( waveformat );
+	assert( datasize );
+	assert( offset );
+	assert( errmsg );
 
-	n64DataSize = 0;
-	
-	// open file
-	if(strcmp(lpszFileName,"stdin")==0) bStdin = true;
-	
-	if(bStdin){ // stdin
-		
-#ifdef USEWIN32API
-		hdFile	= GetStdHandle(STD_INPUT_HANDLE); 
-#else
-		hdFile = stdin;
+	FILE* fp = NULL;
+	bool ret = false;
+
+	*datasize = 0;
+	*offset = 0;
+	errmsg[0] = '\0';
+
+	// stdin
+	if(strncmp(filename,"stdin", 5)==0){
+		fp = stdin;
 #ifdef WIN32
-		_setmode(_fileno(stdin),_O_BINARY); // binary mode
-#endif
-		
+		_setmode(_fileno(stdin),_O_BINARY); // set binary mode
 #endif
 	}
-	else{ // file
-		
-#ifdef USEWIN32API
-		hdFile = CreateFile(lpszFileName,GENERIC_READ, 0, 0,OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
-		if(hdFile == INVALID_HANDLE_VALUE){
-			 wsprintf(szErr,"Could not open '%s'\n",lpszFileName);
+	// file
+	else{
+		fp = fopen(filename,"rb");
+		if(fp == NULL) {
+			_snprintf(errmsg, CHR_BUF, "Cannot open '%s'\n", filename);
 			goto L_ERR;
-		}						
-#else
-		hdFile = fopen(lpszFileName,"rb");
-		if(hdFile == NULL) {
-			wsprintf(szErr,"Could not open '%s'\n",lpszFileName);
-			goto L_ERR;
-		}	
-#endif		
-	}
-	
-
-	//------------------------------------------------------
-
-	dwOffset = 0;
-	
-	// is this file 'RIFF' format?
-	if(!SearchChunk(hdFile,"RIFF",4,true,bStdin,&dwCkSize,&dwOffset)){
-		strcpy(szErr,"Could not find 'RIFF'. This is not wave file.\n");
-		goto L_ERR;	
-	}
-
-
-	//--------------------------
-	
-	// search for 'WAVE'
-	if(!SearchChunk(hdFile,"WAVE",128,false,bStdin,&dwCkSize,&dwOffset)){
-		strcpy(szErr,"Wave header may be broken.\n");
-		goto L_ERR;	
-	}
-	
-	//--------------------------
-	// format chunk
-
-	// search for 'fmt_'
-	if(!SearchChunk(hdFile,"fmt ",128,true,bStdin,&dwCkSize,&dwOffset)){
-		strcpy(szErr,"Wave header may be broken.\n");
-		goto L_ERR;	
-	}
-
-	// get format
-#ifdef USEWIN32API 
-	ReadFile(hdFile,lpWaveFmt,dwCkSize,&dwByte, NULL);
-#else  
-	dwByte = fread(lpWaveFmt,1,dwCkSize,hdFile);
-#endif
-	if(dwByte != dwCkSize){
-		strcpy(szErr,"Wave header may be broken.\n");
-		goto L_ERR;
-	}
-	dwOffset += dwByte;  
-	
-	// set cbSize to  0 
-	lpWaveFmt->cbSize = 0; 
-	
-	// check format tag
-	if(!CheckWaveFormat(lpWaveFmt,szErr)) goto L_ERR;
-
-	//--------------------------
-	// waveflt chunk (extra chunk)
-	
-	if(!bStdin){ // when stdin, endless mode is set, so ignore data size
-
-		// search for 'wflt'
-		if(SearchChunk(hdFile,"wflt",128,true,bStdin,&dwCkSize,&dwOffset)){
-
-			// get file size
-#ifdef USEWIN32API 
-			ReadFile(hdFile,&n64DataSize,sizeof(LONGLONG),&dwByte, NULL);
-#else  
-			dwByte = fread(&n64DataSize,1,sizeof(LONGLONG),hdFile);
-#endif
-			if(dwByte != sizeof(LONGLONG)){
-				strcpy(szErr,"Wave header may be broken.\n");
-				goto L_ERR;
-			}
-			dwOffset += dwByte;  
-			
-			*lpn64WaveDataSize = n64DataSize;
 		}
 	}
 
+	char chunk[5] = {0};
+	unsigned int chunksize;
 
-	//--------------------------
-	// data chunk
-
-	// search for 'data'
-	if(!SearchChunk(hdFile,"data",128,true,bStdin,&dwCkSize,&dwOffset)){
-		strcpy(szErr,"Wave header may be broken.\n");
+	if( GetChunkID( fp, chunk, &chunksize ) != ID_riff ){
+		strcpy(errmsg,"This is not wave file.\n");
 		goto L_ERR;	
 	}
-	
-	if(lpn64WaveDataSize && n64DataSize == 0) *lpn64WaveDataSize = dwCkSize;
-	
-	// offset to data
-	if(lpn64WaveOffset) *lpn64WaveOffset = dwOffset;
+	*offset += 8;
 
-	// close handle
-	if(!bStdin){
-#ifdef USEWIN32API 
-		CloseHandle(hdFile);
-#else
-		fclose(hdFile);
-#endif
+	while(1){
+
+		unsigned int byte;
+		const int id = GetChunkID( fp, chunk, &chunksize );
+
+		if( id == ID_err ){
+			strncpy(errmsg,"Invalid wave header.\n", CHR_BUF);
+			goto L_ERR;	
+		}
+		else if( id == ID_unknown ){
+			_snprintf(errmsg, CHR_BUF, "Unknown chunk '%s'.\n", chunk);
+			goto L_ERR;	
+		}
+		else if( id == ID_wave ){
+			*offset += 4;
+			continue;
+		}
+		else if( id == ID_fmt ){
+			*offset += 8;
+			byte = fread(waveformat,1,chunksize,fp);
+			if(byte != chunksize){
+				strncpy(errmsg, "Invalid fmt chunk.\n", CHR_BUF);
+				goto L_ERR;
+			}
+			*offset += byte;  
+			waveformat->cbSize = 0;
+			if(!IsWaveFormatValid(waveformat, errmsg)) goto L_ERR;
+		}
+		else if( id == ID_wflt ){
+			*offset += 8;
+			byte = fread( datasize, 1, sizeof(unsigned long long), fp);
+			if(byte != sizeof(unsigned long long)){
+				strncpy(errmsg, "Invalid wflt chunk.\n", CHR_BUF);
+				goto L_ERR;
+			}
+			*offset += byte;  
+		}
+		else if( id == ID_data ){
+			*offset += 8;
+			if( *datasize == 0) *datasize = chunksize;
+			break;
+		}
+		else{
+			*offset += 8 + chunksize;
+			__int64 pos64 = *offset;
+			_fseeki64( fp , pos64, SEEK_SET);
+		}
 	}
+			
+	ret = true;
 
-	return true;
-	
-	//------------------------
+	L_ERR: 
 
-L_ERR: 
-	
-	if(!bStdin){
-#ifdef USEWIN32API 
-		CloseHandle(hdFile);
-#else
-		fclose(hdFile);
-#endif
-	}
-	if(lpszErr) strcpy(lpszErr,szErr);
-	
-	return false;
-	
+	// close file
+	if( fp && fp != stdin ) fclose(fp);
+
+	return ret;
 }
 
 

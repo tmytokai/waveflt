@@ -196,8 +196,8 @@ char SzOrgWriteFile[MAX_PATH]; // original output file name specified in command
 char SzWriteFile[MAX_PATH]; // (virtual) output file name
 char SzRealWriteFile[MAX_PATH]; // (actual) output file name 
 char SzCurDir[MAX_PATH]; // current directry
-LONGLONG N64FileOffset; // byte, header offset of input file
-LONGLONG N64FileDataSize; // byte, data size of input file
+unsigned long long N64FileOffset; // byte, header offset of input file
+unsigned long long N64FileDataSize; // byte, data size of input file
 DWORD DwBufSize = 10; // buffer size
 BOOL BlHeadOffset = false; // specify header offset of input file 
 BOOL BlNoChkHdd = false; // no check space of HDD
@@ -232,10 +232,10 @@ char SzExecCmd[CHR_BUF]; // 実際に実行するコマンド
 */
 
 // config of blocks
-LONGLONG N64TotalDataSize; // total data size of output
-LONGLONG N64RealTotalDataSize; // total data size of 'real' output file
-LONGLONG N64OffsetBlk[MAXCOPYBLOCK]; // byte, offset of each block
-LONGLONG N64DataSizeBlk[MAXCOPYBLOCK]; //  byte, copy size of each block
+unsigned long long N64TotalDataSize; // total data size of output
+unsigned long long N64RealTotalDataSize; // total data size of 'real' output file
+unsigned long long N64OffsetBlk[MAXCOPYBLOCK]; // byte, offset of each block
+unsigned long long N64DataSizeBlk[MAXCOPYBLOCK]; //  byte, copy size of each block
 double DbStartTime[MAXCOPYBLOCK]; // sec, start time of each block
 double DbEndTime[MAXCOPYBLOCK]; // sec, end time of each bloc
 DWORD DwCopyBlock = 1; // number of blocks

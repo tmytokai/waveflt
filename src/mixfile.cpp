@@ -5,7 +5,7 @@
 HANDLE HdMixFile = NULL;  // handle of file
 BYTE* LpMixFileBuffer = NULL;  // buffer to read file
 WAVEFORMATEX  WaveFmtMixFile;
-LONGLONG N64MixFileOffset; // offset of file
+unsigned long long N64MixFileOffset; // offset of file
 double DbMixFileStart; // start time in mixing file
 
 
@@ -18,7 +18,7 @@ BOOL OpenMixFile(char* szMixFile,
 				 char* lpszErr
 				 ){
 	
-	LONGLONG n64FileDataSize;
+	unsigned long long n64FileDataSize;
 	char szErr[CHR_BUF];
 
 	DbMixFileStart = dMixStartTime;

@@ -367,15 +367,15 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 
 
 // wave.c
-BOOL CheckWaveFormat(LPWAVEFORMATEX lpWaveFmt,char* lpszErr);
-// check whether format is valid or not
+const bool IsWaveFormatValid( WAVEFORMATEX* waveformat, 
+						   char* errmsg
+						   );
 
-
-BOOL GetWaveFormat(char* lpszFileName, // file name or 'stdin'
-				   LPWAVEFORMATEX lpWaveFmt, 
-				   LONGLONG* lpn64WaveDataSize, // size of data
-				   LONGLONG* lpn64WaveOffset, // offset to data chunk
-				   char* lpszErr 
+const bool GetWaveFormat(const char* filename, // name or 'stdin'
+				   WAVEFORMATEX* waveformat, 
+				   unsigned long long* datasize, // data size (byte)
+				   unsigned long long* offset, // offset to data chunk (byte)
+				   char* errmsg 
 				   );
 
 VOID WriteWaveHeader(HANDLE hdWriteFile,LPWAVEFORMATEX lpWaveFmt,LONGLONG n64WaveDataSize

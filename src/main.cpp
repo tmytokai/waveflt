@@ -1011,7 +1011,7 @@ BOOL SetParam(){
 	}
 	else
 	{ // -format
-		if(!CheckWaveFormat(&InputWaveFmt,szErr))
+		if(!IsWaveFormatValid(&InputWaveFmt,szErr))
 		{
 			fprintf(stderr,"\n");
 			fprintf(stderr,szErr);
