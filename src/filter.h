@@ -14,7 +14,7 @@
 #include <string.h>
 #include <math.h>
 
-#define VER_STR "WAVEFLT ver.21.06.2015 (c)1999-2015 T.Tokairin"
+#define VER_STR "WAVEFLT ver.2015.06.25 (c)1999-2015 T.Tokairin"
 #define VER_NUM  110
 
 #define PI 3.14159265358979324
