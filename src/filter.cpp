@@ -605,7 +605,6 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	// notice: 
 	// If LR-mixing has been executed, number of channels become 1/2 from here,
 	// so use 'outWaveFmt.nChannels' instead of 'inWaveFmt.nChannels'
-	
 
 	// synthesize sine waves
 	if(lpFDat->dwAddSinNum){
@@ -618,132 +617,133 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	
 	// noise gate
 	if(lpFDat->bNgate)
-		NOISEGATE_FREQ(lpFilterBuf,*lpdwPointsInBuf,outWaveFmt);	
+		NOISEGATE_FREQ(lpFilterBuf,*lpdwPointsInBuf,outWaveFmt.nChannels);	
 
-		// FIR
-		if(lpFDat->dwFIRFilter != NO_FILTER){
-			for(i=0;i<outWaveFmt.nChannels;i++)
-				FIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_FIR_NORMAL,i);
-		}
-		
-		// FIR-EQ
-		if(lpFDat->bFIREQ){
-			for(i=0;i<outWaveFmt.nChannels;i++) FIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_FIR_EQ,i);
-		}
-
-		// IIR 
-		if(lpFDat->dwIIRFilter != NO_FILTER) for(i=0;i<outWaveFmt.nChannels;i++)
-			IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_NORMAL,i);
-
-
-		// (de)emphasis
-		if(lpFDat->bDemp) for(i=0;i<outWaveFmt.nChannels;i++)
-			IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_DEMP,i);
-
-		// shelving EQ low
-		if(lpFDat->bSVEQL) for(i=0;i<outWaveFmt.nChannels;i++)
-			IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_SVEQL,i);
-
-		// shelving EQ high
-		if(lpFDat->bSVEQH) for(i=0;i<outWaveFmt.nChannels;i++)
-			IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_SVEQH,i);
-			
-		// peaking EQ high
-		if(lpFDat->bPKEQ) for(i=0;i<outWaveFmt.nChannels;i++)
-			IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_PKEQ,i);
-		
-		// phase invert
-		if(lpFDat->bPhaseInv){
-			for(i=0;i<outWaveFmt.nChannels;i++){
-				for(i2=0;i2<*lpdwPointsInBuf;i2++) 
-					lpFilterBuf[i][i2] = - lpFilterBuf[i][i2];
-			}
-		}
-		
-		// compressor
-		if(lpFDat->bComp){
-			COMPRESS(inWaveFmt.nSamplesPerSec,lpFilterBuf,*lpdwPointsInBuf,outWaveFmt.nChannels,
-				lpFDat->dCompTh,lpFDat->dCompRatio,
-				lpFDat->dCompAttack,lpFDat->dCompRelease,0);
-		}
-		
-		// volume
-		if(lpFDat->dVolume != 1.0){
-			for(i=0;i<outWaveFmt.nChannels;i++){
-				for(i2=0;i2<*lpdwPointsInBuf;i2++) 
-					lpFilterBuf[i][i2] *= lpFDat->dVolume;
-			}
-		}				
-		
-		// fade in/out
+	// FIR
+	if(lpFDat->dwFIRFilter != NO_FILTER){
 		for(i=0;i<outWaveFmt.nChannels;i++)
-			FADEINOUT(lpFilterBuf[i],*lpdwPointsInBuf,
-			
-			inWaveFmt,lpFDat->dwFadeIn,lpFDat->dwFadeOut,
-			n64OutSize,n64DataSize
-			);
-		
-		*lpdwRealPointsInBuf = *lpdwPointsInBuf;
+			FIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_FIR_NORMAL,i);
+	}
 
-		// down sampling(48k -> 44.1k)
-		if(lpFDat->bRsmp){
-			for(i=0;i<outWaveFmt.nChannels;i++)
-				RSAMP(lpFilterBuf[i],*lpdwPointsInBuf,i,lpdwRealPointsInBuf);
+	// FIR-EQ
+	if(lpFDat->bFIREQ){
+		for(i=0;i<outWaveFmt.nChannels;i++) FIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_FIR_EQ,i);
+	}
+
+	// IIR 
+	if(lpFDat->dwIIRFilter != NO_FILTER) for(i=0;i<outWaveFmt.nChannels;i++)
+		IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_NORMAL,i);
+
+
+	// (de)emphasis
+	if(lpFDat->bDemp) for(i=0;i<outWaveFmt.nChannels;i++)
+		IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_DEMP,i);
+
+	// shelving EQ low
+	if(lpFDat->bSVEQL) for(i=0;i<outWaveFmt.nChannels;i++)
+		IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_SVEQL,i);
+
+	// shelving EQ high
+	if(lpFDat->bSVEQH) for(i=0;i<outWaveFmt.nChannels;i++)
+		IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_SVEQH,i);
+
+	// peaking EQ high
+	if(lpFDat->bPKEQ) for(i=0;i<outWaveFmt.nChannels;i++)
+		IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_PKEQ,i);
+
+	// phase invert
+	if(lpFDat->bPhaseInv){
+		for(i=0;i<outWaveFmt.nChannels;i++){
+			for(i2=0;i2<*lpdwPointsInBuf;i2++) 
+				lpFilterBuf[i][i2] = - lpFilterBuf[i][i2];
+		}
+	}
+
+	// compressor
+	if(lpFDat->bComp){
+		COMPRESS(inWaveFmt.nSamplesPerSec,lpFilterBuf,*lpdwPointsInBuf,outWaveFmt.nChannels,
+			lpFDat->dCompTh,lpFDat->dCompRatio,
+			lpFDat->dCompAttack,lpFDat->dCompRelease,0);
+	}
+
+	// volume
+	if(lpFDat->dVolume != 1.0){
+		for(i=0;i<outWaveFmt.nChannels;i++){
+			for(i2=0;i2<*lpdwPointsInBuf;i2++) 
+				lpFilterBuf[i][i2] *= lpFDat->dVolume;
+		}
+	}				
+
+	// fade in/out
+	for(i=0;i<outWaveFmt.nChannels;i++)
+		FADEINOUT(lpFilterBuf[i],*lpdwPointsInBuf,
+
+		inWaveFmt,lpFDat->dwFadeIn,lpFDat->dwFadeOut,
+		n64OutSize,n64DataSize
+		);
+
+	*lpdwRealPointsInBuf = *lpdwPointsInBuf;
+
+	// down sampling(48k -> 44.1k)
+	if(lpFDat->bRsmp){
+		for(i=0;i<outWaveFmt.nChannels;i++)
+			RSAMP(lpFilterBuf[i],*lpdwPointsInBuf,i,lpdwRealPointsInBuf);
+	}
+
+	// notice:
+	// sampling rate of output is changed when re-sampling has been executed, so
+	// use '*lpdwRealPointsInBuf' instead of '*lpdwPointsInBuf', and
+	// use 'outWaveFmt' instead of 'inWaveFmt' from here.
+
+	// calclate RMS or average for normalizer
+	if(dwCurrentNormalMode == NORMAL_AVG){
+		for(i=0;i<outWaveFmt.nChannels;i++) 
+			SET_AVG(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
+	}
+
+	if(dwCurrentNormalMode == NORMAL_RMS){
+		for(i=0;i<outWaveFmt.nChannels;i++) 
+			SET_RMS(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
+	}
+
+	// normalizer
+	if(dwCurrentNormalMode == NORMAL_EXEC){
+
+		for(i=0;i<outWaveFmt.nChannels;i++){
+			for(i2=0;i2<*lpdwRealPointsInBuf;i2++) 
+				lpFilterBuf[i][i2] *= dNormalGain[i];
 		}
 
-		// notice:
-		// sampling rate of output is changed when re-sampling has been executed, so
-		// use '*lpdwRealPointsInBuf' instead of '*lpdwPointsInBuf', and
-		// use 'outWaveFmt' instead of 'inWaveFmt' from here.
+		// compressor(limiter)
+		if(lpFDat->bNormalUseCompressor)
+			COMPRESS(outWaveFmt.nSamplesPerSec,lpFilterBuf,*lpdwRealPointsInBuf,outWaveFmt.nChannels,
+			lpFDat->dNormalTh,lpFDat->dNormalRatio,
+			lpFDat->dNormalAttack,lpFDat->dNormalRelease,1);
+	}
 
-		// calclate RMS or average for normalizer
-		if(dwCurrentNormalMode == NORMAL_AVG){
-			for(i=0;i<outWaveFmt.nChannels;i++) 
-				SET_AVG(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
-		}
-		
-		if(dwCurrentNormalMode == NORMAL_RMS){
-			for(i=0;i<outWaveFmt.nChannels;i++) 
-				SET_RMS(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
-		}
-		
-		// normalizer
-		if(dwCurrentNormalMode == NORMAL_EXEC){
+	// search peak,
+	for(i=0;i<outWaveFmt.nChannels;i++) SET_PEAK(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
 
-			for(i=0;i<outWaveFmt.nChannels;i++){
-				for(i2=0;i2<*lpdwRealPointsInBuf;i2++) 
-					lpFilterBuf[i][i2] *= dNormalGain[i];
-			}
-			
-			// compressor(limiter)
-			if(lpFDat->bNormalUseCompressor)
-				COMPRESS(outWaveFmt.nSamplesPerSec,lpFilterBuf,*lpdwRealPointsInBuf,outWaveFmt.nChannels,
-				lpFDat->dNormalTh,lpFDat->dNormalRatio,
-				lpFDat->dNormalAttack,lpFDat->dNormalRelease,1);
-		}
-		
-		// search peak,
-		for(i=0;i<outWaveFmt.nChannels;i++) SET_PEAK(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
-		
-		// if normalizer is searching the peak, don't change rate and bit
+	// restore wave level
+	if( CONFIG::get().pre_normalization ){
 		if(dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC)
-		{ 
-			// restore wave level
-			if( CONFIG::get().pre_normalization ){
-				const double maxlevel = GetMaxWaveLevel(outWaveFmt);
-				for(i=0;i<outWaveFmt.nChannels;i++){
-					for(i2=0;i2<*lpdwRealPointsInBuf;i2++) lpFilterBuf[i][i2] *= maxlevel;
-				}
+		{
+			const double maxlevel = GetMaxWaveLevel(outWaveFmt);
+			for(i=0;i<outWaveFmt.nChannels;i++){
+				for(i2=0;i2<*lpdwRealPointsInBuf;i2++) lpFilterBuf[i][i2] *= maxlevel;
 			}
-			
-			// dither
-			if(lpFDat->bDither)
+		}
+	}
+
+	// dither
+	if(lpFDat->bDither){
+		if(dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC)
+		{		
+			for(i=0;i<outWaveFmt.nChannels;i++)
 			{
-				for(i=0;i<outWaveFmt.nChannels;i++)
-				{
-					DITHER(lpFilterBuf[i],*lpdwRealPointsInBuf,i,lpFDat->dDitherAmp);
-				}
+				DITHER(lpFilterBuf[i],*lpdwRealPointsInBuf,i,lpFDat->dDitherAmp);
 			}
+		}
 
 	}
 }

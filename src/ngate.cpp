@@ -31,7 +31,7 @@ double *NG_dBand[MAX_CHN];
 // noise gate (stereo link)
 void NOISEGATE_FREQ(double* lpFilterBuf[2], // filter buffer
 			DWORD dwPointsInBuf, // points
-			WAVEFORMATEX waveFmt
+			const unsigned int channels
 			)
 {
 	DWORD i,i2,dwCh,dwBand; 
@@ -43,7 +43,7 @@ void NOISEGATE_FREQ(double* lpFilterBuf[2], // filter buffer
 
 	for(i=0;i< dwPointsInBuf/NG_BAND;i++)
 	{  
-		for(dwCh = 0; dwCh < waveFmt.nChannels; dwCh++)
+		for(dwCh = 0; dwCh < channels; dwCh++)
 		{
 #ifdef NG_USEFFT
 			memset(NG_dBand[dwCh],0,sizeof(COMPLEX)*NG_BAND);
@@ -89,9 +89,9 @@ void NOISEGATE_FREQ(double* lpFilterBuf[2], // filter buffer
 		{
 			// stereo link
 			dGain = 1;
-			for(dwCh = 0; dwCh < waveFmt.nChannels; dwCh++)	dGain = min(dGain,NG_dGain[dwCh][i2]);
+			for(dwCh = 0; dwCh < channels; dwCh++)	dGain = min(dGain,NG_dGain[dwCh][i2]);
 
-			for(dwCh = 0; dwCh < waveFmt.nChannels; dwCh++)
+			for(dwCh = 0; dwCh < channels; dwCh++)
 			{
 #ifdef NG_USEFFT
 				NG_dBand[dwCh][i2].r *= dGain;
@@ -105,7 +105,7 @@ void NOISEGATE_FREQ(double* lpFilterBuf[2], // filter buffer
 		}
 
 		// synthesis bank
-		for(dwCh = 0; dwCh < waveFmt.nChannels; dwCh++)	
+		for(dwCh = 0; dwCh < channels; dwCh++)	
 		{
 #ifdef NG_USEFFT
 			calcIfftFast(NG_dBand[dwCh],ID_FFT_NGATE);

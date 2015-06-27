@@ -817,7 +817,7 @@ VOID FltBank_synthesis(double *dOutput, // SUB_BAND point, output
 // ngate.c
 void NOISEGATE_FREQ(double* lpFilterBuf[2], // filter buffer
 			DWORD dwPointsInBuf, // points
-			WAVEFORMATEX waveFmt
+			const unsigned int channels
 			);
 void unprepareNGATE();
 void ClearNGATE();
