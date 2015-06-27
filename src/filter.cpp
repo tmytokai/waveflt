@@ -618,9 +618,7 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	
 	// noise gate
 	if(lpFDat->bNgate)
-		NOISEGATE_FREQ(lpFilterBuf,*lpdwPointsInBuf,outWaveFmt);
-
-		
+		NOISEGATE_FREQ(lpFilterBuf,*lpdwPointsInBuf,outWaveFmt);	
 
 		// FIR
 		if(lpFDat->dwFIRFilter != NO_FILTER){
@@ -685,50 +683,51 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 			n64OutSize,n64DataSize
 			);
 		
+		*lpdwRealPointsInBuf = *lpdwPointsInBuf;
+
+		// down sampling(48k -> 44.1k)
+		if(lpFDat->bRsmp){
+			for(i=0;i<outWaveFmt.nChannels;i++)
+				RSAMP(lpFilterBuf[i],*lpdwPointsInBuf,i,lpdwRealPointsInBuf);
+		}
+
+		// notice:
+		// sampling rate of output is changed when re-sampling has been executed, so
+		// use '*lpdwRealPointsInBuf' instead of '*lpdwPointsInBuf', and
+		// use 'outWaveFmt' instead of 'inWaveFmt' from here.
+
 		// calclate RMS or average for normalizer
 		if(dwCurrentNormalMode == NORMAL_AVG){
 			for(i=0;i<outWaveFmt.nChannels;i++) 
-				SET_AVG(lpFilterBuf[i],*lpdwPointsInBuf,i);			
+				SET_AVG(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
 		}
 		
 		if(dwCurrentNormalMode == NORMAL_RMS){
 			for(i=0;i<outWaveFmt.nChannels;i++) 
-				SET_RMS(lpFilterBuf[i],*lpdwPointsInBuf,i);			
+				SET_RMS(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
 		}
 		
 		// normalizer
 		if(dwCurrentNormalMode == NORMAL_EXEC){
+
 			for(i=0;i<outWaveFmt.nChannels;i++){
-				for(i2=0;i2<*lpdwPointsInBuf;i2++) 
+				for(i2=0;i2<*lpdwRealPointsInBuf;i2++) 
 					lpFilterBuf[i][i2] *= dNormalGain[i];
 			}
 			
 			// compressor(limiter)
 			if(lpFDat->bNormalUseCompressor)
-				COMPRESS(inWaveFmt.nSamplesPerSec,lpFilterBuf,*lpdwPointsInBuf,outWaveFmt.nChannels,
+				COMPRESS(outWaveFmt.nSamplesPerSec,lpFilterBuf,*lpdwRealPointsInBuf,outWaveFmt.nChannels,
 				lpFDat->dNormalTh,lpFDat->dNormalRatio,
 				lpFDat->dNormalAttack,lpFDat->dNormalRelease,1);
 		}
 		
 		// search peak,
-		for(i=0;i<outWaveFmt.nChannels;i++) SET_PEAK(lpFilterBuf[i],*lpdwPointsInBuf,i);			
+		for(i=0;i<outWaveFmt.nChannels;i++) SET_PEAK(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
 		
 		// if normalizer is searching the peak, don't change rate and bit
 		if(dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC)
 		{ 
-			*lpdwRealPointsInBuf = *lpdwPointsInBuf;
-			
-			// re-sampling
-			if(lpFDat->bRsmp){
-				for(i=0;i<outWaveFmt.nChannels;i++)
-					RSAMP(lpFilterBuf[i],*lpdwPointsInBuf,i,lpdwRealPointsInBuf);
-			}
-			
-			// notice:
-			// sampling rate of output is changed when re-sampling has been executed, so
-			// use '*lpdwRealPointsInBuf' instead of '*lpdwPointsInBuf', and
-			// use 'outWaveFmt' instead of 'inWaveFmt' from here.
-			
 			// restore wave level
 			if( CONFIG::get().pre_normalization ){
 				const double maxlevel = GetMaxWaveLevel(outWaveFmt);

@@ -1987,7 +1987,6 @@ BOOL Filter(){
 		// initialize 
 		//-----------------------
 		
-//		init_genrand(dwSeed);
 		srand(dwSeed);
 		
 		n64RealTotalOutSize = 0; 
@@ -2078,11 +2077,9 @@ BOOL Filter(){
 				//----------------------------------------------------------
 				
 				// caluculate read size of data from input file
-				if(n64BlockDataSize > (n64InputSize-dwRemainByte) + DwBufSize) dwReadByte = DwBufSize;
-				else dwReadByte = (DWORD)(n64BlockDataSize - (n64InputSize-dwRemainByte));
-
-				// in case of endless mode, 
 				if(BlEndless && !BlCutFile) dwReadByte = DwBufSize;  
+				else if(n64BlockDataSize > (n64InputSize-dwRemainByte) + DwBufSize) dwReadByte = DwBufSize;
+				else dwReadByte = (DWORD)(n64BlockDataSize - (n64InputSize-dwRemainByte));
 				
 				// align the boundary if bit of input file is 24
 				if(InputWaveFmt.wBitsPerSample == 24) 
@@ -2185,8 +2182,7 @@ BOOL Filter(){
 				//------------------------------------------------
 				// output 
 				//------------------------------------------------
-
-					
+			
 					// if normalizer is searching the peak, don't output data
 					if(dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC)
 					{
