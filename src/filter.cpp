@@ -231,10 +231,6 @@ void CopyBufferDtoB(BYTE* lpBuffer,  // output, buffer(BYTE*)
 // clear all filters
 void ClearAllFilters(){
 	
-/* obsolete
-	ClearADPCoef();
-	ClearADPBuf();
-*/
 	ClearCOMP();
 	ClearAutoDCOffset();
 	ClearFirBuf();
@@ -244,9 +240,6 @@ void ClearAllFilters(){
 	ClearRsmp();
 	ClearNOSOUND();
 	AddSinCurve(NULL,0,0,0,0,NULL,NULL,NULL);
-/* obsolete
-	ClearShrink();
-*/
 	ClearNGATE();
 	ClearNSFBuf();
 }
@@ -254,23 +247,14 @@ void ClearAllFilters(){
 
 //--------------------------------------
 // unprepare all filters
-void UnprepareAllFilters(){
-
-/* obsolete
-	unprepareADP();
-*/
+void UnprepareAllFilters()
+{
 	unprepareCOMP();
 	UnprepareCONV();
 	unprepareFIR();
 	CloseMixFile();
 	unprepareRsmp();
-/* obsolete
-	unprepareShrink();
-*/
 	unprepareNGATE();
-/* obsolete
-	unprepareMDCT();
-*/
 	unprepareFft();
 }
 
@@ -373,23 +357,9 @@ BOOL InitFilters(LPFILTER_DATA lpFDat,
 		}
 	}
 
-/* obsolete
-	// ADP 
-	if(lpFDat->bADP){
-		dwFoo = (DWORD)((double)lpFDat->dwADPDelayTime*inWaveFmt.nSamplesPerSec/1000.);
-		PrepareADP(lpFDat->dwADPleng,lpFDat->dADPDb,lpFDat->dADPlevel,dwFoo,outWaveFmt.nChannels);
-	}
-*/
-
 	// noisegate
 	if(lpFDat->bNgate)
 		prepareNGATE(outWaveFmt,lpFDat->dNgateTh,lpFDat->dNgateRelease,lpFDat->dNgateAttack,lpFDat->dwNgateRMS);
-
-	/* obsolete
-	// waveshrink filter
-	if(lpFDat->bWaveSh) 
-		prepareShrink(lpFDat->dwWaveShleng,outWaveFmt,lpFDat->dWaveShLevel);
-*/
 
 	// re-sampling
 	if(lpFDat->bRsmp)
@@ -439,13 +409,6 @@ void SetDefaultOption(LPFILTER_DATA lpFDat){
 	lpFDat->dwNoSndM1toM2 = 14400000; // msec. If time of no sound execeed this, change mode from NOSND_SEARCH to NOSND_CUT.
 	lpFDat->dwNoSndRecStop = 14400000; // msec. If time of no sound execeed this, have LockOn stop recording.
 
-/* obsolete
-	// ADP
-	lpFDat->dwADPleng = 127; // length
-	lpFDat->dADPDb = -100;  // db, loss of adp filter
-	lpFDat->dwADPDelayTime = 50; // msec, delay time 
-*/
-
 	// FIR 
 	lpFDat->dwFIRFilter = NO_FILTER;
 	lpFDat->dwFIRleng = 63; // length
@@ -459,13 +422,6 @@ void SetDefaultOption(LPFILTER_DATA lpFDat){
 
 	// IIR
 	lpFDat->dwIIRFilter = NO_FILTER;
-
-	/* obsolete
-	// waveshrink filter
-	lpFDat->dWaveShLowLevel = 0.1;
-	lpFDat->dWaveShHiLevel = 1.0;
-	lpFDat->dwWaveShleng = 2048; // length
-	*/
 	
 	// volume
 	lpFDat->dVolume = 1.0; 
