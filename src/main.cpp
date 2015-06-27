@@ -1789,9 +1789,6 @@ BOOL Filter(){
 #endif
 
 	BOOL bChangeFile = false; // if true, change output file
-	/* obsolete
-	DWORD dwADPTrainDataSize = 0; // byte, training size in ADP training mode
-	*/
 	double dNormalGain[2] = {0,0}; // gain for normalizer
 	DWORD dwCurrentNormalMode; // current mode of normalizer
 	LONGLONG n64PointerStdin;  // byte, current file pointer of stdin
@@ -1817,11 +1814,6 @@ BOOL Filter(){
 	
 	dwSeed = timeGetTime();
 
-	/* obsolete
-#ifdef USEWIN32API
-	hProcessInfo.hProcess = NULL;
-#endif	
-	*/
 
 	// in case of Ctrl+C 
 #ifdef USEWIN32API
@@ -1916,15 +1908,7 @@ BOOL Filter(){
 	
 	// open output file
 	if(!OpenWriteFile(&hdWriteFile,SzWriteFile,
-		/* obsolete
-#ifdef USEWIN32API
-		&hProcessInfo,
-#endif   
-		*/
 		BlStdout
-		/* obsolete
-		,BlCreatePipe,SzPipeCmd,DwPipeBufSize
-		*/
 		)){
 		goto L_ERR;
 	}
@@ -2011,11 +1995,6 @@ BOOL Filter(){
 
 		ClearAllFilters();
 
-/* obsolete
-		// set ADP training mode
-		if(FDAT.bADP && DwADPTrainTime) dwADPTrainDataSize = DwADPTrainTime*InputWaveFmt.nAvgBytesPerSec;
-		else dwADPTrainDataSize = 0;
-*/
 
 		dwFoo = (DWORD)(DbShiftTime * WriteWaveFmt.nSamplesPerSec / 1000);
 		dwCutHeadOutPoints = dwFoo;
@@ -2036,9 +2015,6 @@ BOOL Filter(){
 			n64BlockDataSize = N64DataSizeBlk[dwBlockNo];
 			
 			if(
-				/* obsolete
-				!dwADPTrainDataSize && 
-				*/
 				(dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC)){
 				fprintf(stderr,"\n----------------\n");
 				fprintf(stderr,"[block %d : ",dwBlockNo);
@@ -2061,10 +2037,6 @@ BOOL Filter(){
 
 				fprintf(stderr,"output: ");
 				if(BlStdout){
-					/* obsolete
-					if(BlCreatePipe) fprintf(stderr,"[pipe] %s\n",SzPipeCmd);
-					else 
-					*/
 						if(BlWaveOut) fprintf(stderr,"[waveout]\n");
 					else fprintf(stderr,"[stdout]\n");
 				}
@@ -2076,11 +2048,6 @@ BOOL Filter(){
 					(double)FDAT.n64SplitByte/InputWaveFmt.nAvgBytesPerSec,
 					FDAT.n64SplitByte/1024/1024);
 			}
-			/* obsolete
-			else if(dwADPTrainDataSize && 
-				(dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC)) 
-				fprintf(stderr,"\nNow, trainig the coefficients of ADP filter ...\n");
-				*/
 
 			
 			// move file pointer of input file
@@ -2206,16 +2173,10 @@ BOOL Filter(){
 					&dwRealPointsInBuf, // output points
 					
 					&bChangeFile,
-					/* obsolete
-					dwADPTrainDataSize,
-					*/
 					dwCurrentNormalMode,
 					dNormalGain,
 					DwCurSplitNo,
 
-					/* obsolete
-					HdWndLkm,
-					*/
 					
 					n64TotalOutSize+n64OutSize,N64TotalDataSize,
 					InputWaveFmt,
@@ -2225,10 +2186,6 @@ BOOL Filter(){
 				// output 
 				//------------------------------------------------
 
-				/* obsolete
-				// In ADP training mode, don't output data
-				if(dwADPTrainDataSize == 0){
-				*/
 					
 					// if normalizer is searching the peak, don't output data
 					if(dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC)
@@ -2311,15 +2268,9 @@ BOOL Filter(){
 							dFoo = 20*log10(fabs(dFoo));
 							
 							ShowStatus(WriteWaveFmt,SzRealWriteFile,
-								/* obsolte
-								BlCreatePipe,
-								*/
 								n64RealTotalOutSize+n64RealOutSize,
 								N64RealTotalDataSize,
 								dFoo,
-								/* obsolete
-								false,
-								*/
 								false,
 								(BlEndless && !BlCutFile)
 								);
@@ -2349,14 +2300,6 @@ BOOL Filter(){
 #endif
 							
 #ifdef USEWIN32API
-							/* obsolete
-							// wait until child process is terminated
-							if(!StopChildStop(hProcessInfo,BlCreatePipe)){
-								hProcessInfo.hProcess = NULL;
-								goto L_ERR;
-							}
-							hProcessInfo.hProcess = NULL;
-							*/
 							
 							// set timestamp
 							if(BlFileStamp && !BlNoSignal)
@@ -2372,17 +2315,6 @@ BOOL Filter(){
 							}
 #endif	
 
-							/* obsolete
-#ifdef WIN32
-							// execute command
-							if(BlExecCom && strcmp(SzWriteFile,"null")!=0){
-								fprintf(stderr,"\nexecute: %s\n",SzExecCmd);
-								if(!ExecCommand(SzExecCmd,NULL,FALSE,BlOpenWin)){
-									fprintf(stderr,"Could not execute %s.\n",SzExecCmd);
-								}
-							}							
-#endif
-							*/
 
 							//---------------------------------------
 							
@@ -2419,32 +2351,10 @@ BOOL Filter(){
 							SetCommandStrings(false,SzWriteFile,SzWriteFile,SzWriteFile,SzUserDef[0],SzUserDef[1],SzUserDef[2],SystemTime,WriteWaveFmt,n64Foo);
 							strcpy(SzRealWriteFile,SzWriteFile);
 			
-							/* obsolete
-#ifdef WIN32
-							// -exec command
-							if(BlExecCom) 
-								SetCommandStrings(false,SzExecCmd,SzExecComand,SzRealWriteFile,SzUserDef[0],SzUserDef[1],SzUserDef[2],SystemTime,WriteWaveFmt,n64Foo);
-
-							// -pipeout command
-							if(BlCreatePipe)
-							{
-								SetCommandStrings(true,SzPipeCmd,SzPipeComand,SzRealWriteFile,SzUserDef[0],SzUserDef[1],SzUserDef[2],SystemTime,WriteWaveFmt,n64Foo);
-								strcpy(SzWriteFile,"stdout");
-							}
-#endif
-							*/
 							
 							// open new output file
 							if(!OpenWriteFile(&hdWriteFile,SzWriteFile,
-								/* obsolete
-#ifdef USEWIN32API
-								&hProcessInfo,
-#endif   
-								*/
 								BlStdout
-								/* obsolete
-								,BlCreatePipe,SzPipeCmd,DwPipeBufSize
-								*/
 								))
 							{
 								goto L_ERR;
@@ -2495,9 +2405,6 @@ BOOL Filter(){
 							fprintf(stderr,"\n\n----------------\nchange output\n");
 							fprintf(stderr,"output: ");
 							if(BlStdout){
-								/* obsolete
-								if(BlCreatePipe) fprintf(stderr,"[pipe] %s\n\n",SzPipeCmd);
-								else */
 									fprintf(stderr,"[stdout]\n");
 							}
 							else fprintf(stderr,"%s\n",SzWriteFile);
@@ -2524,41 +2431,15 @@ BOOL Filter(){
 
 					if(BlVerbose)
 						ShowStatus(WriteWaveFmt,SzRealWriteFile,
-						/* obsolete
-						BlCreatePipe,
-						*/
 						n64TotalOutSize+n64OutSize,
 						N64TotalDataSize,
 						0,
-						/* obsolete
-						false,
-						*/
 						true,
 						(BlEndless && !BlCutFile)
 						);
 
 				}
 				
-			/* obsolete
-			}			
-			else // ADP trainging mode
-			{
-				n64OutSize += dwPointsInBuf * InputWaveFmt.nBlockAlign;
-				
-				if(BlVerbose)
-					ShowStatus(WriteWaveFmt,SzRealWriteFile,BlCreatePipe,
-					n64TotalOutSize+n64OutSize,
-					N64TotalDataSize,
-					0,
-					true,false,
-					(BlEndless && !BlCutFile)
-					);
-				
-				// If ADP training mode is finished, then exit loop
-				if(dwADPTrainDataSize 
-					&& dwADPTrainDataSize < n64TotalOutSize+n64OutSize) goto L_EXITBLOCK;
-			}
-			*/
 			
 			
 		}
@@ -2572,17 +2453,6 @@ L_EXITBLOCK:
 		n64RealTotalOutSize += n64RealOutSize;
 		n64TotalOutSize += n64OutSize;
 		
-		/* obsolete
-		// ADP training mode is over.
-		if(dwADPTrainDataSize && dwADPTrainDataSize < n64TotalOutSize){
-			ClearADPBuf();
-			dwADPTrainDataSize = 0; 
-			dwBlockNo = -1;
-			
-			n64RealTotalOutSize = 0;
-			n64TotalOutSize = 0;
-		}
-		*/
 		
 	}
 	// loop from for(dwBlockNo = 0; ...
@@ -2634,14 +2504,6 @@ L_EXITBLOCK:
 #endif
 	
 #ifdef USEWIN32API
-	/* obsolete
-	// wait until child process is terminated
-	if(!StopChildStop(hProcessInfo,BlCreatePipe)){
-		hProcessInfo.hProcess = NULL;
-		goto L_ERR;
-	}
-	hProcessInfo.hProcess = NULL;
-	*/
 	
 	// set timestamp
 	if(BlFileStamp && !BlNoSignal)
@@ -2658,23 +2520,6 @@ L_EXITBLOCK:
 #endif	
 	
 	
-	/* obsolete
-#ifdef WIN32
-	// execute command
-	if(BlExecCom && strcmp(SzWriteFile,"null")!=0){
-		fprintf(stderr,"execute: %s\n",SzExecCmd);
-		if(!ExecCommand(SzExecCmd,NULL,FALSE,BlOpenWin)){
-			fprintf(stderr,"Could not execute %s.\n",SzExecCmd);
-		}
-	}
-#endif
-	*/
-
-/* obsolete
-	// write characteristics of ADP filter 
-	if(BlADPOutFilter && FDAT.bADP)
-		OutputADPFilterChr(SzCurDir,WriteWaveFmt.nChannels,WriteWaveFmt.nSamplesPerSec);
-*/
 
 	if(FDAT.bAutoOffset && BlVerbose){
 		
@@ -2718,12 +2563,6 @@ L_ERR:
 	if(lpWriteBuffer) free(lpWriteBuffer);
 	for(i=0;i<2;i++) if(lpFilterBuf[i]) free(lpFilterBuf[i]);
 	
-	/* obsolete
-#ifdef USEWIN32API
-	// wait until child process is terminated.
-	if(!StopChildStop(hProcessInfo,BlCreatePipe)) bReturn = false;
-#endif	
-	*/
 	
 	return bReturn;
 }

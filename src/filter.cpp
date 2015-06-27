@@ -500,17 +500,9 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 				 // then *lpdwPointsInBuf = *lpdwRealPointsInBuf.
 
 				 BOOL* lpbChangeFile, // if return value of *lpbChangeFile is true, change output file
-				 /* obsolete
-				 BOOL bADPtrainMode, // if true , now ADP is in the training mode  
-				 */
 				 DWORD dwCurrentNormalMode, // current mode of normalizer
 				 double dNormalGain[2], // L-R, gain for normalizer
 				 DWORD dwCurFileNo,  // current file number
-
-				 /* obsolete
-				 HWND hWndLockon, // hwnd of 'lockon'
-				 */
-
 				 LONGLONG n64OutSize, // byte, total output size
 				 LONGLONG n64DataSize, // byte, total data size of wave
 				 WAVEFORMATEX inWaveFmt, // format of input
@@ -554,9 +546,6 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 		lpFilterBuf,
 		lpdwPointsInBuf,
 		&bChangeFile,
-		/* obsolete
-		hWndLockon,
-		*/
 		inWaveFmt.nSamplesPerSec,
 		inWaveFmt.nChannels,
 		
@@ -631,27 +620,6 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	if(lpFDat->bNgate)
 		NOISEGATE_FREQ(lpFilterBuf,*lpdwPointsInBuf,outWaveFmt);
 
-	/* obsolete
-	// ADP filter
-	if(lpFDat->bADP){
-		for(i=0;i<outWaveFmt.nChannels;i++) ADPLMS(lpFilterBuf[i],*lpdwPointsInBuf,i);
-	}
-	*/
-	
-	/* obsolete
-	// In ADP training mode, don't execute other filters
-	if(!bADPtrainMode)
-	{ 
-	*/
-
-		/* obsolete
-		// waveshrink filter
-		if(lpFDat->bWaveSh){
-			for(i=0;i<outWaveFmt.nChannels;i++)
-				dwFoo = SHRINK_MDCT(lpFilterBuf[i],*lpdwPointsInBuf,i);
-			*lpdwPointsInBuf = dwFoo;
-		}	
-		*/
 		
 
 		// FIR
@@ -778,8 +746,5 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 				}
 			}
 
-			/* obsolete
-		}
-		*/
 	}
 }
