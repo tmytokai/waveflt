@@ -25,14 +25,14 @@ void DcOffset::set_offset( const int channel, const double value )
     offset[ channel ] = value;
 }
 
-const double DcOffset::get_offset( const int channel )
+const double DcOffset::get_offset( const int channel ) const
 {
     assert( channel < format.channels );
 
     return offset[ channel ];
 }
 
-void DcOffset::show_config()
+void DcOffset::show_config() const
 {
 	fprintf(stderr,"DC offset: " );
 	for( int i=0; i < output_format.channels; ++i){
@@ -47,6 +47,11 @@ void DcOffset::clear_buffer()
 	printf("\nDcOffset::clear_buffer\n");
 }
 
+void DcOffset::inputfile_seeked()
+{
+	printf("\nDcOffset::inputfile_seeked\n");
+}
+
 void DcOffset::process( Buffer& buffer )
 {
 	check_input_format( buffer.format );
@@ -59,12 +64,12 @@ void DcOffset::process( Buffer& buffer )
 	buffer.format = output_format;
 }
 
-void DcOffset::file_changed()
+void DcOffset::outputfile_changed()
 {
-	printf("\nDcOffset::file_changed\n");
+	printf("\nDcOffset::outputfile_changed\n");
 }
 
-void DcOffset::show_result()
+void DcOffset::show_result() const
 {
 	printf("\nDcOffset::show_result\n");
 }

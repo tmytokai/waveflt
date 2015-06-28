@@ -17,13 +17,14 @@ public:
 	virtual ~DcOffset();
 
     void set_offset( const int channel, const double value );
-    const double get_offset( const int channel );
+    const double get_offset( const int channel ) const;
 
-	virtual void show_config();
+	virtual void show_config() const;
     virtual void clear_buffer();
+	virtual void inputfile_seeked();
     virtual void process( Buffer& buffer );
-	virtual void file_changed();
-	virtual void show_result();
+	virtual void outputfile_changed();
+	virtual void show_result() const;
 };
 
 

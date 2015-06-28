@@ -2916,12 +2916,19 @@ BOOL FilterBody()
 			// move file pointer of input file
 			if(!BlStdin)  // hdd
 			{
+				if( dwBlockNo == 0 || N64OffsetBlk[dwBlockNo] != N64OffsetBlk[dwBlockNo-1] + N64DataSizeBlk[dwBlockNo-1] ){
 #ifdef USEWIN32API
-				LI.QuadPart = N64OffsetBlk[dwBlockNo];
-				SetFilePointer(hdReadFile,LI.LowPart, &LI.HighPart,FILE_BEGIN);
+					LI.QuadPart = N64OffsetBlk[dwBlockNo];
+					SetFilePointer(hdReadFile,LI.LowPart, &LI.HighPart,FILE_BEGIN);
 #else
-				fseek(hdReadFile,N64OffsetBlk[dwBlockNo],SEEK_SET);
+					fseek(hdReadFile,N64OffsetBlk[dwBlockNo],SEEK_SET);
 #endif
+					std::vector<Filter*>::iterator it = filters.begin();
+					for( ; it != filters.end(); ++it ){
+						(*it)->inputfile_seeked();
+					}
+				}
+
 			}
 			else // stdin
 			{
@@ -3200,7 +3207,7 @@ BOOL FilterBody()
 
 							std::vector<Filter*>::iterator it = filters.begin();
 							for( ; it != filters.end(); ++it ){
-								(*it)->file_changed();
+								(*it)->outputfile_changed();
 							}
 
 							// get current system time

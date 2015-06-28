@@ -20,14 +20,15 @@ public:
 	virtual ~Filter(){}
 	const WAVFMT& get_output_format() const { return output_format; }
 
-	virtual void show_config() = 0;
+	virtual void show_config() const = 0;
     virtual void clear_buffer() = 0;
+	virtual void inputfile_seeked() = 0;
     virtual void process( Buffer& buffer ) = 0;
-	virtual void file_changed() = 0;
-	virtual void show_result() = 0;
+	virtual void outputfile_changed() = 0;
+	virtual void show_result() const = 0;
 
 protected:
-	void check_input_format( const WAVFMT& _input_format ){
+	void check_input_format( const WAVFMT& _input_format ) const{
 		assert( _input_format.channels == input_format.channels );
 		assert( _input_format.rate == input_format.rate );
 		assert( _input_format.bits == input_format.bits );
