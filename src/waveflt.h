@@ -135,11 +135,11 @@ typedef struct
 
 typedef struct
 {
-	
+/*	
 	// DC offset adjustment
 	BOOL bOffset; 
 	double dOffset[2]; // offset value (left,right)
-
+*/
 	// Auto DC offset adjustment
 	BOOL bAutoOffset; 
 	DWORD dwAutoOffsetTime; // sec, training time

@@ -36,6 +36,11 @@ CONFIG::CONFIG()
 
 void CONFIG::_reset()
 {
+	// DC offset
+	use_dcoffset = false;
+	dcoffset.clear();
+
+
 	pre_normalization = true;
 }
 
@@ -48,12 +53,24 @@ void CONFIG::_status()
 
 void CONFIG::_usage()
 {
+	// DC offset
+	fprintf(stdout,"-ofs left right : adjust DC offset\n");
+
 	fprintf(stdout,"-no-pre-normalization : don't pre-normalize data\n");
 }
 
 const int CONFIG::_analyze_argv( const char argv[][CHR_BUF] )
-{
-	if( strncmp(argv[0],"-no-pre-normalization",21)==0){
+{			
+	// DC offset
+	if(strcmp(argv[0],"-ofs")==0) {
+		use_dcoffset = true;
+		dcoffset.push_back( atof(argv[1]) );
+		dcoffset.push_back( atof(argv[2]) );
+		return 3;
+	}
+
+
+	else if( strncmp(argv[0],"-no-pre-normalization",21)==0){
 		pre_normalization = false;
 		return 1;
 	}

@@ -9,7 +9,7 @@
 DWORD  GetVer(char* szVer);
 BOOL ReadOption(int argc, char *argv_org[]);
 BOOL SetParam();
-BOOL Filter();
+BOOL FilterBody();
 void DeleteInputFile();
 
 #define CHR_BUF 256 
@@ -39,7 +39,7 @@ int main(int argc,char *argv[])
 		}
 
 		// filter
-		if(!Filter()){
+		if(!FilterBody()){
 			fprintf(stderr,"Fatal error.\n");
 			exit(1);
 		}

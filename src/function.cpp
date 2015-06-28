@@ -179,7 +179,7 @@ void ShowAbout(){
 	fprintf(stdout,"-shift msec : shift output\n");
 	fprintf(stdout,"\n");
 
-	fprintf(stdout,"-ofs left right : DC offset adjustment\n");
+//	fprintf(stdout,"-ofs left right : DC offset adjustment\n");
 	fprintf(stdout,"-autoofs sec : auto DC offset adjustment\n");
 	fprintf(stdout,"\n");
 	

@@ -1,9 +1,18 @@
 // body of filter
 
+#include <vector>
 #include <string>
 
 #include "waveflt.h"
+
 #include "config.h"
+
+#include "filter.h"
+#include "buffer.h"
+#include "dcoffset.h"
+
+std::vector<Filter*> filters;
+
 
 //----------------------------------------------------
 // global 
@@ -379,6 +388,11 @@ void ClearAllFilters(){
 	AddSinCurve(NULL,0,0,0,0,NULL,NULL,NULL);
 	ClearNGATE();
 	ClearNSFBuf();
+
+	std::vector<Filter*>::iterator it = filters.begin();
+	for( ; it != filters.end(); ++it ){
+		(*it)->clear_buffer();
+	}
 }
 
 
@@ -393,6 +407,11 @@ void UnprepareAllFilters()
 	unprepareRsmp();
 	unprepareNGATE();
 	unprepareFft();
+
+	std::vector<Filter*>::iterator it = filters.begin();
+	for( ; it != filters.end(); ++it ){
+		delete (*it);
+	}
 }
 
 
@@ -635,11 +654,25 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	static double dNoiseShape[MAX_CHN]; // buffer of noise shaper
 
 	// adjust DC offset 
+	/*
 	if(lpFDat->bOffset){
 		for(i=0;i<inWaveFmt.nChannels;i++)
 			DCOFFSET(lpFilterBuf[i],*lpdwPointsInBuf,lpFDat->dOffset[i]);
 	}
-	
+	*/
+	WAVFMT wavfmt;
+	wavfmt.channels = inWaveFmt.nChannels;
+	wavfmt.rate = inWaveFmt.nSamplesPerSec;
+	wavfmt.bits = inWaveFmt.wBitsPerSample;
+	Buffer buffer(wavfmt);
+	for(i=0;i<inWaveFmt.nChannels;i++) buffer.buffer[i] = lpFilterBuf[i];
+	buffer.points = *lpdwPointsInBuf;
+
+	std::vector<Filter*>::iterator it = filters.begin();
+	for( ; it != filters.end(); ++it ){
+		(*it)->process(buffer);
+	}
+
 	// pre-normalize data between -1 to 1 before filtering
 	if( CONFIG::get().pre_normalization ){
 		const double maxlevel = GetMaxWaveLevel(inWaveFmt);
@@ -944,7 +977,10 @@ BOOL ReadOption(int argc, char *argv_org[]){
 	for(i=1;i<(unsigned int)argc-2;i++)
 	{
 		const int ret_config = CONFIG::analyze_argv( argv+i );
-		if( ret_config ) i2 += ret_config;
+		if( ret_config ){
+			i += ret_config-1;
+			i2 += ret_config;
+		}
 
 		//
 		// obsolete part
@@ -1102,7 +1138,7 @@ BOOL ReadOption(int argc, char *argv_org[]){
 			DbFadeOutTime = max(0.1,min(10.,atof(argv[i+1])));
 			i++; i2+=2;
 		}
-		
+/*		
 		// DC offset
 		else if(strcmp(argv[i],"-ofs")==0) {
 			FDAT.bOffset = true; 
@@ -1110,7 +1146,7 @@ BOOL ReadOption(int argc, char *argv_org[]){
 			FDAT.dOffset[1] = atof(argv[i+2]);
 			i+=2; i2+=3;
 		}
-
+*/
 		// auto adjust DC offset
 		else if(strcmp(argv[i],"-autoofs")==0) {
 			FDAT.bAutoOffset = true; 
@@ -1866,10 +1902,12 @@ BOOL SetParam(){
 	dFoo = (double)N64FileDataSize/InputWaveFmt.nAvgBytesPerSec;
 	fprintf(stderr,"time = %.2lf sec \n",dFoo);
 
+	/* obsolete
 	fprintf(stderr,"input file: ");
 	if(BlStdin)	fprintf(stderr,"stdin\n");
 	else if(BlNoSignal) fprintf(stderr,"nosignal\n");
 	else fprintf(stderr,"%s\n",SzReadFile);
+*/
 
 	// if -info option is specified, finish here.
 	if(BlFileInfo)
@@ -2085,6 +2123,7 @@ BOOL SetParam(){
 	// stdout
 	if(strcmp(SzOrgWriteFile,"stdout")==0) strcpy(SzWriteFile,"stdout");
 
+#if 0 // obsolete
 	fprintf(stderr,"output file: ");
 	if(BlStdout) // stdout 
 	{
@@ -2096,6 +2135,7 @@ BOOL SetParam(){
 	}
 	// HDD or NULL
 	else fprintf(stderr,"%s\n",SzWriteFile);
+#endif
 
 	// if name of output file is the same as input file, rename input file to *.bkp.
 	if(strcmp(SzReadFile,SzOrgWriteFile)==0)
@@ -2177,7 +2217,7 @@ BOOL SetParam(){
 	if(strlen(SzUserDef[0])) fprintf(stderr,"udef1: %%1 = %s\n",SzUserDef[0]);
 	if(strlen(SzUserDef[1])) fprintf(stderr,"udef2: %%2 = %s\n",SzUserDef[1]);
 	if(strlen(SzUserDef[2])) fprintf(stderr,"udef3: %%3 = %s\n",SzUserDef[2]);
-	if(FDAT.bOffset) fprintf(stderr,"DC offset: left += %lf right += %lf\n",FDAT.dOffset[0],FDAT.dOffset[1]);
+//	if(FDAT.bOffset) fprintf(stderr,"DC offset: left += %lf right += %lf\n",FDAT.dOffset[0],FDAT.dOffset[1]);
 	if(FDAT.bPhaseInv) fprintf(stderr,"invert phase:\n");
 	if(DbShiftTime != 0) fprintf(stderr,"shift output: %.2lf msec\n",DbShiftTime);
 	if(FDAT.bDemp){
@@ -2214,9 +2254,9 @@ BOOL SetParam(){
 
 	// auto DC offset 
 	if(FDAT.bAutoOffset){ // -autoofs
-		FDAT.bOffset = false;  // if -autoofs is specified, then -ofs is canceled.
-		FDAT.dOffset[0] = 0;
-		FDAT.dOffset[1] = 0;
+//		FDAT.bOffset = false;  // if -autoofs is specified, then -ofs is canceled.
+//		FDAT.dOffset[0] = 0;
+//		FDAT.dOffset[1] = 0;
 		fprintf(stderr,"Auto DC offset: %d sec\n",FDAT.dwAutoOffsetTime);
 	}
 
@@ -2533,6 +2573,40 @@ BOOL SetParam(){
 	}
 #endif
 
+	/////////////////////
+
+	WAVFMT wavfmt;
+	wavfmt.channels = InputWaveFmt.nChannels;
+	wavfmt.rate = InputWaveFmt.nSamplesPerSec;
+	wavfmt.bits = InputWaveFmt.wBitsPerSample;
+
+	// DC offset
+	if( CONFIG::get().use_dcoffset ){
+		Filter* filter = new DcOffset( wavfmt, CONFIG::get().dcoffset);
+		filters.push_back( filter );
+		wavfmt = filter->get_output_format();
+	}
+	
+	fprintf(stderr,"\nstream of data:\n");
+
+	if(BlStdin)	fprintf(stderr,"stdin\n");
+	else if(BlNoSignal) fprintf(stderr,"nosignal\n");
+	else fprintf(stderr,"%s\n",SzReadFile);
+
+	std::vector<Filter*>::iterator it = filters.begin();
+	for( ; it != filters.end(); ++it ){
+		fprintf(stderr,"=> ");
+		(*it)->show_config();
+	}
+
+	fprintf(stderr,"=> ");
+	if(BlStdout) // stdout or waveout
+	{			
+		if(BlWaveOut)	fprintf(stderr,"waveout\n");
+		else fprintf(stderr,"stdout\n");
+	}
+	else fprintf(stderr,"%s\n",SzWriteFile);
+
 	return true;
 }
 
@@ -2540,8 +2614,8 @@ BOOL SetParam(){
 
 
 //-------------------------------------------------------
-// filter
-BOOL Filter()
+// filter body
+BOOL FilterBody()
 {
 	if(BlFileInfo) return true;
 	
@@ -3123,7 +3197,12 @@ BOOL Filter()
 							n64RealTotalOutSize = 0;
 							bChangeFile = false;
 							ClearNOSOUND(); 
-							
+
+							std::vector<Filter*>::iterator it = filters.begin();
+							for( ; it != filters.end(); ++it ){
+								(*it)->file_changed();
+							}
+
 							// get current system time
 							GetLocalTime(&SystemTime);
 							
@@ -3305,7 +3384,12 @@ L_EXITBLOCK:
 	}
 #endif	
 	
-	
+	if(BlVerbose){
+		std::vector<Filter*>::iterator it = filters.begin();
+		for( ; it != filters.end(); ++it ){
+			(*it)->show_result();
+		}
+	}
 
 	if(FDAT.bAutoOffset && BlVerbose){
 		
@@ -3354,8 +3438,7 @@ L_ERR:
 	if(lpBuffer) free(lpBuffer);
 	if(lpWriteBuffer) free(lpWriteBuffer);
 	for(i=0;i<2;i++) if(lpFilterBuf[i]) free(lpFilterBuf[i]);
-	
-	
+
 	return bReturn;
 }
 

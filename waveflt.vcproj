@@ -667,6 +667,26 @@
 				RelativePath="src\waveflt.h"
 				>
 			</File>
+			<File
+				RelativePath=".\src\waveformat.h"
+				>
+			</File>
+			<Filter
+				Name="Filter"
+				>
+				<File
+					RelativePath=".\src\buffer.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\dcoffset.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\filter.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="HELP"

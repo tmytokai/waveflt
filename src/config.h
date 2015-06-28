@@ -3,6 +3,9 @@
 #ifndef _WFLT_CONFIG_H
 #define _WFLT_CONFIG_H
 
+#include <vector>
+
+
 #ifndef CHR_BUF
 #define CHR_BUF 256
 #endif
@@ -18,6 +21,10 @@ public:
 	static const int analyze_argv( const char argv[][CHR_BUF] );
 
 	CONFIG();
+
+	// DC offset
+	bool use_dcoffset;
+	std::vector<double> dcoffset;
 
 	// pre-normalize data between -1 to 1 before filtering
 	bool pre_normalization;

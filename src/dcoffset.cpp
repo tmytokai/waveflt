@@ -1,3 +1,78 @@
+// DC offset
+
+#include "dcoffset.h"
+
+DcOffset::DcOffset( const WAVFMT& _input_format )
+    : Filter( _input_format )
+{
+    offset.resize( output_format.channels );
+    for( int i=0; i < output_format.channels; ++i) offset[i] = 0;
+}
+
+DcOffset::DcOffset( const WAVFMT& _input_format, const std::vector<double>& _offset )
+    : Filter( _input_format ), offset( _offset )
+{}
+
+DcOffset::~DcOffset()
+{
+	printf("\nDcOffset::~DcOffset\n");
+}
+
+void DcOffset::set_offset( const int channel, const double value )
+{
+    assert( channel < format.channels );
+
+    offset[ channel ] = value;
+}
+
+const double DcOffset::get_offset( const int channel )
+{
+    assert( channel < format.channels );
+
+    return offset[ channel ];
+}
+
+void DcOffset::show_config()
+{
+	fprintf(stderr,"DC offset: " );
+	for( int i=0; i < output_format.channels; ++i){
+		fprintf(stderr,"ch%d = %lf ", i, offset[i] );
+		if( i < output_format.channels-1 ) fprintf(stderr,", " );
+	}
+	fprintf(stderr,"\n" );
+}
+
+void DcOffset::clear_buffer()
+{
+	printf("\nDcOffset::clear_buffer\n");
+}
+
+void DcOffset::process( Buffer& buffer )
+{
+	check_input_format( buffer.format );
+
+    if( ! buffer.points ) return;
+    for( int i=0; i < output_format.channels; ++i){
+		for( unsigned int i2=0; i2 < buffer.points; ++i2 ) buffer.buffer[i][i2] += offset[i];
+    }
+
+	buffer.format = output_format;
+}
+
+void DcOffset::file_changed()
+{
+	printf("\nDcOffset::file_changed\n");
+}
+
+void DcOffset::show_result()
+{
+	printf("\nDcOffset::show_result\n");
+}
+
+
+//------------------------------------------------------
+// obsolete
+
 // adjustment of DC offset
 
 #ifdef WIN32
