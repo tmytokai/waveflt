@@ -1,6 +1,11 @@
 // dither + noise shaper (2-order Delta-Sigma ADC)
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#endif
+
+#define MAX_CHN		6   // max number of channels
+#define QUANTIZATION(a,b) ((LONG)(a+b))
 
 double buf_stage1[MAX_CHN];
 double buf_stage2[MAX_CHN];

@@ -1,6 +1,13 @@
 // filter bank
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#define _USE_MATH_DEFINES
+#endif
+#include <math.h>
+
+#define MAX_CHN		6   // max number of channels
+
 #include "fbank.h"
 
 #define SUB_BAND 32
@@ -35,8 +42,8 @@ void ClearFltBank(){
 	// set DCT coefficients
 	for(i=0;i<SUB_BAND;i++){
 		for(k=0;k<SUB_BAND*2;k++){
-		FBK_DCT[i][k] = cos((2*i+1)*(k-16)*PI/(SUB_BAND*2));
-		FBK_IDCT[i][k] = cos((2*i+1)*(k+16)*PI/(SUB_BAND*2));
+		FBK_DCT[i][k] = cos((2*i+1)*(k-16)*M_PI/(SUB_BAND*2));
+		FBK_IDCT[i][k] = cos((2*i+1)*(k+16)*M_PI/(SUB_BAND*2));
 		} 
 	}
 }

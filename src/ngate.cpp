@@ -4,12 +4,29 @@
 // in the experimental stage
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#define _USE_MATH_DEFINES
+#endif
+#include <math.h>
+
+//------------------------------------------------
+// fbank.c
+void ClearFltBank();
+VOID FltBank_analysis(double *dInput, // SUB_BAND point, input
+				double *dOutput,   // SUB_BAND point, output
+				DWORD dwCh);
+// synthesis
+VOID FltBank_synthesis(double *dOutput, // SUB_BAND point, output
+				double *dInput,   // SUB_BAND point, input
+				DWORD  dwCh // channel
+				);
 
 //#define NG_USEFFT // use FFT
 
 #define ID_FFT_NGATE 1
 
+#define MAX_CHN		6   // max number of channels
 
 #ifdef NG_USEFFT
 #define NG_BAND	2048

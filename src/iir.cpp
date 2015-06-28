@@ -1,7 +1,28 @@
 // IIR filter
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#define _USE_MATH_DEFINES
+#endif
+#include <math.h>
 
+// type of filter
+#define NO_FILTER	0
+#define LPF 1
+#define HPF 2
+#define BPF 3
+#define BSF 4
+#define SVEQL 5  // shelving EQ low
+#define SVEQH 6  // shelving EQ high
+
+// ID of IIR filter
+#define ID_IIR_NORMAL	0  // IIR
+#define ID_IIR_DEMP		1  // IIR-(de)emphasys
+#define ID_IIR_SVEQL	2  // IIR-shelving EQ low
+#define ID_IIR_SVEQH	3  // IIR-shelving EQ high
+#define ID_IIR_PKEQ		4  // IIR-peaking EQ
+
+#define MAX_CHN		6   // max number of channels
 #define IIR_NUM		5
 #define MAX_IIRDIM	5
 
@@ -14,30 +35,6 @@ double IIR_B[IIR_NUM][MAX_CHN][MAX_IIRDIM];
 DWORD IIR_dwDim[IIR_NUM][MAX_CHN];
 
 
-//-------------------------------------------
-// get impulse of IIR
-DWORD GetIIRimpulse(double* imp,DWORD N,DWORD dwIirNum,DWORD dwChn){
-	
-	memset(imp,0,sizeof(double)*N);
-	imp[0] = 1;
-
-	// get impulse
-	IIR(imp,N,dwIirNum,dwChn);
-
-	return N;
-}
-
-
-//------------------------------------
-// get coefficients
-DWORD GetIIRCoef(double* dCoef[2],DWORD dwIirNum,DWORD dwChn)
-{
-
-	dCoef[0] = IIR_A[dwIirNum][dwChn];
-	dCoef[1] = IIR_B[dwIirNum][dwChn];
-
-	return IIR_dwDim[dwIirNum][dwChn];
-}
 
 
 
@@ -78,6 +75,30 @@ void IIR(double* lpFilterBuf, // buffer
 }
 
 
+//-------------------------------------------
+// get impulse of IIR
+DWORD GetIIRimpulse(double* imp,DWORD N,DWORD dwIirNum,DWORD dwChn){
+	
+	memset(imp,0,sizeof(double)*N);
+	imp[0] = 1;
+
+	// get impulse
+	IIR(imp,N,dwIirNum,dwChn);
+
+	return N;
+}
+
+
+//------------------------------------
+// get coefficients
+DWORD GetIIRCoef(double* dCoef[2],DWORD dwIirNum,DWORD dwChn)
+{
+
+	dCoef[0] = IIR_A[dwIirNum][dwChn];
+	dCoef[1] = IIR_B[dwIirNum][dwChn];
+
+	return IIR_dwDim[dwIirNum][dwChn];
+}
 
 
 //-----------------------------
@@ -98,90 +119,9 @@ void ClearIirBuf(){
 
 
 
-//-----------------------------------
-// set IIR filter
-void prepareIIRCoefficient(DWORD dwFilter,// type of filter
-						   double dCutFreqL, // low
-						   double dCutFreqH, // hish
-						   double dSmpRate,  // sampling rate
-						   DWORD N,  // dimension of proto-filter
-
-						   DWORD dwIirNum, // ID of filter
-						   DWORD dwChn // channel
-						   ){
-	
-	if(dwFilter == BPF){ // 4dim-IIR for BPF
-		IIR4_BPF_Butterworth(IIR_A[dwIirNum][dwChn],IIR_B[dwIirNum][dwChn],1,N,dCutFreqL,dCutFreqH,dSmpRate);
-		IIR_dwDim[dwIirNum][dwChn] = N*2;
-	}
-	else // 2dim
-	{
-		IIR2_Butterworth(dwFilter,IIR_A[dwIirNum][dwChn],IIR_B[dwIirNum][dwChn],1,N,dCutFreqL,dCutFreqH,dSmpRate);
-		IIR_dwDim[dwIirNum][dwChn] = N;
-	}
-	
-	ClearIirBuf();
-}
 
 
 
-
-//-----------------------------------
-// shelving EQ
-void CalcIirShelvingEQ(DWORD dwFilter,
-					   double dCutFreq,
-					 double dDb,
-					 double dSmpRate,  // sampling rate
-					 DWORD dwIirNum, // ID of filter
-					 DWORD dwChn // channel
-					 ){
-
-	IIR1_ShelvingEQ(dwFilter,IIR_A[dwIirNum][dwChn],IIR_B[dwIirNum][dwChn],dCutFreq,dDb,dSmpRate);
-	IIR_dwDim[dwIirNum][dwChn] = 1;
-	ClearIirBuf();
-}
-
-
-
-
-
-//-----------------------------------
-// peaking EQ
-void CalcIirPeakingEQ(double dCntFreq,  // center
-					  double dQ,  // Q
-					  double dDb,
-					  double dSmpRate,  // sampling rate
-					  DWORD dwIirNum, // ID of filter
-					  DWORD dwChn // channel
-					  ){
-	double dCutFreqL,dCutFreqH,dHalfFreq; 
-	double dT1,dT2,alpha;
-	
-	dHalfFreq = dCntFreq/2./dQ;
-	dCutFreqL = dCntFreq - dHalfFreq;
-	dCutFreqH = dCntFreq + dHalfFreq;
-
-	if(dCutFreqL < 0){
-		IIR1_ShelvingEQ(SVEQL,IIR_A[dwIirNum][dwChn],IIR_B[dwIirNum][dwChn],dCutFreqH,dDb,dSmpRate);
-		IIR_dwDim[dwIirNum][dwChn] = 1;
-	}
-	else if(dCutFreqH > dSmpRate/2){
-
-		dT2 = 1./(2.*PI*dCutFreqL);
-		alpha = pow(10.,-fabs(dDb)/20);
-		dT1 =dT2/alpha;
-		dCutFreqL = 1./(2.*PI*dT1);
-
-		IIR1_ShelvingEQ(SVEQH,IIR_A[dwIirNum][dwChn],IIR_B[dwIirNum][dwChn],dCutFreqL,dDb,dSmpRate);
-		IIR_dwDim[dwIirNum][dwChn] = 1;
-	}
-	else{
-		IIR2_PeakingEQ(IIR_A[dwIirNum][dwChn],IIR_B[dwIirNum][dwChn],dCutFreqL,dCutFreqH,dDb,dSmpRate);
-		IIR_dwDim[dwIirNum][dwChn] = 2;
-	}
-	
-	ClearIirBuf();
-}
 
 
 
@@ -215,8 +155,8 @@ void IIR2_Butterworth(DWORD dwFilter,// type of filter
 	case LPF:
 		// LPF (Butterworth 2)
 
-		dOmg = tan(2*PI*dCutFreqL/(2*dSmpRate)); // pre-warping
-		theta = (2*k-1)*PI/(2*N);
+		dOmg = tan(2*M_PI*dCutFreqL/(2*dSmpRate)); // pre-warping
+		theta = (2*k-1)*M_PI/(2*N);
 
 		a[0] = 1. + 2.*dOmg*cos(theta) +dOmg*dOmg;
 		a[1] = 2.*(1.-dOmg*dOmg);
@@ -231,8 +171,8 @@ void IIR2_Butterworth(DWORD dwFilter,// type of filter
 	case HPF:
 		//HPF (Butterworth 2)
 
-		dOmg = tan(2*PI*dCutFreqL/(2*dSmpRate)); // pre-warping
-		theta = (2*k-1)*PI/(2*N);
+		dOmg = tan(2*M_PI*dCutFreqL/(2*dSmpRate)); // pre-warping
+		theta = (2*k-1)*M_PI/(2*N);
 
 		a[0] = 1. + 2.*dOmg*cos(theta) +dOmg*dOmg;
 		a[1] = 2.*(1.-dOmg*dOmg);
@@ -247,8 +187,8 @@ void IIR2_Butterworth(DWORD dwFilter,// type of filter
 	case BPF: 
 		// BPF (Butterworth 1)
 		
-		dOmgL = tan(2.*PI*dCutFreqL/(2*dSmpRate)); 
-		dOmgH = tan(2.*PI*dCutFreqH/(2*dSmpRate)); 
+		dOmgL = tan(2.*M_PI*dCutFreqL/(2*dSmpRate)); 
+		dOmgH = tan(2.*M_PI*dCutFreqH/(2*dSmpRate)); 
 
 		alpha = (dOmgH*dOmgL);
 		beta = (dOmgH-dOmgL); 
@@ -288,10 +228,10 @@ void IIR4_BPF_Butterworth(double a[5],
 	double alpha;
 	double beta;
 
-	theta = (2*k-1)*PI/(2*N);
+	theta = (2*k-1)*M_PI/(2*N);
 		
-	dOmgL = tan(2.*PI*dCutFreqL/(2*dSmpRate)); 
-	dOmgH = tan(2.*PI*dCutFreqH/(2*dSmpRate)); 
+	dOmgL = tan(2.*M_PI*dCutFreqL/(2*dSmpRate)); 
+	dOmgH = tan(2.*M_PI*dCutFreqH/(2*dSmpRate)); 
 	alpha = (dOmgH*dOmgL);
 	beta = (dOmgH-dOmgL); 
 
@@ -331,7 +271,7 @@ void IIR1_ShelvingEQ(DWORD dwFilter,
 	DWORD i;
 	double a0;
 
-	double dOmg = tan(2.*PI*dCutFreq/(2*dSmpRate)); 
+	double dOmg = tan(2.*M_PI*dCutFreq/(2*dSmpRate)); 
 	double gamma = pow(10.,-fabs(dDb)/20);
 	
 	switch(dwFilter){
@@ -403,8 +343,8 @@ void IIR2_PeakingEQ(double a[3],
 	double beta;
 	double gamma = pow(10.,-fabs(dDb)/20);
 
-	dOmgL = tan(2.*PI*dCutFreqL/(2*dSmpRate)); 
-	dOmgH = tan(2.*PI*dCutFreqH/(2*dSmpRate)); 
+	dOmgL = tan(2.*M_PI*dCutFreqL/(2*dSmpRate)); 
+	dOmgH = tan(2.*M_PI*dCutFreqH/(2*dSmpRate)); 
 	alpha = (dOmgH*dOmgL);
 	beta = (dOmgH-dOmgL); 
 	
@@ -437,4 +377,86 @@ void IIR2_PeakingEQ(double a[3],
 }
 
 
-// EOF
+
+
+
+//-----------------------------------
+// peaking EQ
+void CalcIirPeakingEQ(double dCntFreq,  // center
+					  double dQ,  // Q
+					  double dDb,
+					  double dSmpRate,  // sampling rate
+					  DWORD dwIirNum, // ID of filter
+					  DWORD dwChn // channel
+					  ){
+	double dCutFreqL,dCutFreqH,dHalfFreq; 
+	double dT1,dT2,alpha;
+	
+	dHalfFreq = dCntFreq/2./dQ;
+	dCutFreqL = dCntFreq - dHalfFreq;
+	dCutFreqH = dCntFreq + dHalfFreq;
+
+	if(dCutFreqL < 0){
+		IIR1_ShelvingEQ(SVEQL,IIR_A[dwIirNum][dwChn],IIR_B[dwIirNum][dwChn],dCutFreqH,dDb,dSmpRate);
+		IIR_dwDim[dwIirNum][dwChn] = 1;
+	}
+	else if(dCutFreqH > dSmpRate/2){
+
+		dT2 = 1./(2.*M_PI*dCutFreqL);
+		alpha = pow(10.,-fabs(dDb)/20);
+		dT1 =dT2/alpha;
+		dCutFreqL = 1./(2.*M_PI*dT1);
+
+		IIR1_ShelvingEQ(SVEQH,IIR_A[dwIirNum][dwChn],IIR_B[dwIirNum][dwChn],dCutFreqL,dDb,dSmpRate);
+		IIR_dwDim[dwIirNum][dwChn] = 1;
+	}
+	else{
+		IIR2_PeakingEQ(IIR_A[dwIirNum][dwChn],IIR_B[dwIirNum][dwChn],dCutFreqL,dCutFreqH,dDb,dSmpRate);
+		IIR_dwDim[dwIirNum][dwChn] = 2;
+	}
+	
+	ClearIirBuf();
+}
+
+
+
+//-----------------------------------
+// shelving EQ
+void CalcIirShelvingEQ(DWORD dwFilter,
+					   double dCutFreq,
+					 double dDb,
+					 double dSmpRate,  // sampling rate
+					 DWORD dwIirNum, // ID of filter
+					 DWORD dwChn // channel
+					 ){
+
+	IIR1_ShelvingEQ(dwFilter,IIR_A[dwIirNum][dwChn],IIR_B[dwIirNum][dwChn],dCutFreq,dDb,dSmpRate);
+	IIR_dwDim[dwIirNum][dwChn] = 1;
+	ClearIirBuf();
+}
+
+//-----------------------------------
+// set IIR filter
+void prepareIIRCoefficient(DWORD dwFilter,// type of filter
+						   double dCutFreqL, // low
+						   double dCutFreqH, // hish
+						   double dSmpRate,  // sampling rate
+						   DWORD N,  // dimension of proto-filter
+
+						   DWORD dwIirNum, // ID of filter
+						   DWORD dwChn // channel
+						   ){
+	
+	if(dwFilter == BPF){ // 4dim-IIR for BPF
+		IIR4_BPF_Butterworth(IIR_A[dwIirNum][dwChn],IIR_B[dwIirNum][dwChn],1,N,dCutFreqL,dCutFreqH,dSmpRate);
+		IIR_dwDim[dwIirNum][dwChn] = N*2;
+	}
+	else // 2dim
+	{
+		IIR2_Butterworth(dwFilter,IIR_A[dwIirNum][dwChn],IIR_B[dwIirNum][dwChn],1,N,dCutFreqL,dCutFreqH,dSmpRate);
+		IIR_dwDim[dwIirNum][dwChn] = N;
+	}
+	
+	ClearIirBuf();
+}
+

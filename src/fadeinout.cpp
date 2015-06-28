@@ -1,7 +1,8 @@
 // fade in/out
 
-#include "filter.h"
-
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 //---------------------------------
 // linear fade in / out 

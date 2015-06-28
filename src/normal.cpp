@@ -1,6 +1,9 @@
 // serch peak, avg, RMS for normalizer
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#endif
+#include <math.h>
 
 
 double DbPeak[2] = {0,0}; // peak

@@ -1,9 +1,38 @@
 // FIR filter 
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#define _USE_MATH_DEFINES
+#endif
+#include <math.h>
 
+//----------------------------
+// conv.c
+double CONV();
+void InitCONV(DWORD dwLength);
+void UnprepareCONV();
+void SetConvSize(DWORD n);
+double* GetConvBufA();
+double* GetConvBufB();
+BOOL  CheckSSE2(); // you need to call this function to use SSE2
+
+//-------------------------------------------------
+// filterfunc.c
+double kaiserAlpha(double dDB);
+double I0(double x);
+
+
+#define MAX_CHN		6   // max number of channels
 #define FIR_NUM		3
 
+// type of filter
+#define NO_FILTER	0
+#define LPF 1
+#define HPF 2
+#define BPF 3
+#define BSF 4
+#define SVEQL 5  // shelving EQ low
+#define SVEQH 6  // shelving EQ high
 
 double* FIR_buffer[FIR_NUM][MAX_CHN];  // delay buffer
 DWORD FIR_dwBufSize[FIR_NUM][MAX_CHN];  // buffer size
@@ -98,6 +127,67 @@ void unprepareFIR(){
 }
 
 
+
+//--------------------------------------
+// coefficients of linear phase FIR filter via window method (kaiser window)
+void CalcFirCoefficient(DWORD dwFilter,  // type of filter
+						double * coeff, 
+
+						DWORD dwLength,
+						double dbSmpRate,  // sampling rate
+						double dDB,  // loss
+						DWORD dwCutLow,  // cut-off freq (low)
+						DWORD dwCutHigh  // cut-off freq (high)
+						){
+	DWORD i,dwCenter;
+	double foo;
+	double alpha,f_l,f_h;
+
+	// normalize cut-off freq between 0 and 1.0
+	f_l = (double)dwCutLow/(dbSmpRate/2.); 
+	f_h = (double)dwCutHigh/(dbSmpRate/2.); 
+
+	dwCenter = (dwLength-1)/2;
+
+	// get impulse
+	switch(dwFilter){
+		
+	case LPF:
+		coeff[dwCenter] = f_l;
+		for(i=1; i <= dwCenter ; i++) coeff[dwCenter+i] = sin(M_PI*i*f_l)/(M_PI*i);
+		break;
+		
+	case HPF:
+		coeff[dwCenter] = 1-f_l;
+		for(i=1; i <= dwCenter ; i++) coeff[dwCenter+i] = -sin(M_PI*i*f_l)/(M_PI*i);
+		break;
+		
+	case BPF:
+		coeff[dwCenter] = (f_h-f_l);
+		for(i=1; i <= dwCenter ; i++) coeff[dwCenter+i] = (sin(M_PI*i*f_h)-sin(M_PI*i*f_l))/(M_PI*i);
+		break;
+		
+	case BSF:
+		coeff[dwCenter] = 1-(f_h-f_l);
+		for(i=1; i <= dwCenter ; i++) coeff[dwCenter+i] = -(sin(M_PI*i*f_h)-sin(M_PI*i*f_l))/(M_PI*i);
+		break;
+	}
+
+
+	// shift
+	alpha = kaiserAlpha(dDB);
+	for(i=1;i<=dwCenter;i++) {
+
+		foo = coeff[dwCenter+i]
+			// x kaiser window
+			*I0(alpha*sqrt(1-(2*i/(double)(dwLength-1)) 
+			*(2*i/(double)(dwLength-1)) ))/I0(alpha);
+
+		coeff[dwCenter+i] = foo;
+		coeff[dwCenter-i] = foo;
+	}
+	
+}
 
 
 //--------------------------------------------------------
@@ -234,68 +324,6 @@ void CalcEQCoefficient(DWORD dwFIRleng,
 
 //------------------------------------------------------------------------
 
-
-
-//--------------------------------------
-// coefficients of linear phase FIR filter via window method (kaiser window)
-void CalcFirCoefficient(DWORD dwFilter,  // type of filter
-						double * coeff, 
-
-						DWORD dwLength,
-						double dbSmpRate,  // sampling rate
-						double dDB,  // loss
-						DWORD dwCutLow,  // cut-off freq (low)
-						DWORD dwCutHigh  // cut-off freq (high)
-						){
-	DWORD i,dwCenter;
-	double foo;
-	double alpha,f_l,f_h;
-
-	// normalize cut-off freq between 0 and 1.0
-	f_l = (double)dwCutLow/(dbSmpRate/2.); 
-	f_h = (double)dwCutHigh/(dbSmpRate/2.); 
-
-	dwCenter = (dwLength-1)/2;
-
-	// get impulse
-	switch(dwFilter){
-		
-	case LPF:
-		coeff[dwCenter] = f_l;
-		for(i=1; i <= dwCenter ; i++) coeff[dwCenter+i] = sin(PI*i*f_l)/(PI*i);
-		break;
-		
-	case HPF:
-		coeff[dwCenter] = 1-f_l;
-		for(i=1; i <= dwCenter ; i++) coeff[dwCenter+i] = -sin(PI*i*f_l)/(PI*i);
-		break;
-		
-	case BPF:
-		coeff[dwCenter] = (f_h-f_l);
-		for(i=1; i <= dwCenter ; i++) coeff[dwCenter+i] = (sin(PI*i*f_h)-sin(PI*i*f_l))/(PI*i);
-		break;
-		
-	case BSF:
-		coeff[dwCenter] = 1-(f_h-f_l);
-		for(i=1; i <= dwCenter ; i++) coeff[dwCenter+i] = -(sin(PI*i*f_h)-sin(PI*i*f_l))/(PI*i);
-		break;
-	}
-
-
-	// shift
-	alpha = kaiserAlpha(dDB);
-	for(i=1;i<=dwCenter;i++) {
-
-		foo = coeff[dwCenter+i]
-			// x kaiser window
-			*I0(alpha*sqrt(1-(2*i/(double)(dwLength-1)) 
-			*(2*i/(double)(dwLength-1)) ))/I0(alpha);
-
-		coeff[dwCenter+i] = foo;
-		coeff[dwCenter-i] = foo;
-	}
-	
-}
 
 
 // EOF

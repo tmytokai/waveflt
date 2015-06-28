@@ -247,26 +247,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="src\filter.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="src\filterfunc.cpp"
 				>
 				<FileConfiguration
@@ -388,6 +368,26 @@
 			</File>
 			<File
 				RelativePath="src\wave.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="src\waveflt.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -664,7 +664,7 @@
 				>
 			</File>
 			<File
-				RelativePath="src\filter.h"
+				RelativePath="src\waveflt.h"
 				>
 			</File>
 		</Filter>

@@ -1,6 +1,8 @@
 // adjustment of DC offset
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 BOOL BlDCoffFirstBuffer = true; // whether this is first buffer or not
 double DbDCoffTotal = 0;

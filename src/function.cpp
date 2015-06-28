@@ -1,7 +1,6 @@
 // common functions
 
-
-#include "filter.h"
+#include "waveflt.h"
 #include "config.h"
 
 

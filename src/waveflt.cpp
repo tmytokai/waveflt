@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "filter.h"
+#include "waveflt.h"
 #include "config.h"
 
 //----------------------------------------------------
@@ -458,7 +458,7 @@ BOOL InitFilters(LPFILTER_DATA lpFDat,
 		dT1 = 0.000050;
 		dT2 = 0.000015;
 		dDb = 20*log10(dT2/dT1) * lpFDat->dDempDb;
-		dCutFreq = 1./(2.*PI*dT1);
+		dCutFreq = 1./(2.*M_PI*dT1);
 		for(i=0;i<outWaveFmt.nChannels;i++){
 			CalcIirShelvingEQ(SVEQH,dCutFreq,dDb,inWaveFmt.nSamplesPerSec,ID_IIR_DEMP,i);
 		}
@@ -477,10 +477,10 @@ BOOL InitFilters(LPFILTER_DATA lpFDat,
 	if(lpFDat->bSVEQH)
 	{
 
-		dT2 = 1./(2.*PI*(double)lpFDat->dwSVEQHfreq);
+		dT2 = 1./(2.*M_PI*(double)lpFDat->dwSVEQHfreq);
 		alpha = pow(10.,-fabs(lpFDat->dSVEQHdb)/20);
 		dT1 =dT2/alpha;
-		dCutFreq = 1./(2.*PI*dT1);
+		dCutFreq = 1./(2.*M_PI*dT1);
 		for(i=0;i<outWaveFmt.nChannels;i++){
 			CalcIirShelvingEQ(SVEQH,dCutFreq,lpFDat->dSVEQHdb,inWaveFmt.nSamplesPerSec,ID_IIR_SVEQH,i);
 		}

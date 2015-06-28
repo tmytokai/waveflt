@@ -1,6 +1,26 @@
 // split file at no sound or at specified size
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#endif
+#include <math.h>
+
+// mode of nosound
+#define NOSND_NOT			0	// no split
+#define NOSND_EXEC			1	// searching no sound part
+#define NOSND_SEARCH		2	// searching sound part after splitting, then move to NOSND_EXEC
+#define NOSND_CUT			3	// deleting no sound part after splitting, then move to NOSND_EXEC
+#define NOSND_HEADCUTONLY	4	// deleting no sound part,then move to NOSND_NOT 
+#define NOSND_STOP			5	// stop recording of lockon if no sound part is continuing
+
+// type of normalizer
+#define NORMAL_NOT			0
+#define NORMAL_EXEC			1  // execute normalizer
+#define NORMAL_PEAKBYDB		2  // searching peak
+#define NORMAL_AVG			3  // searching average
+#define NORMAL_RMS			4  // searching RMS
+
+#define MAX_SPLIT	128 // max of split number
 
 DWORD NOSND_dwMode; // mode
 DWORD NOSND_dwInitMode; // initial mode
@@ -94,16 +114,7 @@ VOID NOSOUND(double* lpFilterBuf[2], // buffer
 			}
 			dwCurPos = dwPos;
 		}
-		
-		/* obsolete
-#ifdef USEWIN32API
-		// stop recording
-		if(NOSND_dwPoint > dwNoSndRecStopPoint){
-			StopRecording(hWnd);
-		}
-#endif
-		*/
-		
+				
 		switch(NOSND_dwMode){
 			
 		case NOSND_CUT:

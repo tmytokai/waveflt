@@ -1,7 +1,18 @@
 // FFT , IFFT
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#define _USE_MATH_DEFINES
+#endif
+#include <math.h>
 
+#ifndef COMPLEX
+typedef struct
+{
+	double r;
+	double i;
+}COMPLEX,*LPCOMPLEX;
+#endif
 
 #define FFT_NUM 4
 
@@ -33,7 +44,7 @@ void calcFftCosTable(double* lpdCos,
 	 // table of sin and cos
 	 for(i=1;i<=(*lpdwMaxBit);i++){
 		 for(i2=0;i2<dwFftPoint/2;i2++){ 
-			 dRad = 2.*PI*(double)(i2)/(double)(1<<i); 
+			 dRad = 2.*M_PI*(double)(i2)/(double)(1<<i); 
 			 lpdCos[i*dwFftPoint/2+i2] = cos(dRad);				 
 			 lpdSin[i*dwFftPoint/2+i2] = sin(dRad);		
 		 }	 

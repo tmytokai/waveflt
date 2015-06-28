@@ -1,8 +1,13 @@
 // I/O
 
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#define USEWIN32API  // use win32 APIs
+#endif
+#include <stdio.h>
 
+#define CHR_BUF 256 
 
 /* obsolete
 //-----------------------------------------

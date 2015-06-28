@@ -1,6 +1,10 @@
 // compressor
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#define _USE_MATH_DEFINES
+#endif
+#include <math.h>
 
 #define COMPMODE_ATTACK 0
 #define COMPMODE_RELEASE 1

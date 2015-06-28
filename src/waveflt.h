@@ -6,18 +6,19 @@
 #ifdef WIN32
 #define USEWIN32API  // use win32 APIs
 #include <windows.h>
-#include <fcntl.h>  // _setmode
-#include <io.h>
+//#include <fcntl.h>  // _setmode
+//#include <io.h>
 #endif
 
 #include <stdio.h>
 #include <string.h>
+#define _USE_MATH_DEFINES
 #include <math.h>
 
+/*
 #define VER_STR "WAVEFLT ver.2015.06.25 (c)1999-2015 T.Tokairin"
 #define VER_NUM  110
-
-#define PI 3.14159265358979324
+*/
 
 #define MAX_CHN		6   // max number of channel
 
@@ -399,6 +400,7 @@ void WaveLevel(double dLevel[2],  // output of left and right
 const double GetMaxWaveLevel(const WAVEFORMATEX& waveformat);
 
 
+
 /* obsolete
 //--------------------------------------------------
 // adp.c
@@ -775,8 +777,8 @@ void GET_AVG(double* dAVG);
 
 DWORD  GetVer(char* szVer); // get version
 
-double kaiserAlpha(double dDB);
-double I0(double x);
+//double kaiserAlpha(double dDB);
+//double I0(double x);
 void Idft(LPCOMPLEX data, // input
 		  LPCOMPLEX out, // output
 		  DWORD N  
@@ -800,7 +802,7 @@ double CalcSpec(LPCOMPLEX x,// input
 				double freq,  // frequency
 				double samp_freq // sampling frequency
 				); 
-
+/*
 //------------------------------------------------
 // fbank.c
 void ClearFltBank();
@@ -812,7 +814,7 @@ VOID FltBank_synthesis(double *dOutput, // SUB_BAND point, output
 				double *dInput,   // SUB_BAND point, input
 				DWORD  dwCh // channel
 				);
-
+*/
 
 //--------------------------------------------
 // ngate.c
@@ -845,12 +847,12 @@ void init_genrand(unsigned long s);
 unsigned long genrand_int32(void);
 */
 
-
+/*
 BOOL ReadOption(int, char**);
 BOOL SetParam();
 BOOL Filter();
 void DeleteInputFile();
-
+*/
 
 
 //--------------------------------------------------

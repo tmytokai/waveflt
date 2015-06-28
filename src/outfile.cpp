@@ -1,7 +1,13 @@
 // counfiguration of output file name
 
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#endif
+#include <stdio.h>
+
+#define MAX_SPLIT	128 // max of split number
+#define CHR_BUF 256 
 
 char* OUTFILE_szName[MAX_SPLIT]; 
 DWORD OUTFILE_dwNum = 0;

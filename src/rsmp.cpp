@@ -1,6 +1,42 @@
 // re-sampling
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#define _USE_MATH_DEFINES
+#endif
+#include <math.h>
+
+//--------------------------------------------------
+// fir.c
+void CalcFirCoefficient(DWORD dwFilter,  // type of filter
+						double * coeff, 
+
+						DWORD dwLength,
+						double dbSmpRate,  // sampling rate
+						double dDB,  // loss
+						DWORD dwCutLow,  // cut-off freq (low)
+						DWORD dwCutHigh  // cut-off freq (high)
+						);
+
+
+//----------------------------
+// conv.c
+double CONV();
+void InitCONV(DWORD dwLength);
+void UnprepareCONV();
+void SetConvSize(DWORD n);
+double* GetConvBufA();
+double* GetConvBufB();
+BOOL  CheckSSE2(); // you need to call this function to use SSE2
+
+// type of filter
+#define NO_FILTER	0
+#define LPF 1
+#define HPF 2
+#define BPF 3
+#define BSF 4
+#define SVEQL 5  // shelving EQ low
+#define SVEQH 6  // shelving EQ high
 
 
 double **RSM_dFir;  // RSM_dFir[phase][index], polyphase FIR filter coefficients

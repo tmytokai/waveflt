@@ -1,8 +1,18 @@
 // main 
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+#include <stdio.h>
 #include <string>
 
-#include "filter.h"
+DWORD  GetVer(char* szVer);
+BOOL ReadOption(int argc, char *argv_org[]);
+BOOL SetParam();
+BOOL Filter();
+void DeleteInputFile();
+
+#define CHR_BUF 256 
 
 int main(int argc,char *argv[])
 {

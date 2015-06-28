@@ -1,9 +1,25 @@
 // common wave function
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#define USEWIN32API  // use win32 APIs
+#endif
+#include <stdio.h>
+
 #include <io.h> // _setmode
 #include <fcntl.h> // _O_BINARY
 #include <assert.h>
+
+#define CHR_BUF 256 
+
+#define WAVEHDRSIZE(a) ( (a == TRUE) ? 44 + (8 + 8 + 4) : 44)
+
+#ifndef WAVE_FORMAT_PCM
+#define WAVE_FORMAT_PCM 0x0001
+#endif
+#ifndef WAVE_FORMAT_IEEE_FLOAT
+#define WAVE_FORMAT_IEEE_FLOAT 0x0003
+#endif
 
 //-------------------------------------------------------------------
 // set WAVE format

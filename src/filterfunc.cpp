@@ -1,8 +1,22 @@
 // common functions for filter
 
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#define _USE_MATH_DEFINES
+#endif
+#include <math.h>
 
+#define VER_STR "WAVEFLT ver.2015.06.25 (c)1999-2015 T.Tokairin"
+#define VER_NUM  110
+
+#ifndef COMPLEX
+typedef struct
+{
+	double r;
+	double i;
+}COMPLEX,*LPCOMPLEX;
+#endif
 
 //---------------------------------------------
 // get version of waveflt
@@ -27,7 +41,7 @@ void Dft(LPCOMPLEX x,// input
 
 	memset(X,0,sizeof(COMPLEX)*N);
 
-	w = (2*PI/N);  
+	w = (2*M_PI/N);  
 	
 	// W_N^(kn) = e^{-i*w*k*n} = cos[w*k*n] - i*sin[w*k*n] = cos - i*sin
 	//
@@ -83,7 +97,7 @@ double CalcSpec(LPCOMPLEX x,// input
 	COMPLEX X;
 	double w;
 	
-	w = 2*PI*freq/samp_freq;  
+	w = 2*M_PI*freq/samp_freq;  
 	
 	X.r = 0;
 	X.i = 0;
@@ -148,7 +162,7 @@ void KBDWin(double* win, DWORD dwSize,double alpha){
 	DWORD i;
 	
 	for (i=0; i<=dwSize/2; i++){
-      foo += I0(PI*alpha* sqrt(1. - (4.*i/dwSize - 1.)*(4.*i/dwSize - 1.)));
+      foo += I0(M_PI*alpha* sqrt(1. - (4.*i/dwSize - 1.)*(4.*i/dwSize - 1.)));
       if(i<dwSize/2) win[i] = foo;
    }
 
@@ -186,51 +200,11 @@ void AddSinCurve(double* lpFilterBuf,
 	for(num = 0; num < dwNum; num++){
 		dwCurTime = dwTime[dwChn];
 		dbLevel = pow(10.,lpdbDb[num]/20);
-		dbPhase = dwPhase[num]*PI/180.;
-		w = 2.*PI/dwRate*dwFreq[num];
+		dbPhase = dwPhase[num]*M_PI/180.;
+		w = 2.*M_PI/dwRate*dwFreq[num];
 		for(i=0;i<dwPointsInBuf;i++){
 			lpFilterBuf[i] += dbLevel *sin(w*(dwCurTime++)+dbPhase);
 		}
 	}
 	dwTime[dwChn] = dwTime[dwChn]+dwPointsInBuf;
 }
-
-
-
-/* obsolete
-#ifdef USEWIN32API
-
-//-------------------------------------
-// thread to stop 'lockon'
-void WINAPI StopRecordingThread(LPVOID lpVoid){
-
-	HWND hWnd = (HWND)lpVoid;
-	SendMessage(hWnd,WM_COMMAND,1003,0); 
-}
-
-
-
-//------------------------------------
-// stop lockon
-// create thread to avoid dead-lock
-void StopRecording(HWND hWnd){
-	
-	DWORD dwID;
-
-	if(hWnd == NULL) return;
-
-	fprintf(stderr,"\nstopping lockon...\n");
-
-	CreateThread(NULL,0,
-		(LPTHREAD_START_ROUTINE)StopRecordingThread,
-		(LPVOID)hWnd,
-		0,(LPDWORD)&dwID);
-	
-}
-
-#endif
-*/
-
-
-
-// EOF

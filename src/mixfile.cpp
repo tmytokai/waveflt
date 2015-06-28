@@ -1,6 +1,22 @@
 // file mixing
 
-#include "filter.h"
+#ifdef WIN32
+#include <windows.h>
+#endif
+
+// wave.c
+const bool GetWaveFormat(const char* filename, // name or 'stdin'
+				   WAVEFORMATEX* waveformat, 
+				   unsigned long long* datasize, // data size (byte)
+				   unsigned long long* offset, // offset to data chunk (byte)
+				   char* errmsg 
+				   );
+void WaveLevel(double dLevel[2],  // output of left and right
+			   BYTE* lpWaveData,  // input
+			   WAVEFORMATEX waveFmt);
+const double GetMaxWaveLevel(const WAVEFORMATEX& waveformat);
+
+#define CHR_BUF 256 
 
 HANDLE HdMixFile = NULL;  // handle of file
 BYTE* LpMixFileBuffer = NULL;  // buffer to read file
