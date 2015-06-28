@@ -308,6 +308,7 @@ typedef struct
 
 
 // filter.c
+#if 0
 void  CopyBufferBtoD(BYTE* lpBuffer,  // input, buffer (BYTE*)
 						DWORD dwByte, // size of lpBuffer
 
@@ -363,7 +364,7 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 				 WAVEFORMATEX inWaveFmt, // format of input
 				 WAVEFORMATEX outWaveFmt // format of output
 				 );
-
+#endif
 
 
 // wave.c
@@ -832,9 +833,9 @@ void prepareNGATE(WAVEFORMATEX waveFmt,
 // dither.c
 void ClearNSFBuf();
 void DITHER(double* lpFilterBuf, // filter buffer
-		 DWORD dwPointsInBuf, // points of data in the filter buffer
-		 DWORD dwChn, // channel
-		 double dAmp
+		 DWORD points,
+		 int channel,
+		 double amp
 		 );
 
 /* obsolete
@@ -843,5 +844,191 @@ void DITHER(double* lpFilterBuf, // filter buffer
 void init_genrand(unsigned long s);
 unsigned long genrand_int32(void);
 */
+
+
+BOOL ReadOption(int, char**);
+BOOL SetParam();
+BOOL Filter();
+void DeleteInputFile();
+
+
+
+//--------------------------------------------------
+// function.c
+
+int GetArgv(char*,char[MAX_ARGC][CHR_BUF],int);
+void ShowAbout();
+BOOL GetCmdLineFromFile(char*,char*);
+void ShowStatus(WAVEFORMATEX waveFmt,  
+				char* szWriteFile, // name of output file
+/* obsolete
+				BOOL bCreatePipe, // pipe mode
+*/
+				LONGLONG u64DataSize,  // output size 
+				LONGLONG u64TotalSize, // total size of output file
+				double dPeak,	   // peak
+/* obsolete
+				BOOL bADPtrain, // ADP training mode
+*/
+				BOOL bNormalGain, // now, normalizer is searching peak
+				BOOL bStdin // stdin mode
+				);
+
+
+#ifdef USEWIN32API
+/* obsolete
+BOOL ExecCommand(LPSTR lpszCommandLine,PROCESS_INFORMATION*,BOOL,BOOL);
+BOOL ExecPipeCommand(LPSTR,PROCESS_INFORMATION*,HANDLE*);
+*/
+BOOL GetFileMappingData(int,char*[ ],LPSTR,LPSTR);
+VOID GetFreeHddSpace64(ULONGLONG*,LPSTR);
+#endif
+
+
+VOID SetCommandStrings(
+#ifndef DEF_WAVEFLT
+					   BOOL bCommand,
+#endif
+					   BOOL bFstdin,  // use 'fstdin'
+					   LPSTR lpszCommand, // output strings
+					   LPSTR lpszCommandIn, // input strings
+					   LPSTR lpszFile,     // file name
+					   LPSTR lpszUserDef1, // user defined strings 
+					   LPSTR lpszUserDef2,
+					   LPSTR lpszUserDef3,
+					   SYSTEMTIME sysTime, // current time
+					   WAVEFORMATEX waveFmt,
+					   LONGLONG n64DataSize // data size
+#ifndef DEF_WAVEFLT
+					   ,HWND hWnd,  // hwnd of lockon
+					   DWORD dwRecTime, // recording time(sec) : if n64DataSize = 0, use this parameter
+					   BOOL bOpenConsole, // open console
+					   WORD wSaveMode // save mode
+#endif
+					   );
+
+/* obsolete
+#ifdef USEWIN32API
+BOOL StopChildStop(PROCESS_INFORMATION,BOOL);
+#endif
+*/
+
+#ifdef USEWIN32API
+VOID AddSpase(HANDLE hdWriteFile,DWORD dwSize,WAVEFORMATEX waveFmt);
+#else 
+void AddSpase(FILE* hdWriteFile,DWORD dwSize,WAVEFORMATEX waveFmt);
+#endif
+
+BOOL ExchangeTime(LPSTR lpTime,double* lpSec);
+
+
+BOOL ShowPeakWave(char* lpszFile, // name of input file
+			 DWORD dwBufSize,
+			 WAVEFORMATEX waveFmt,
+			 LONGLONG n64Offset,  // offset 
+			 LONGLONG n64DataSize);
+
+void GetGainForNormalizer(double dNormalGain[2],
+							BOOL bStereoLink,
+							DWORD dwCurrentNormalMode,
+							double dNormalLevel,
+							LONGLONG n64TotalOutSize,
+							WAVEFORMATEX waveFmt);
+/* obsolete
+void OutputADPFilterChr(char* lpszSaveDir,DWORD dwChn,DWORD dwSampleRate);
+*/
+
+void OutputFIRFilterChr(char* lpszSaveDir,WAVEFORMATEX waveFmt,DWORD dwFIRnum);
+void OutputIIRFilterChr(char* lpszSaveDir,WAVEFORMATEX waveFmt,DWORD dwFIRnum);
+void printIIRcoef(DWORD dwIirNum);
+void OutputRsmpChr(char* lpszSaveDir,WAVEFORMATEX waveFmt);
+
+//--------------------------------------------------
+// playwave.c
+#ifdef USEWIN32API
+BOOL OpenWaveDevice(UINT,WAVEFORMATEX,DWORD);
+BOOL PlayWave(BYTE*,DWORD);
+BOOL CloseWaveDevice(BOOL);
+#endif
+
+
+
+//--------------------------------------------------
+// io.c
+
+#ifdef USEWIN32API
+BOOL OpenReadFile(HANDLE* hdReadFile,char* szReadFile,
+#else
+BOOL OpenReadFile(FILE** hdReadFile,char* szReadFile,
+#endif
+					BOOL bStdin // stdin 
+					);
+
+#ifdef USEWIN32API
+BOOL OpenWriteFile(HANDLE* hdWriteFile,char* szWriteFile,
+				   /* obsolete
+				   PROCESS_INFORMATION* pProInfo,
+				   */
+#else
+BOOL OpenWriteFile(FILE** hdWriteFile,char* szWriteFile,
+#endif
+					BOOL bStdout // stdou4
+/* obsolete
+					BOOL bCreatePipe, // create pipe
+					char* szPipeCmd, // command of pipe
+					DWORD dwPipeSize  // buffer size of pipe
+*/
+					);
+
+#ifdef USEWIN32API
+void ReadData(HANDLE,BYTE*,DWORD,DWORD*);
+#else
+void ReadData(FILE*,BYTE*,DWORD,DWORD*);
+#endif
+
+#ifdef USEWIN32API
+BOOL WriteData(HANDLE hdWriteFile,BYTE* lpBuffer,DWORD dwWriteByte,DWORD* lpdwByte
+/* obsolete
+			   ,BOOL bCreatePipe,
+			   PROCESS_INFORMATION hProcessInfo
+			   */
+			   );
+#else
+BOOL WriteData(FILE* hdWriteFile,BYTE* lpBuffer,DWORD dwWriteByte,DWORD* lpdwByte,
+/* obsolete
+			   BOOL bCreatePipe
+*/
+			   );
+#endif
+
+BOOL WriteTextData(HANDLE hdWriteFile,
+				   double* lpFilterBuf[2], // buffer
+				   DWORD dwPointsInBuf, // points of data in buffer
+				   WAVEFORMATEX waveFmt);
+
+
+
+// outfile.c
+void SetOutputFileName(LPSTR lpszBaseFile,  // base name
+						 LPSTR lpszOutputFile, // output file name
+						 DWORD dwNum // number
+						 );
+
+
+BOOL PrepareOutputFileName(LPSTR lpszConfigFile, // configuration file
+#ifdef WIN32		
+						HANDLE hFileMap, // handle of file mapping
+#endif
+						char* lpszErr
+						);
+
+void unprepareOutputFileName();
+
+
+// rand.c
+//void init_genrand(unsigned long s);
+
+
+
 
 #endif

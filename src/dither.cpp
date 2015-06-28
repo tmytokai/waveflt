@@ -32,7 +32,8 @@ void DITHER(double* lpFilterBuf, // filter buffer
 		lpFilterBuf[i] += dither;
 
 		// noise shaper (2-order Delta-Sigma ADC)
-		// Voutput(z) = Vinput(z) + (1-z^{-1})^2 \cdot Vnoise(z)
+		// Output(z) = [ { Input(z) - z^{-1} Output(z) }{1/(1-z^{-1})} -  z^{-1} Output(z) ]{1/(1-z^{-1})} + Noise(z)
+		// Output(z) = Input(z) + (1-z^{-1})^2 Noise(z)
 		double aout = lpFilterBuf[i];
 		aout -= buf_out[channel];
 		aout += buf_stage1[channel]; buf_stage1[channel] = aout;

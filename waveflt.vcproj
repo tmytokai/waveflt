@@ -667,10 +667,6 @@
 				RelativePath="src\filter.h"
 				>
 			</File>
-			<File
-				RelativePath="src\main.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="HELP"
