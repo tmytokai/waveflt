@@ -5,6 +5,8 @@
 #define _USE_MATH_DEFINES
 #endif
 #include <math.h>
+#include <assert.h>
+#include <stdio.h>
 
 //--------------------------------------------------
 // fir.c
@@ -47,6 +49,7 @@ double* RSM_buffer[2] = {NULL,NULL}; // buffer
 DWORD RSM_dwMaxBufferSize; // buffer size
 DWORD RSM_dwBufSize[2] = {0,0}; //size of data filled in buffer
 DWORD RSM_dwCurPos[2] = {0,0}; // current reading point 
+DWORD RSM_dwCounter[2] = {0,0};
 
 DWORD RSM_dwUp = 0;  // up-sampling  points
 DWORD RSM_dwDown = 0; // down-sampling points after up-sampling
@@ -155,8 +158,9 @@ void ClearRsmp(){
 	for(i=0;i<2;i++){
 		if(RSM_buffer[i]) memset(RSM_buffer[i],0,sizeof(double)*RSM_dwMaxBufferSize);
 		RSM_dwFirPhase[i] = 0;
-		RSM_dwCurPos[i] = RSM_dwConvSize;
+		RSM_dwCurPos[i] = RSM_dwConvSize-1;
 		RSM_dwBufSize[i] = 0;
+		RSM_dwCounter[i] = RSM_dwDown-1;
 	}
 
 }
@@ -170,51 +174,66 @@ void RSAMP( double* lpFilterBuf, // filter buffer
 			DWORD dwCh,
 
 			LPDWORD lpdwAfterPoints
-			){
+			)
+{
+	if( !dwPointsInBuf ) return;
 
-
-	DWORD dwBase,dwPos;
+	DWORD dwPos = 0;
 	double *buf1,*buf2;
-
-	dwBase = 0;
-	dwPos = 0;
 
 	SetConvSize(RSM_dwConvSize);
 	buf1 = GetConvBufA();
 	buf2 = GetConvBufB();
 
 	// copy data to re-sampling buffer
-	memcpy(RSM_buffer[dwCh]+RSM_dwBufSize[dwCh],lpFilterBuf+dwBase,sizeof(double)*dwPointsInBuf);
+	memcpy(RSM_buffer[dwCh]+RSM_dwBufSize[dwCh],lpFilterBuf,sizeof(double)*dwPointsInBuf);
 	RSM_dwBufSize[dwCh] += dwPointsInBuf;
+	assert( RSM_dwBufSize[dwCh] <= RSM_dwMaxBufferSize );
+
+	while(RSM_dwFirPhase[dwCh] >= RSM_dwUp){
+		RSM_dwFirPhase[dwCh] -= RSM_dwUp;
+		RSM_dwCurPos[dwCh]++;
+		assert(RSM_dwCurPos[dwCh] < RSM_dwBufSize[dwCh]);
+		printf("\n%d - %d\n",RSM_dwFirPhase[dwCh],  RSM_dwUp );
+	}
 	memcpy(buf2,(RSM_buffer[dwCh]+RSM_dwCurPos[dwCh] -(RSM_dwConvSize-1)),sizeof(double)*RSM_dwConvSize);
 
 	while(1){
 
 		// convolution
 		memcpy(buf1,RSM_dFir[RSM_dwFirPhase[dwCh]],sizeof(double)*RSM_dwConvSize);
-		lpFilterBuf[dwBase + dwPos++] = CONV();
+		lpFilterBuf[dwPos++] = CONV();
+		/*
+		double out = CONV();
+		RSM_dwCounter[dwCh]++;
+		if( RSM_dwCounter[dwCh] == RSM_dwDown ){
+			RSM_dwCounter[dwCh] = 0;
+			lpFilterBuf[dwPos++] = out;
+		}
+		*/
 
 		// renew phase and reading point of buffer
 		RSM_dwFirPhase[dwCh] += RSM_dwDown;
+//		RSM_dwFirPhase[dwCh]++;
+		bool cpy = false;
 		while(RSM_dwFirPhase[dwCh] >= RSM_dwUp){
 			RSM_dwFirPhase[dwCh] -= RSM_dwUp;
 			RSM_dwCurPos[dwCh]++;
-			memcpy(buf2,(RSM_buffer[dwCh]+RSM_dwCurPos[dwCh] -(RSM_dwConvSize-1)),sizeof(double)*RSM_dwConvSize);
+			if(RSM_dwCurPos[dwCh] == RSM_dwBufSize[dwCh]) break;
+			cpy = true;			
 		}
-
-		if(RSM_dwCurPos[dwCh] >= RSM_dwBufSize[dwCh]) break;
+		if(RSM_dwCurPos[dwCh] == RSM_dwBufSize[dwCh]) break;
+		if( cpy ) memcpy(buf2,(RSM_buffer[dwCh]+RSM_dwCurPos[dwCh] -(RSM_dwConvSize-1)),sizeof(double)*RSM_dwConvSize);
 	}
 
 	(*lpdwAfterPoints) = dwPos;
 
 	// move RSM_dwConvSize byte data from tail to front for next convolution
-	memcpy(RSM_buffer[dwCh],RSM_buffer[dwCh] + (RSM_dwBufSize[dwCh]-RSM_dwConvSize),sizeof(double)*(RSM_dwConvSize));
-	RSM_dwCurPos[dwCh] = RSM_dwCurPos[dwCh] - (RSM_dwBufSize[dwCh] - RSM_dwConvSize);
-	RSM_dwBufSize[dwCh] = RSM_dwConvSize;
+	memcpy(RSM_buffer[dwCh],RSM_buffer[dwCh] + (RSM_dwBufSize[dwCh]-(RSM_dwConvSize-1)),sizeof(double)*(RSM_dwConvSize-1));
+	RSM_dwCurPos[dwCh] = RSM_dwConvSize-1;
+	RSM_dwBufSize[dwCh] = RSM_dwConvSize-1;
 
 };
-
-// EOF
 
 
 
