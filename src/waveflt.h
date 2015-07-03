@@ -15,6 +15,8 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include "waveformat.h"
+
 /*
 #define VER_STR "WAVEFLT ver.2015.06.25 (c)1999-2015 T.Tokairin"
 #define VER_NUM  110
@@ -315,14 +317,14 @@ void  CopyBufferBtoD(BYTE* lpBuffer,  // input, buffer (BYTE*)
 
 						double* lpFilterBuf[2], // output, buffer of wave data (double*) (L-R)
 						LPDWORD lpdwPointsInBuf, // points of data in lpFilterBuf
-						WAVEFORMATEX waveFmt
+						WAVFMT waveFmt
 						);
 
 void CopyBufferDtoB(BYTE* lpBuffer,  // output, buffer(BYTE*)
 						   
 						   double* lpFilterBuf[2], // input, buffer(double*)
 						   DWORD dwPointsInBuf, // points in lpFilterBuf
-						   WAVEFORMATEX waveFmt,
+						   WAVFMT waveFmt,
    						   BOOL bRound,
 						   
 						   DWORD* lpdwSaturate  // number of saturation
@@ -333,8 +335,8 @@ void UnprepareAllFilters();
 
 BOOL InitFilters(LPFILTER_DATA lpFDat,
 				 DWORD dwFilterPoints, // points of data in filter buffer
-				 WAVEFORMATEX inWaveFmt,
-				 WAVEFORMATEX outWaveFmt,
+				 WAVFMT inWaveFmt,
+				 WAVFMT outWaveFmt,
 				 char* lpszErr);
 
 
@@ -362,42 +364,10 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 
 				 LONGLONG n64OutSize, // byte, total output size
 				 LONGLONG n64DataSize, // byte, total data size of wave
-				 WAVEFORMATEX inWaveFmt, // format of input
-				 WAVEFORMATEX outWaveFmt // format of output
+				 WAVFMT inWaveFmt, // format of input
+				 WAVFMT outWaveFmt // format of output
 				 );
 #endif
-
-
-// wave.c
-const bool IsWaveFormatValid( const WAVEFORMATEX& waveformat,
-							 char* errmsg
-							 );
-
-const bool GetWaveFormat(const char* filename, // name or 'stdin'
-				   WAVEFORMATEX* waveformat, 
-				   unsigned long long* datasize, // data size (byte)
-				   unsigned long long* offset, // offset to data chunk (byte)
-				   char* errmsg 
-				   );
-
-VOID WriteWaveHeader(HANDLE hdWriteFile,LPWAVEFORMATEX lpWaveFmt,LONGLONG n64WaveDataSize
-					 ,BOOL bUseExtChunk);
-
-void SetWaveFmt(LPWAVEFORMATEX lpWaveFmt,WORD waveChn,
-				DWORD waveRate,	WORD waveBit, WORD wTag);
-
-LONGLONG SeekStdin(LPBYTE lpBuffer,
-			   DWORD dwBufSize,
-			   LONGLONG n64SeekPointer,
-			   LONGLONG n64CurFilePointer  // dwSeekPointer > dwCurFilePointer
-			   );
-
-void WaveLevel(double dLevel[2],  // output of left and right
-			   BYTE* lpWaveData,  // input
-			   WAVEFORMATEX waveFmt);
-// change byte-data to double-data 
-
-const double GetMaxWaveLevel(const WAVEFORMATEX& waveformat);
 
 
 
@@ -588,7 +558,7 @@ void unprepareShrink();
 void ClearShrink();
 
 void prepareShrink(DWORD dwShLeng,
-				   WAVEFORMATEX waveFmt,
+				   WAVFMT waveFmt,
 				   double dThreshold  // dB
 				   );
 */
@@ -617,7 +587,7 @@ DWORD GetRSMPCoef(double** h,DWORD dwInputFreq,LPDWORD lpdwUp);
 // mixfile.c
 void ClearMixFile();
 void CloseMixFile();
-void MixFile(WAVEFORMATEX waveOrgFmt, 
+void MixFile(WAVFMT waveOrgFmt, 
 			 double* lpFilterBuf[2],
 			 DWORD dwPoints, // points in buffer
 			 LONGLONG n64OutSize, // output size of data
@@ -626,7 +596,7 @@ void MixFile(WAVEFORMATEX waveOrgFmt,
 			 );
 
 BOOL OpenMixFile(char* szMixFile,
-				 WAVEFORMATEX waveOrgFmt, 
+				 WAVFMT waveOrgFmt, 
 				 DWORD dwBufSize, // points of data in buffer
 				 double dMixStartTime, // start time in mixing file
 				 char* lpszErr
@@ -653,7 +623,7 @@ void unprepareCOMP();
 
 //--------------------------------------------------
 // split.c
-VOID SPLIT(WAVEFORMATEX waveFmt, 
+VOID SPLIT(WAVFMT waveFmt, 
 		   DWORD* lpdwPointsInBuf, // points in buffer
 		   LONGLONG n64TotalOutSize, // total output size
 		   DWORD dwNoSndCurNo,
@@ -694,7 +664,7 @@ VOID DCOFFSET(double* lpFilterBuf, // buffer
 
 VOID AUTODCOFFSET(double* lpFilterBuf[2], // buffer (L-R)
 			  DWORD dwPointsInBuf, // points
-			  WAVEFORMATEX waveFmt,  // format
+			  WAVFMT waveFmt,  // format
 			  DWORD dwTrainSec // sec, training time
 			  );
 
@@ -739,7 +709,7 @@ void IMDCT_fast(double* x,	// N
 void FADEINOUT(double* lpFilterBuf, // filter buffer
 				   DWORD dwPointsInBuf, // points of data in buffer
 
-				   WAVEFORMATEX waveFmt,
+				   WAVFMT waveFmt,
 				   DWORD dwFadeIn, // points of fade in
 				   DWORD dwFadeOut, // points of fase out
 
@@ -824,7 +794,7 @@ void NOISEGATE_FREQ(double* lpFilterBuf[2], // filter buffer
 			);
 void unprepareNGATE();
 void ClearNGATE();
-void prepareNGATE(WAVEFORMATEX waveFmt,
+void prepareNGATE(WAVFMT waveFmt,
 				  double dThreshold,  // dB
 				  double dRelease, // msec
 				  double dAttack, // msec
@@ -861,7 +831,7 @@ void DeleteInputFile();
 int GetArgv(char*,char[MAX_ARGC][CHR_BUF],int);
 void ShowAbout();
 BOOL GetCmdLineFromFile(char*,char*);
-void ShowStatus(WAVEFORMATEX waveFmt,  
+void ShowStatus(WAVFMT waveFmt,  
 				char* szWriteFile, // name of output file
 /* obsolete
 				BOOL bCreatePipe, // pipe mode
@@ -899,7 +869,7 @@ VOID SetCommandStrings(
 					   LPSTR lpszUserDef2,
 					   LPSTR lpszUserDef3,
 					   SYSTEMTIME sysTime, // current time
-					   WAVEFORMATEX waveFmt,
+					   WAVFMT waveFmt,
 					   LONGLONG n64DataSize // data size
 #ifndef DEF_WAVEFLT
 					   ,HWND hWnd,  // hwnd of lockon
@@ -916,9 +886,9 @@ BOOL StopChildStop(PROCESS_INFORMATION,BOOL);
 */
 
 #ifdef USEWIN32API
-VOID AddSpase(HANDLE hdWriteFile,DWORD dwSize,WAVEFORMATEX waveFmt);
+VOID AddSpace(HANDLE hdWriteFile,DWORD dwSize);
 #else 
-void AddSpase(FILE* hdWriteFile,DWORD dwSize,WAVEFORMATEX waveFmt);
+void AddSpace(FILE* hdWriteFile,DWORD dwSize);
 #endif
 
 BOOL ExchangeTime(LPSTR lpTime,double* lpSec);
@@ -926,7 +896,7 @@ BOOL ExchangeTime(LPSTR lpTime,double* lpSec);
 
 BOOL ShowPeakWave(char* lpszFile, // name of input file
 			 DWORD dwBufSize,
-			 WAVEFORMATEX waveFmt,
+			 WAVFMT waveFmt,
 			 LONGLONG n64Offset,  // offset 
 			 LONGLONG n64DataSize);
 
@@ -935,20 +905,20 @@ void GetGainForNormalizer(double dNormalGain[2],
 							DWORD dwCurrentNormalMode,
 							double dNormalLevel,
 							LONGLONG n64TotalOutSize,
-							WAVEFORMATEX waveFmt);
+							WAVFMT waveFmt);
 /* obsolete
 void OutputADPFilterChr(char* lpszSaveDir,DWORD dwChn,DWORD dwSampleRate);
 */
 
-void OutputFIRFilterChr(char* lpszSaveDir,WAVEFORMATEX waveFmt,DWORD dwFIRnum);
-void OutputIIRFilterChr(char* lpszSaveDir,WAVEFORMATEX waveFmt,DWORD dwFIRnum);
+void OutputFIRFilterChr(char* lpszSaveDir,WAVFMT waveFmt,DWORD dwFIRnum);
+void OutputIIRFilterChr(char* lpszSaveDir,WAVFMT waveFmt,DWORD dwFIRnum);
 void printIIRcoef(DWORD dwIirNum);
-void OutputRsmpChr(char* lpszSaveDir,WAVEFORMATEX waveFmt);
+void OutputRsmpChr(char* lpszSaveDir,WAVFMT waveFmt);
 
 //--------------------------------------------------
 // playwave.c
 #ifdef USEWIN32API
-BOOL OpenWaveDevice(UINT,WAVEFORMATEX,DWORD);
+BOOL OpenWaveDevice(UINT,WAVFMT,DWORD);
 BOOL PlayWave(BYTE*,DWORD);
 BOOL CloseWaveDevice(BOOL);
 #endif
@@ -1006,7 +976,7 @@ BOOL WriteData(FILE* hdWriteFile,BYTE* lpBuffer,DWORD dwWriteByte,DWORD* lpdwByt
 BOOL WriteTextData(HANDLE hdWriteFile,
 				   double* lpFilterBuf[2], // buffer
 				   DWORD dwPointsInBuf, // points of data in buffer
-				   WAVEFORMATEX waveFmt);
+				   WAVFMT waveFmt);
 
 
 

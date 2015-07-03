@@ -7,6 +7,8 @@
 #endif
 #include <stdio.h>
 
+#include "waveformat.h"
+
 #define CHR_BUF 256 
 
 /* obsolete
@@ -313,7 +315,7 @@ BOOL OpenWriteFile(FILE** hdWriteFile,char* szWriteFile,
 BOOL WriteTextData(HANDLE hdWriteFile,
 				   double* lpFilterBuf[2], // buffer
 				   DWORD dwPointsInBuf, // points of data in buffer
-				   WAVEFORMATEX waveFmt)
+				   WAVFMT waveFmt)
 {
 
 	DWORD dwPos,dwChrLn,dwByte;
@@ -326,7 +328,7 @@ BOOL WriteTextData(HANDLE hdWriteFile,
 
 		nLevel[0] = (LONG)lpFilterBuf[0][dwPos];
 		wsprintf(szOut,"%12d",nLevel[0]);
-		if(waveFmt.nChannels == 2){
+		if(waveFmt.channels == 2){
 			nLevel[1] = (LONG)lpFilterBuf[1][dwPos];
 			wsprintf(szOut,"%s %12d",szOut,nLevel[1]);
 		}

@@ -3,10 +3,17 @@
 #ifndef _WAVEFORMAT_H
 #define _WAVEFORMAT_H
 
+#ifndef WAVE_FORMAT_PCM
+#define WAVE_FORMAT_PCM 0x0001
+#endif
+
+#ifndef WAVE_FORMAT_IEEE_FLOAT
+#define WAVE_FORMAT_IEEE_FLOAT 0x0003
+#endif
 
 typedef struct
 {
-    unsigned short  format;      // type of format
+    unsigned short  tag;      // type of format
     unsigned short  channels;    // channels
     unsigned int    rate;        // sampling rate
     unsigned int    avgbyte;     // = rate * block

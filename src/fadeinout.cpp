@@ -4,12 +4,14 @@
 #include <windows.h>
 #endif
 
+#include "waveformat.h"
+
 //---------------------------------
 // linear fade in / out 
 void FADEINOUT(double* lpFilterBuf, // filter buffer
 				   DWORD dwPointsInBuf, // points of data 
 
-				   WAVEFORMATEX waveFmt,
+				   WAVFMT waveFmt,
 				   DWORD dwFadeIn, // byte, size of fade in
 				   DWORD dwFadeOut, // byte, size of fade out
 
@@ -38,7 +40,7 @@ void FADEINOUT(double* lpFilterBuf, // filter buffer
 			lpFilterBuf[i] = dGain * lpFilterBuf[i];
 		}		
 	
-		n64Pos+=waveFmt.nBlockAlign;
+		n64Pos+=waveFmt.block;
 	}
 	
 	return;

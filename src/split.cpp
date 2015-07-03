@@ -5,6 +5,8 @@
 #endif
 #include <math.h>
 
+#include "waveformat.h"
+
 // mode of nosound
 #define NOSND_NOT			0	// no split
 #define NOSND_EXEC			1	// searching no sound part
@@ -228,7 +230,7 @@ VOID NOSOUND(double* lpFilterBuf[2], // buffer
 
 //-----------------------------------------------
 // split file at specified size
-VOID SPLIT(WAVEFORMATEX waveFmt, 
+VOID SPLIT(WAVFMT waveFmt, 
 		   DWORD* lpdwPointsInBuf, // points in buffer
 		   LONGLONG n64TotalOutSize, // total output size
 		   DWORD DwCurSplitNo,
@@ -243,12 +245,12 @@ VOID SPLIT(WAVEFORMATEX waveFmt,
 	DWORD dwFoo;
 	
 	// get current output size
-	n64FileSize = n64TotalOutSize +(*lpdwPointsInBuf)*waveFmt.nBlockAlign; 
+	n64FileSize = n64TotalOutSize +(*lpdwPointsInBuf)*waveFmt.block; 
 
 	if(n64FileSize >= *lpn64SplitByte){  
 
 		// decrease points of buffer
-		*lpdwPointsInBuf = (DWORD)((*lpn64SplitByte-n64TotalOutSize)/waveFmt.nBlockAlign);
+		*lpdwPointsInBuf = (DWORD)((*lpn64SplitByte-n64TotalOutSize)/waveFmt.block);
 		*bChangeFile = true;
 		
 		dwFoo = DwCurSplitNo+1;
@@ -258,7 +260,7 @@ VOID SPLIT(WAVEFORMATEX waveFmt,
 			
 			// -split2,3
 			if(lpdSplitTime[dwFoo])
-				*lpn64SplitByte = (LONGLONG)((double)waveFmt.nAvgBytesPerSec*lpdSplitTime[dwFoo]);
+				*lpn64SplitByte = (LONGLONG)((double)waveFmt.avgbyte*lpdSplitTime[dwFoo]);
 			
 			// -splitbm
 			if(lpn64SplitByteMalti[dwFoo]) *lpn64SplitByte = lpn64SplitByteMalti[dwFoo];

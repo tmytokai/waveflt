@@ -1,58 +1,45 @@
-// common wave function
+// common wave functions
 
 #ifdef WIN32
 #include <windows.h>
 #define USEWIN32API  // use win32 APIs
 #endif
-#include <stdio.h>
 
+#include <stdio.h>
 #include <io.h> // _setmode
 #include <fcntl.h> // _O_BINARY
 #include <assert.h>
 
+#include "wave.h"
+
 #define CHR_BUF 256 
 
-#define WAVEHDRSIZE(a) ( (a == TRUE) ? 44 + (8 + 8 + 4) : 44)
 
-#ifndef WAVE_FORMAT_PCM
-#define WAVE_FORMAT_PCM 0x0001
-#endif
-#ifndef WAVE_FORMAT_IEEE_FLOAT
-#define WAVE_FORMAT_IEEE_FLOAT 0x0003
-#endif
-
-//-------------------------------------------------------------------
-// set WAVE format
-void SetWaveFmt(LPWAVEFORMATEX lpWaveFmt,WORD waveChn,
-				DWORD waveRate,	WORD waveBit, WORD wTag)
+void SetWaveFormat(WAVFMT& format, 
+				   const unsigned short tag,	
+				   const unsigned short channels, 
+				   const unsigned int rate, 
+				   const unsigned short bits )
 {
-	
-	lpWaveFmt->wFormatTag = wTag;
-	lpWaveFmt->nChannels = waveChn;  
-	lpWaveFmt->nSamplesPerSec = waveRate; 
-	lpWaveFmt->nAvgBytesPerSec = (DWORD)(waveRate*waveChn*waveBit/8); // byte/sec
-	lpWaveFmt->nBlockAlign = (WORD)(waveChn*waveBit/8); // byte/block
-	lpWaveFmt->wBitsPerSample = waveBit; 
-	lpWaveFmt->cbSize = (WORD)0; // no extention
+	format.tag = tag;
+	format.channels = channels;
+	format.rate = rate;
+	format.avgbyte = (unsigned int)(rate*channels*bits/8);
+	format.block = (unsigned short)(channels*bits/8);
+	format.bits = bits;
 }
 
 
-
-//-------------------------------------------------------------------
-// write out wave header to file
-#ifdef USEWIN32API  // use Windows APIs
-
-VOID WriteWaveHeader(HANDLE hdWriteFile,LPWAVEFORMATEX lpWaveFmt,LONGLONG n64WaveDataSize
-					 ,BOOL bUseExtChunk)
-{
-	
+void WriteWaveHeader( HANDLE hdWriteFile, const WAVFMT& format, const LONGLONG n64WaveDataSize ,const BOOL bUseExtChunk )
+{	
 	DWORD dwFoo;
 	DWORD dwByte; 
 	LARGE_INTEGER LI; 
 	DWORD dwFileType;
 	DWORD dwHeadSize;
 
-	dwHeadSize = WAVEHDRSIZE(bUseExtChunk);
+	dwHeadSize = 44;
+	if( bUseExtChunk ) dwHeadSize += (8 + 8 + 4);
 
 	if(hdWriteFile == NULL) return;
 
@@ -78,7 +65,7 @@ VOID WriteWaveHeader(HANDLE hdWriteFile,LPWAVEFORMATEX lpWaveFmt,LONGLONG n64Wav
 	WriteFile(hdWriteFile, "fmt ",4, &dwByte, NULL);
 	dwFoo = 16;
 	WriteFile(hdWriteFile, &dwFoo,sizeof(DWORD), &dwByte, NULL);
-	WriteFile(hdWriteFile, lpWaveFmt, sizeof(WAVEFORMATEX)-sizeof(WORD), &dwByte, NULL);
+	WriteFile(hdWriteFile, &format, sizeof(WAVFMT), &dwByte, NULL);
 	
 	// waveflt chunk (extra chunk)
 	if(bUseExtChunk){
@@ -89,7 +76,6 @@ VOID WriteWaveHeader(HANDLE hdWriteFile,LPWAVEFORMATEX lpWaveFmt,LONGLONG n64Wav
 			dwFoo = 0;
 			WriteFile(hdWriteFile, &dwFoo,sizeof(DWORD), &dwByte, NULL);
 	}
-
 	
 	// data chunk (8  + datasize)
 	WriteFile(hdWriteFile, "data",4, &dwByte, NULL);
@@ -98,80 +84,28 @@ VOID WriteWaveHeader(HANDLE hdWriteFile,LPWAVEFORMATEX lpWaveFmt,LONGLONG n64Wav
 	WriteFile(hdWriteFile, &dwFoo,sizeof(DWORD), &dwByte, NULL);
 }
 
-#else  // without win32 APIs
 
-void EXPORT WriteWaveHeader(FILE* hdWriteFile,LPWAVEFORMATEX lpWaveFmt,LONGLONG n64WaveDataSize)
+
+const bool IsWaveFormatValid( const WAVFMT& format,  char* errmsg )
 {
-	
-	DWORD dwFoo;
-	DWORD dwHeadSize;
-
-	dwHeadSize = WAVEHDRSIZE(BlExtChunkOfHdr);
-
-	if(hdWriteFile == NULL) return;
-	
-	if(hdWriteFile != stdout) fseek(hdWriteFile,0,SEEK_SET);
-	
-	// RIFF (20 byte)
-	fwrite("RIFF",1,4,hdWriteFile);
-	if(n64WaveDataSize >= 0xFFFFFFFF-dwHeadSize+8) dwFoo = 0xFFFFFFFF; // = 4G
-	else dwFoo = ((DWORD)n64WaveDataSize + dwHeadSize) - 8;
-	fwrite(&dwFoo,1,sizeof(DWORD),hdWriteFile);
-	fwrite("WAVE",1,4,hdWriteFile);
-
-	// format chunk (16 byte)
-	fwrite("fmt ",1,4,hdWriteFile);
-	dwFoo = 16;
-	fwrite(&dwFoo,1,sizeof(DWORD),hdWriteFile);
-	fwrite(lpWaveFmt,1,16,hdWriteFile);
-
-	// waveflt chunk (extra chunk)
-	fwrite("wflt",1,4,hdWriteFile);
-	dwFoo = sizeof(LONGLONG);
-	fwrite(&dwFoo,1,sizeof(DWORD),hdWriteFile);
-	fwrite(&n64WaveDataSize,1,sizeof(LONGLONG),hdWriteFile);
-	
-
-	// data chunk (8 byte)
-	fwrite("data",1,4,hdWriteFile);
-	if(n64WaveDataSize >= 0xFFFFFFFF-dwHeadSize+8) dwFoo = 0xFFFFFFFF-dwHeadSize+8; // = 4G 
-	else dwFoo = (DWORD)n64WaveDataSize;
-	fwrite(&dwFoo,1,sizeof(DWORD),hdWriteFile);
-}
-
-#endif
-
-
-
-const bool IsWaveFormatValid( const WAVEFORMATEX& waveformat, 
-							 char* errmsg
-							 )
-{
-	assert( waveformat );
 	assert( errmsg );
 
-	const unsigned short tag = waveformat.wFormatTag;
-	if( tag != WAVE_FORMAT_IEEE_FLOAT && tag != WAVE_FORMAT_PCM 
-		){
+	if( format.tag != WAVE_FORMAT_IEEE_FLOAT && format.tag != WAVE_FORMAT_PCM ){
 		strncpy( errmsg, "Not PCM format.\n", CHR_BUF);
 		return false;
 	}
-
-	const unsigned short channels = waveformat.nChannels;  
-	if( channels != 1 && channels != 2){
-		_snprintf( errmsg, CHR_BUF ,"'%d channels' is not supported.\n", channels);
+ 
+	if( format.channels != 1 && format.channels != 2){
+		_snprintf( errmsg, CHR_BUF ,"'%d channels' is not supported.\n", format.channels);
 		return false;
 	}	
 
-	const unsigned short bit = waveformat.wBitsPerSample; 
-	if( bit != 8 && bit != 16 && bit != 24 && bit != 32 && bit != 64){
-		_snprintf(errmsg, CHR_BUF, "'%d bit' is not supported.\n", bit);
+	if( format.bits != 8 && format.bits != 16 && format.bits != 24 && format.bits != 32 && format.bits != 64){
+		_snprintf(errmsg, CHR_BUF, "'%d bit' is not supported.\n", format.bits);
 		return false;
 	}
 	
-	const unsigned int avgbytes = waveformat.nAvgBytesPerSec; 
-	const unsigned int rate = waveformat.nSamplesPerSec; 
-	if(avgbytes != channels*rate*bit/8){
+	if(format.avgbyte != format.channels*format.rate*format.bits/8){
 		strncpy(errmsg,"Invalid wave format.\n", CHR_BUF);
 		return false;
 	}
@@ -199,24 +133,20 @@ enum
 };
 
 
-const int GetChunkID( FILE* fp,
-					 char* chunk,
-					 unsigned int* chunksize
-					 )
+const int GetChunkID( FILE* fp,	 char* chunk,  unsigned int& chunksize )
 {
 	assert( fp );
 	assert( chunk );
-	assert( chunksize );
 
 	unsigned int byte;
-	*chunksize = 0;
+	chunksize = 0;
 
 	byte = fread( chunk, 1, 4, fp);
 	if(byte != 4) return ID_err;
 
 	if( strncmp(chunk,"WAVE",4) ==0 ) return ID_wave;
 
-	byte = fread(chunksize,1,sizeof(unsigned int),fp);
+	byte = fread(&chunksize,1,sizeof(unsigned int),fp);
 	if(byte != sizeof(unsigned int)) return ID_err;
 
 	if( strncmp(chunk,"RIFF",4) ==0 ) return ID_riff;
@@ -235,23 +165,19 @@ const int GetChunkID( FILE* fp,
 
 
 const bool GetWaveFormat(const char* filename, // name or 'stdin'
-				   WAVEFORMATEX* waveformat, 
-				   unsigned long long* datasize, // data size (byte)
-				   unsigned long long* offset, // offset to data chunk (byte)
-				   char* errmsg 
-				   )
+				   WAVFMT& format, 
+				   unsigned long long& datasize, // data size (byte)
+				   unsigned long long& offset, // offset to data chunk (byte)
+				   char* errmsg )
 {
 	assert( filename );
-	assert( waveformat );
-	assert( datasize );
-	assert( offset );
 	assert( errmsg );
 
 	FILE* fp = NULL;
 	bool ret = false;
 
-	*datasize = 0;
-	*offset = 0;
+	datasize = 0;
+	offset = 0;
 	errmsg[0] = '\0';
 
 	// stdin
@@ -273,16 +199,16 @@ const bool GetWaveFormat(const char* filename, // name or 'stdin'
 	char chunk[5] = {0};
 	unsigned int chunksize;
 
-	if( GetChunkID( fp, chunk, &chunksize ) != ID_riff ){
+	if( GetChunkID( fp, chunk, chunksize ) != ID_riff ){
 		strcpy(errmsg,"This is not wave file.\n");
 		goto L_ERR;	
 	}
-	*offset += 8;
+	offset += 8;
 
 	while(1){
 
 		unsigned int byte;
-		const int id = GetChunkID( fp, chunk, &chunksize );
+		const int id = GetChunkID( fp, chunk, chunksize );
 
 		if( id == ID_err ){
 			strncpy(errmsg,"Invalid wave header.\n", CHR_BUF);
@@ -293,37 +219,36 @@ const bool GetWaveFormat(const char* filename, // name or 'stdin'
 			goto L_ERR;	
 		}
 		else if( id == ID_wave ){
-			*offset += 4;
+			offset += 4;
 			continue;
 		}
 		else if( id == ID_fmt ){
-			*offset += 8;
-			byte = fread(waveformat,1,chunksize,fp);
+			offset += 8;
+			byte = fread(&format,1,chunksize,fp);
 			if(byte != chunksize){
 				strncpy(errmsg, "Invalid fmt chunk.\n", CHR_BUF);
 				goto L_ERR;
 			}
-			*offset += byte;  
-			waveformat->cbSize = 0;
-			if(!IsWaveFormatValid(*waveformat, errmsg)) goto L_ERR;
+			offset += byte;  
+			if(!IsWaveFormatValid(format, errmsg)) goto L_ERR;
 		}
 		else if( id == ID_wflt ){
-			*offset += 8;
-			byte = fread( datasize, 1, sizeof(unsigned long long), fp);
+			offset += 8;
+			byte = fread( &datasize, 1, sizeof(unsigned long long), fp);
 			if(byte != sizeof(unsigned long long)){
 				strncpy(errmsg, "Invalid wflt chunk.\n", CHR_BUF);
 				goto L_ERR;
 			}
-			*offset += byte;  
+			offset += byte;  
 		}
 		else if( id == ID_data ){
-			*offset += 8;
-			if( *datasize == 0) *datasize = chunksize;
+			offset += 8;
+			if( datasize == 0) datasize = chunksize;
 			break;
 		}
 		else{
-			*offset += 8 + chunksize;
-			__int64 pos64 = *offset;
+			offset += (8 + chunksize);
+			__int64 pos64 = offset;
 			_fseeki64( fp , pos64, SEEK_SET);
 		}
 	}
@@ -380,9 +305,9 @@ LONGLONG SeekStdin(LPBYTE lpBuffer,
 //-------------------------------------------------------------------
 // change byte-data to double-data 
 void WaveLevel(double dLevel[2],  // output of left and right
-			   BYTE* lpWaveData,  // input
-			   WAVEFORMATEX waveFmt){ 
-	
+			   const BYTE* lpWaveData,  // input
+			   const WAVFMT& format)
+{ 	
 	long i;
 	short data[2];
 	long nData[2];
@@ -391,32 +316,32 @@ void WaveLevel(double dLevel[2],  // output of left and right
 
 	nData[1] = 0;
 	
-	if(waveFmt.wBitsPerSample==8){ // 8 bit
-		for(i=0;i<waveFmt.nChannels;i++) nData[i] = (long)lpWaveData[i]-0x80;
+	if(format.bits==8){ // 8 bit
+		for(i=0;i<format.channels;i++) nData[i] = (long)lpWaveData[i]-0x80;
 	}
-	else if(waveFmt.wBitsPerSample==16){	// 16 bit
-		memcpy(data,lpWaveData,sizeof(short)*waveFmt.nChannels);
+	else if(format.bits==16){	// 16 bit
+		memcpy(data,lpWaveData,sizeof(short)*format.channels);
 		nData[0] = (long)data[0];
 		nData[1] = (long)data[1];
 	}
-	else if(waveFmt.wBitsPerSample==24){	// 24 bit
-		for(i=0;i<waveFmt.nChannels;i++){
+	else if(format.bits==24){	// 24 bit
+		for(i=0;i<format.channels;i++){
 			nData[i] = 0;
 			memcpy((LPBYTE)(nData+i)+1,lpWaveData+3*i,3);
 			nData[i] /= 256;
 		}
 	}
-	else if(waveFmt.wBitsPerSample==32 && waveFmt.wFormatTag == WAVE_FORMAT_PCM){	// 32 bit long
-		memcpy(nData,lpWaveData,sizeof(long)*waveFmt.nChannels);
+	else if(format.bits==32 && format.tag == WAVE_FORMAT_PCM){	// 32 bit long
+		memcpy(nData,lpWaveData,sizeof(long)*format.channels);
 	}
-	else if(waveFmt.wBitsPerSample==32 && waveFmt.wFormatTag == WAVE_FORMAT_IEEE_FLOAT){	// 32 bit float
-		memcpy(fData,lpWaveData,sizeof(double)*waveFmt.nChannels);
+	else if(format.bits==32 && format.tag == WAVE_FORMAT_IEEE_FLOAT){	// 32 bit float
+		memcpy(fData,lpWaveData,sizeof(double)*format.channels);
 		dLevel[0] = fData[0];
 		dLevel[1] = fData[1];
 		return;
 	}	
-	else if(waveFmt.wBitsPerSample==64){	// 64 bit double
-		memcpy(dData,lpWaveData,sizeof(double)*waveFmt.nChannels);
+	else if(format.bits==64){	// 64 bit double
+		memcpy(dData,lpWaveData,sizeof(double)*format.channels);
 		dLevel[0] = dData[0];
 		dLevel[1] = dData[1];
 		return;
@@ -428,26 +353,26 @@ void WaveLevel(double dLevel[2],  // output of left and right
 
 
 
-const double GetMaxWaveLevel(const WAVEFORMATEX& waveformat){
-
+const double GetMaxWaveLevel(const WAVFMT& format)
+{
 	double ret = 0;
 
-	switch(waveformat.wBitsPerSample){
+	switch(format.bits){
 
 	case 8: 
-		ret = 127; 
+		ret = 128; 
 		break;
 	case 16:
-		ret = 32767; 
+		ret = 32768; 
 		break;
 	case 24: 
-		ret = 8388607; 
+		ret = 8388608; 
 		break;
 	case 64: 
 		ret = 1; 
 		break;
 	case 32: 
-		if(waveformat.wFormatTag == WAVE_FORMAT_PCM) ret = 2147483647;
+		if(format.tag == WAVE_FORMAT_PCM) ret = 2147483648;
 		else ret = 1;
 		break;
 	}

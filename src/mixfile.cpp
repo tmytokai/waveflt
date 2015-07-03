@@ -4,23 +4,13 @@
 #include <windows.h>
 #endif
 
-// wave.c
-const bool GetWaveFormat(const char* filename, // name or 'stdin'
-				   WAVEFORMATEX* waveformat, 
-				   unsigned long long* datasize, // data size (byte)
-				   unsigned long long* offset, // offset to data chunk (byte)
-				   char* errmsg 
-				   );
-void WaveLevel(double dLevel[2],  // output of left and right
-			   BYTE* lpWaveData,  // input
-			   WAVEFORMATEX waveFmt);
-const double GetMaxWaveLevel(const WAVEFORMATEX& waveformat);
+#include "wave.h"
 
 #define CHR_BUF 256 
 
 HANDLE HdMixFile = NULL;  // handle of file
 BYTE* LpMixFileBuffer = NULL;  // buffer to read file
-WAVEFORMATEX  WaveFmtMixFile;
+WAVFMT  WaveFmtMixFile;
 unsigned long long N64MixFileOffset; // offset of file
 double DbMixFileStart; // start time in mixing file
 
@@ -28,7 +18,7 @@ double DbMixFileStart; // start time in mixing file
 //------------------------------
 // open mix file
 BOOL OpenMixFile(char* szMixFile,
-				 WAVEFORMATEX waveOrgFmt, 
+				 WAVFMT waveOrgFmt, 
 				 DWORD dwBufSize, // points of data in buffer
 				 double dMixStartTime, // start time in mixing file
 				 char* lpszErr
@@ -39,17 +29,17 @@ BOOL OpenMixFile(char* szMixFile,
 
 	DbMixFileStart = dMixStartTime;
 
-	if(!GetWaveFormat(szMixFile,&WaveFmtMixFile,&n64FileDataSize,&N64MixFileOffset,szErr)){
+	if(!GetWaveFormat(szMixFile,WaveFmtMixFile,n64FileDataSize,N64MixFileOffset,szErr)){
 		if(lpszErr) strcpy(lpszErr,szErr);
 		return false;
 	}
 
-	if(WaveFmtMixFile.nSamplesPerSec != waveOrgFmt.nSamplesPerSec){
+	if(WaveFmtMixFile.rate != waveOrgFmt.rate){
 		if(lpszErr) wsprintf(lpszErr,"Rate of mixing file must be the same as input.\n");
 		return false;
 	}
 
-	if(WaveFmtMixFile.nChannels != waveOrgFmt.nChannels){
+	if(WaveFmtMixFile.channels != waveOrgFmt.channels){
 		if(lpszErr) wsprintf(lpszErr,"Channels of mixing file must be the same as input.\n");
 		return false;
 	}
@@ -61,7 +51,7 @@ BOOL OpenMixFile(char* szMixFile,
 		return false;
 	}	
 
-	LpMixFileBuffer = (BYTE*)malloc(dwBufSize*WaveFmtMixFile.nBlockAlign +1024); 
+	LpMixFileBuffer = (BYTE*)malloc(dwBufSize*WaveFmtMixFile.block +1024); 
 
 	return true;
 }
@@ -77,7 +67,7 @@ void ClearMixFile(){
 	if(!HdMixFile) return;
 
 	// move the pointer 
-	LI.QuadPart = + (LONGLONG)(DbMixFileStart*WaveFmtMixFile.nSamplesPerSec)*WaveFmtMixFile.nBlockAlign;
+	LI.QuadPart = + (LONGLONG)(DbMixFileStart*WaveFmtMixFile.rate)*WaveFmtMixFile.block;
 	LI.QuadPart += N64MixFileOffset;
 
 	SetFilePointer(HdMixFile,LI.LowPart, &LI.HighPart,FILE_BEGIN);
@@ -101,7 +91,7 @@ void CloseMixFile(){
 
 //----------------------------------------
 // file mixing
-void MixFile(WAVEFORMATEX waveOrgFmt, 
+void MixFile(WAVFMT waveOrgFmt, 
 			 double* lpFilterBuf[2], // L-R
 			 DWORD dwPoints, // points
 			 LONGLONG n64OutSize, // total output size of data
@@ -118,14 +108,14 @@ void MixFile(WAVEFORMATEX waveOrgFmt,
 
 	if(!HdMixFile) return;
 
-	n64OutPoint = n64OutSize/waveOrgFmt.nBlockAlign;
-	n64StartPoint = (LONGLONG)(dMixStartTime*waveOrgFmt.nSamplesPerSec);
+	n64OutPoint = n64OutSize/waveOrgFmt.block;
+	n64StartPoint = (LONGLONG)(dMixStartTime*waveOrgFmt.rate);
 	if(n64OutPoint > n64StartPoint) dwOffset = 0;
 	else if(n64OutPoint + dwPoints < n64StartPoint) return;  // before start time
 	else dwOffset = (DWORD)(n64StartPoint - n64OutPoint);
 
 	// read data from mixing file
-	dwReadSize = (dwPoints-dwOffset) * WaveFmtMixFile.nBlockAlign;
+	dwReadSize = (dwPoints-dwOffset) * WaveFmtMixFile.block;
 	ReadFile(HdMixFile,LpMixFileBuffer,dwReadSize,&dwByte,NULL);
 	if(dwByte == 0) return;
 	
@@ -133,9 +123,9 @@ void MixFile(WAVEFORMATEX waveOrgFmt,
 	lpBuffer2 = LpMixFileBuffer;
 	dwPos = dwOffset;
 	
-	if(waveOrgFmt.nChannels == 2){ // stereo
+	if(waveOrgFmt.channels == 2){ // stereo
 
-		for(i=0;i< dwByte;i+=WaveFmtMixFile.nBlockAlign){
+		for(i=0;i< dwByte;i+=WaveFmtMixFile.block){
 			
 			lpFilterBuf[0][dwPos] *= dMixLevel[0];
 			lpFilterBuf[1][dwPos] *= dMixLevel[0];
@@ -144,19 +134,19 @@ void MixFile(WAVEFORMATEX waveOrgFmt,
 			lpFilterBuf[1][dwPos] += dLevel[1]/dMaxLevel * dMixLevel[1];
 		
 			dwPos++;
-			lpBuffer2 += WaveFmtMixFile.nBlockAlign;
+			lpBuffer2 += WaveFmtMixFile.block;
 		}
 	}
 	else // mono
 	{
-		for(i=0;i< dwByte;i+=WaveFmtMixFile.nBlockAlign){
+		for(i=0;i< dwByte;i+=WaveFmtMixFile.block){
 			
 			lpFilterBuf[0][dwPos] *= dMixLevel[0];
 			WaveLevel(dLevel,lpBuffer2,WaveFmtMixFile);
 			lpFilterBuf[0][dwPos] += dLevel[0]/dMaxLevel * dMixLevel[1];
 			
 			dwPos++;
-			lpBuffer2 += WaveFmtMixFile.nBlockAlign;
+			lpBuffer2 += WaveFmtMixFile.block;
 		}
 	}
 	

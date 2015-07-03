@@ -6,6 +6,7 @@
 #include "waveflt.h"
 
 #include "config.h"
+#include "wave.h"
 
 #include "filter.h"
 #include "buffer.h"
@@ -18,8 +19,8 @@ std::vector<Filter*> filters;
 // global 
 
 char argv[MAX_ARGC][CHR_BUF],szCmdLine[MAX_WAVFLTOPTBUF];
-WAVEFORMATEX InputWaveFmt; // format of input
-WAVEFORMATEX WriteWaveFmt; // format of output
+WAVFMT InputWaveFmt; // format of input
+WAVFMT WriteWaveFmt; // format of output
 char SzReadFile[MAX_PATH]; // input file name
 char SzOrgWriteFile[MAX_PATH]; // original output file name specified in command line
 char SzWriteFile[MAX_PATH]; // (virtual) output file name
@@ -157,43 +158,43 @@ void CopyBufferBtoD(BYTE* lpBuffer,  // input, buffer (BYTE*)
 
 						double* lpFilterBuf[2], // output, buffer of wave data (double*) (L-R)
 						LPDWORD lpdwPointsInBuf, // points of data in lpFilterBuf
-						WAVEFORMATEX waveFmt
+						WAVFMT format
 						)
 {
 	DWORD i,dwChn,dwPos; 
 	BYTE* lpBuffer2;
 	LONG nVal;
 	DWORD dwFilterBufSize; 
-
-	dwFilterBufSize = dwByte / waveFmt.nBlockAlign;
 	
-	if(waveFmt.wBitsPerSample == 16)
+	dwFilterBufSize = dwByte / format.block;
+	
+	if(format.bits == 16)
 	{  // 16 bit
 		
-		for(dwChn = 0 ; dwChn < waveFmt.nChannels  ; dwChn++)
+		for(dwChn = 0 ; dwChn < format.channels  ; dwChn++)
 		{
 			dwPos = 0;
 			lpBuffer2 = lpBuffer+sizeof(short)*dwChn;
 			memset(lpFilterBuf[dwChn],0,sizeof(double)*dwFilterBufSize);
 			
-			for(i=0;i< dwByte;i+=waveFmt.nBlockAlign)
+			for(i=0;i< dwByte;i+=format.block)
 			{
 				lpFilterBuf[dwChn][dwPos] = (double)(*((short*)lpBuffer2));
 				dwPos++;
-				lpBuffer2 += waveFmt.nBlockAlign;
+				lpBuffer2 += format.block;
 			}
 
 		}
 	}
-	else if(waveFmt.wBitsPerSample == 8)
+	else if(format.bits == 8)
 	{ // 8 bit
 		
-		for(dwChn = 0 ; dwChn < waveFmt.nChannels  ; dwChn++)
+		for(dwChn = 0 ; dwChn < format.channels  ; dwChn++)
 		{
 			dwPos = 0;
 			memset(lpFilterBuf[dwChn],0,sizeof(double)*dwFilterBufSize);
 			
-			for(i=0;i< dwByte;i+=waveFmt.nBlockAlign)
+			for(i=0;i< dwByte;i+=format.block)
 			{
 				lpFilterBuf[dwChn][dwPos] = (double)((int)lpBuffer[i+dwChn]-0x80);
 				dwPos++;
@@ -201,16 +202,16 @@ void CopyBufferBtoD(BYTE* lpBuffer,  // input, buffer (BYTE*)
 		}
 
 	}
-	else if(waveFmt.wBitsPerSample == 24)
+	else if(format.bits == 24)
 	{  // 24 bit
 		
-		for(dwChn = 0 ; dwChn < waveFmt.nChannels  ; dwChn++)
+		for(dwChn = 0 ; dwChn < format.channels  ; dwChn++)
 		{
 			dwPos = 0;
 			lpBuffer2 = lpBuffer+3*dwChn;
 			memset(lpFilterBuf[dwChn],0,sizeof(double)*dwFilterBufSize);
 			
-			for(i=0;i< dwByte;i+=waveFmt.nBlockAlign)
+			for(i=0;i< dwByte;i+=format.block)
 			{
 				nVal = 0;
 				memcpy((LPBYTE)(&nVal)+1,lpBuffer2,3);
@@ -218,62 +219,62 @@ void CopyBufferBtoD(BYTE* lpBuffer,  // input, buffer (BYTE*)
 
 				lpFilterBuf[dwChn][dwPos] = (double)nVal;
 				dwPos ++;
-				lpBuffer2 += waveFmt.nBlockAlign;
+				lpBuffer2 += format.block;
 			}
 		}
 	}
-	else if(waveFmt.wBitsPerSample == 32 && waveFmt.wFormatTag == WAVE_FORMAT_PCM)
+	else if(format.bits == 32 && format.tag == WAVE_FORMAT_PCM)
 	{  // 32 bit long
 		
-		for(dwChn = 0 ; dwChn < waveFmt.nChannels  ; dwChn++)
+		for(dwChn = 0 ; dwChn < format.channels  ; dwChn++)
 		{
 			dwPos = 0;
 			lpBuffer2 = lpBuffer+sizeof(long)*dwChn;
 			memset(lpFilterBuf[dwChn],0,sizeof(double)*dwFilterBufSize);
 			
-			for(i=0;i< dwByte;i+=waveFmt.nBlockAlign)
+			for(i=0;i< dwByte;i+=format.block)
 			{
 				lpFilterBuf[dwChn][dwPos] = (double)(*((long*)lpBuffer2));
 				dwPos ++;
-				lpBuffer2 += waveFmt.nBlockAlign;
+				lpBuffer2 += format.block;
 			}
 		}
 	}
-	else if(waveFmt.wBitsPerSample == 32 && waveFmt.wFormatTag == WAVE_FORMAT_IEEE_FLOAT)
+	else if(format.bits == 32 && format.tag == WAVE_FORMAT_IEEE_FLOAT)
 	{  // 32 bit float
-		for(dwChn = 0 ; dwChn < waveFmt.nChannels  ; dwChn++)
+		for(dwChn = 0 ; dwChn < format.channels  ; dwChn++)
 		{
 			dwPos = 0;
 			lpBuffer2 = lpBuffer+sizeof(float)*dwChn;
 			memset(lpFilterBuf[dwChn],0,sizeof(double)*dwFilterBufSize);
 			
-			for(i=0;i< dwByte;i+=waveFmt.nBlockAlign)
+			for(i=0;i< dwByte;i+=format.block)
 			{
 				lpFilterBuf[dwChn][dwPos] = (double)(*((float*)lpBuffer2));
 				dwPos ++;
-				lpBuffer2 += waveFmt.nBlockAlign;
+				lpBuffer2 += format.block;
 			}
 		}
 	}
-	else if(waveFmt.wBitsPerSample == 64)
+	else if(format.bits == 64)
 	{  // 64 bit(double)
 		
-		for(dwChn = 0 ; dwChn < waveFmt.nChannels  ; dwChn++)
+		for(dwChn = 0 ; dwChn < format.channels  ; dwChn++)
 		{
 			dwPos = 0;
 			lpBuffer2 = lpBuffer+sizeof(double)*dwChn;
 			memset(lpFilterBuf[dwChn],0,sizeof(double)*dwFilterBufSize);
 			
-			for(i=0;i< dwByte;i+=waveFmt.nBlockAlign)
+			for(i=0;i< dwByte;i+=format.block)
 			{
 				lpFilterBuf[dwChn][dwPos] = (double)(*((double*)lpBuffer2));
 				dwPos ++;
-				lpBuffer2 += waveFmt.nBlockAlign;
+				lpBuffer2 += format.block;
 			}
 		}
 	}
 
-	*lpdwPointsInBuf = dwByte/waveFmt.nBlockAlign;
+	*lpdwPointsInBuf = dwByte/format.block;
 }
 
 
@@ -283,7 +284,7 @@ void CopyBufferDtoB(BYTE* lpBuffer,  // output, buffer(BYTE*)
 						   
 						   double* lpFilterBuf[2], // input, buffer(double*)
 						   DWORD dwPointsInBuf, // points in lpFilterBuf
-						   WAVEFORMATEX waveFmt,
+						   WAVFMT format,
    						   BOOL bRound,
 						   
 						   DWORD* lpdwSaturate  // number of saturation
@@ -300,45 +301,45 @@ void CopyBufferDtoB(BYTE* lpBuffer,  // output, buffer(BYTE*)
 
 	if(bRound) dRound = 0.5; else dRound = 0;
 	
-	if(waveFmt.wBitsPerSample == 64)
+	if(format.bits == 64)
 	{  // 64 bit  , no check saturation
 		
-		for(dwChn = 0 ; dwChn < waveFmt.nChannels  ; dwChn++)
+		for(dwChn = 0 ; dwChn < format.channels  ; dwChn++)
 		{
 			dwPos = 0;
-			lpBuffer2 = lpBuffer + waveFmt.wBitsPerSample/8 * dwChn;
+			lpBuffer2 = lpBuffer + format.bits/8 * dwChn;
 
 			for(i=0;i< dwPointsInBuf;i++,dwPos++)
 			{
 				memcpy(lpBuffer2,lpFilterBuf[dwChn]+dwPos,sizeof(double));
-				lpBuffer2 += waveFmt.nBlockAlign;
+				lpBuffer2 += format.block;
 			}
 		}
 	}
-	else if(waveFmt.wBitsPerSample == 32 && waveFmt.wFormatTag == WAVE_FORMAT_IEEE_FLOAT) 
+	else if(format.bits == 32 && format.tag == WAVE_FORMAT_IEEE_FLOAT) 
 	{ 	// 32bit float , no check saturation
 
-		for(dwChn = 0 ; dwChn < waveFmt.nChannels  ; dwChn++)
+		for(dwChn = 0 ; dwChn < format.channels  ; dwChn++)
 		{
 			dwPos = 0;
-			lpBuffer2 = lpBuffer + waveFmt.wBitsPerSample/8 * dwChn;
+			lpBuffer2 = lpBuffer + format.bits/8 * dwChn;
 
 			for(i=0;i< dwPointsInBuf;i++,dwPos++)
 			{
 				fOut = (float)(lpFilterBuf[dwChn][dwPos]);
 				memcpy(lpBuffer2,&fOut,sizeof(float));
-				lpBuffer2 += waveFmt.nBlockAlign;
+				lpBuffer2 += format.block;
 			}
 		}
 	}
 	else  // 8,16,24,32-long
 	{
-		dMaxLevel = GetMaxWaveLevel(waveFmt);
+		dMaxLevel = GetMaxWaveLevel(format);
 		
-		for(dwChn = 0 ; dwChn < waveFmt.nChannels  ; dwChn++)
+		for(dwChn = 0 ; dwChn < format.channels  ; dwChn++)
 		{
 			dwPos = 0;
-			lpBuffer2 = lpBuffer + waveFmt.wBitsPerSample/8 *dwChn;
+			lpBuffer2 = lpBuffer + format.bits/8 *dwChn;
 
 			for(i=0;i< dwPointsInBuf;i++,dwPos++)
 			{
@@ -355,13 +356,13 @@ void CopyBufferDtoB(BYTE* lpBuffer,  // output, buffer(BYTE*)
 				nOut = QUANTIZATION(dFoo,dRound);
 
 				// copy data to buffer
-				if(waveFmt.wBitsPerSample == 16) *((short*)lpBuffer2) = (short)nOut;
-				else if(waveFmt.wBitsPerSample == 8) *lpBuffer2 = (BYTE)(nOut+0x80);
-				else if(waveFmt.wBitsPerSample == 24) memcpy(lpBuffer2,&nOut,3);
-				else if(waveFmt.wBitsPerSample == 32 && waveFmt.wFormatTag == WAVE_FORMAT_PCM) 
+				if(format.bits == 16) *((short*)lpBuffer2) = (short)nOut;
+				else if(format.bits == 8) *lpBuffer2 = (BYTE)(nOut+0x80);
+				else if(format.bits == 24) memcpy(lpBuffer2,&nOut,3);
+				else if(format.bits == 32 && format.tag == WAVE_FORMAT_PCM) 
 					memcpy(lpBuffer2,&nOut,sizeof(long)); // 32 bit long
 				
-				lpBuffer2 += waveFmt.nBlockAlign;
+				lpBuffer2 += format.block;
 			}
 
 			
@@ -420,8 +421,8 @@ void UnprepareAllFilters()
 // initialize filters
 BOOL InitFilters(LPFILTER_DATA lpFDat,
 				 DWORD dwFilterPoints, // points of data in filter buffer
-				 WAVEFORMATEX inWaveFmt,
-				 WAVEFORMATEX outWaveFmt,
+				 WAVFMT informat,
+				 WAVFMT outformat,
 				 char* lpszErr){
 
 	DWORD dwFoo,i;
@@ -429,30 +430,30 @@ BOOL InitFilters(LPFILTER_DATA lpFDat,
 
 	// FIR before nosound
 	if(lpFDat->dwNoSndFIRFilter != NO_FILTER){
-		for(i=0;i<inWaveFmt.nChannels;i++){
+		for(i=0;i<informat.channels;i++){
 			prepareFIRCoefficient(lpFDat->dwNoSndFIRFilter,lpFDat->dwNoSndFIRleng,
-				inWaveFmt.nSamplesPerSec,lpFDat->dNoSndFIRDb,lpFDat->dwNoSndFIRCutLow,
+				informat.rate,lpFDat->dNoSndFIRDb,lpFDat->dwNoSndFIRCutLow,
 				lpFDat->dwNoSndFIRCutHigh,dwFilterPoints,ID_FIR_NOSND,i);
 		}
 	}
 	
 	// nosound
 	if(lpFDat->dwNoSndMode != NOSND_NOT)
-		PrepareNOSOUND(lpFDat->dwNoSndMode,lpFDat->dwNoSndSuspend,inWaveFmt.nSamplesPerSec);
+		PrepareNOSOUND(lpFDat->dwNoSndMode,lpFDat->dwNoSndSuspend,informat.rate);
 	
 	// FIR 
 	if(lpFDat->dwFIRFilter != NO_FILTER){
-		for(i=0;i<outWaveFmt.nChannels;i++){
+		for(i=0;i<outformat.channels;i++){
 			prepareFIRCoefficient(lpFDat->dwFIRFilter,lpFDat->dwFIRleng,
-				inWaveFmt.nSamplesPerSec,lpFDat->dFIRDb,lpFDat->dwFIRCutLow,
+				informat.rate,lpFDat->dFIRDb,lpFDat->dwFIRCutLow,
 				lpFDat->dwFIRCutHigh,dwFilterPoints,ID_FIR_NORMAL,i);
 		}
 	}
 	
 	// FIR-EQ
 	if(lpFDat->bFIREQ){ 
-		for(i=0;i<outWaveFmt.nChannels;i++){
-			CalcEQCoefficient(lpFDat->dwEQleng,lpFDat->dwEQband,inWaveFmt.nSamplesPerSec,
+		for(i=0;i<outformat.channels;i++){
+			CalcEQCoefficient(lpFDat->dwEQleng,lpFDat->dwEQband,informat.rate,
 				lpFDat->dEQDb,lpFDat->dEQLevel,lpFDat->dEQ_Q,
 				dwFilterPoints,ID_FIR_EQ,i);
 		}
@@ -461,9 +462,9 @@ BOOL InitFilters(LPFILTER_DATA lpFDat,
 	// IIR 
 	if(lpFDat->dwIIRFilter != NO_FILTER)
 	{
-		for(i=0;i<outWaveFmt.nChannels;i++){
+		for(i=0;i<outformat.channels;i++){
 		prepareIIRCoefficient(lpFDat->dwIIRFilter,
-			(double)lpFDat->dwIIRCutLow,(double)lpFDat->dwIIRCutHigh,inWaveFmt.nSamplesPerSec,
+			(double)lpFDat->dwIIRCutLow,(double)lpFDat->dwIIRCutHigh,informat.rate,
 			2,ID_IIR_NORMAL,i);
 		}
 	}
@@ -478,17 +479,17 @@ BOOL InitFilters(LPFILTER_DATA lpFDat,
 		dT2 = 0.000015;
 		dDb = 20*log10(dT2/dT1) * lpFDat->dDempDb;
 		dCutFreq = 1./(2.*M_PI*dT1);
-		for(i=0;i<outWaveFmt.nChannels;i++){
-			CalcIirShelvingEQ(SVEQH,dCutFreq,dDb,inWaveFmt.nSamplesPerSec,ID_IIR_DEMP,i);
+		for(i=0;i<outformat.channels;i++){
+			CalcIirShelvingEQ(SVEQH,dCutFreq,dDb,informat.rate,ID_IIR_DEMP,i);
 		}
 	}
 
 	// shelving EQ low
 	if(lpFDat->bSVEQL)
 	{
-		for(i=0;i<outWaveFmt.nChannels;i++){
+		for(i=0;i<outformat.channels;i++){
 			CalcIirShelvingEQ(SVEQL,lpFDat->dwSVEQLfreq,lpFDat->dSVEQLdb,
-				inWaveFmt.nSamplesPerSec,ID_IIR_SVEQL,i);
+				informat.rate,ID_IIR_SVEQL,i);
 		}
 	}
 
@@ -500,42 +501,42 @@ BOOL InitFilters(LPFILTER_DATA lpFDat,
 		alpha = pow(10.,-fabs(lpFDat->dSVEQHdb)/20);
 		dT1 =dT2/alpha;
 		dCutFreq = 1./(2.*M_PI*dT1);
-		for(i=0;i<outWaveFmt.nChannels;i++){
-			CalcIirShelvingEQ(SVEQH,dCutFreq,lpFDat->dSVEQHdb,inWaveFmt.nSamplesPerSec,ID_IIR_SVEQH,i);
+		for(i=0;i<outformat.channels;i++){
+			CalcIirShelvingEQ(SVEQH,dCutFreq,lpFDat->dSVEQHdb,informat.rate,ID_IIR_SVEQH,i);
 		}
 	}
 
 	// peaking EQ 
 	if(lpFDat->bPKEQ)
 	{
-		for(i=0;i<outWaveFmt.nChannels;i++){
-			CalcIirPeakingEQ((double)lpFDat->dwPKfreq,lpFDat->dPKQ,lpFDat->dPKdb,inWaveFmt.nSamplesPerSec,ID_IIR_PKEQ,i);
+		for(i=0;i<outformat.channels;i++){
+			CalcIirPeakingEQ((double)lpFDat->dwPKfreq,lpFDat->dPKQ,lpFDat->dPKdb,informat.rate,ID_IIR_PKEQ,i);
 		}
 	}
 
 	// noisegate
 	if(lpFDat->bNgate)
-		prepareNGATE(outWaveFmt,lpFDat->dNgateTh,lpFDat->dNgateRelease,lpFDat->dNgateAttack,lpFDat->dwNgateRMS);
+		prepareNGATE(outformat,lpFDat->dNgateTh,lpFDat->dNgateRelease,lpFDat->dNgateAttack,lpFDat->dwNgateRMS);
 
 	// re-sampling
 	if(lpFDat->bRsmp)
 	{
 		prepareRsmp(lpFDat->dwRsmpInFreq,lpFDat->dwRsmpOutFreq,lpFDat->dwRsmpCut,lpFDat->dRsmpDB,lpFDat->dwRsmpLn,lpFDat->dwRsmpUp,lpFDat->dwRsmpDown,
-			dwFilterPoints,outWaveFmt.nChannels);
+			dwFilterPoints,outformat.channels);
 	}
 
 	// file mixing
 	if(lpFDat->bMixFile){
-		if(!OpenMixFile(lpFDat->szMixFile,inWaveFmt,dwFilterPoints,lpFDat->dMixStartTime[1],lpszErr)){
+		if(!OpenMixFile(lpFDat->szMixFile,informat,dwFilterPoints,lpFDat->dMixStartTime[1],lpszErr)){
 			return false;
 		}
 	}
 
 	// compressor
-	if(lpFDat->bComp) prepareCOMP(outWaveFmt.nChannels,lpFDat->dwCompRMS,0);
+	if(lpFDat->bComp) prepareCOMP(outformat.channels,lpFDat->dwCompRMS,0);
 
 	// limiter after compressor
-	prepareCOMP(outWaveFmt.nChannels,lpFDat->dwNormalCompRMS,1);
+	prepareCOMP(outformat.channels,lpFDat->dwNormalCompRMS,1);
 
 	// init convolution
 	dwFoo = dwFilterPoints;
@@ -635,7 +636,7 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 				 double* lpFilterBuf[2],  // (input / output) buffer of wave data
 				 LPDWORD lpdwPointsInBuf, // (input / output) data points in buffer
 				 LPDWORD lpdwRealPointsInBuf, // (output) output data points
-				 // note: if inWaveFmt.nSamplesPerSec = outWaveFmt.nSamplesPerSec,
+				 // note: if informat.rate = outformat.rate,
 				 // then *lpdwPointsInBuf = *lpdwRealPointsInBuf.
 
 				 BOOL* lpbChangeFile, // if return value of *lpbChangeFile is true, change output file
@@ -644,8 +645,8 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 				 DWORD dwCurFileNo,  // current file number
 				 LONGLONG n64OutSize, // byte, total output size
 				 LONGLONG n64DataSize, // byte, total data size of wave
-				 WAVEFORMATEX inWaveFmt, // format of input
-				 WAVEFORMATEX outWaveFmt // format of output
+				 WAVFMT informat, // format of input
+				 WAVFMT outformat // format of output
 				 ){
 	
 	DWORD i,i2,dwFoo;
@@ -656,16 +657,13 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	// adjust DC offset 
 	/*
 	if(lpFDat->bOffset){
-		for(i=0;i<inWaveFmt.nChannels;i++)
+		for(i=0;i<informat.channels;i++)
 			DCOFFSET(lpFilterBuf[i],*lpdwPointsInBuf,lpFDat->dOffset[i]);
 	}
 	*/
-	WAVFMT wavfmt;
-	wavfmt.channels = inWaveFmt.nChannels;
-	wavfmt.rate = inWaveFmt.nSamplesPerSec;
-	wavfmt.bits = inWaveFmt.wBitsPerSample;
-	Buffer buffer(wavfmt);
-	for(i=0;i<inWaveFmt.nChannels;i++) buffer.buffer[i] = lpFilterBuf[i];
+
+	Buffer buffer(informat);
+	for(i=0;i<informat.channels;i++) buffer.buffer[i] = lpFilterBuf[i];
 	buffer.points = *lpdwPointsInBuf;
 
 	std::vector<Filter*>::iterator it = filters.begin();
@@ -675,19 +673,19 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 
 	// pre-normalize data between -1 to 1 before filtering
 	if( CONFIG::get().pre_normalization ){
-		const double maxlevel = GetMaxWaveLevel(inWaveFmt);
-		for(i=0;i<inWaveFmt.nChannels;i++){
+		const double maxlevel = GetMaxWaveLevel(informat);
+		for(i=0;i<informat.channels;i++){
 			for(i2=0;i2<*lpdwPointsInBuf;i2++) lpFilterBuf[i][i2] /= maxlevel;
 		}
 	}
 	
 	// auto adjust DC offset
 	if(lpFDat->bAutoOffset)
-		AUTODCOFFSET(lpFilterBuf,*lpdwPointsInBuf,inWaveFmt,lpFDat->dwAutoOffsetTime);
+		AUTODCOFFSET(lpFilterBuf,*lpdwPointsInBuf,informat,lpFDat->dwAutoOffsetTime);
 	
 	// FIR before nosound
 	if(lpFDat->dwNoSndFIRFilter != NO_FILTER){
-		for(i=0;i<inWaveFmt.nChannels;i++)
+		for(i=0;i<informat.channels;i++)
 			FIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_FIR_NOSND,i);
 	}	
 
@@ -699,8 +697,8 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 		lpFilterBuf,
 		lpdwPointsInBuf,
 		&bChangeFile,
-		inWaveFmt.nSamplesPerSec,
-		inWaveFmt.nChannels,
+		informat.rate,
+		informat.channels,
 		
 		lpFDat->dwNoSndTime,
 		lpFDat->dwNoSndM1toM2,
@@ -714,13 +712,13 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	// rewind buffer of FIR filter, or the noise appears in the head of next file.
 	if(bChangeFile && lpFDat->dwNoSndFIRFilter != NO_FILTER){
 			dwFoo = dwPointsInBufBeforeSplit - *lpdwPointsInBuf;//  size of rewind
-			for(i=0;i<inWaveFmt.nChannels;i++) RewindBufFIR(dwFoo,ID_FIR_NOSND,i);
+			for(i=0;i<informat.channels;i++) RewindBufFIR(dwFoo,ID_FIR_NOSND,i);
 	}
 	
 	// split at specified time or size of output data
 	// if splitting has been occured in NOSOUND, don't split again.
 	if(lpFDat->bSplit && bChangeFile == false)  
-		SPLIT(inWaveFmt,lpdwPointsInBuf,
+		SPLIT(informat,lpdwPointsInBuf,
 		n64OutSize,dwCurFileNo,&bChangeFile,
 		&lpFDat->n64SplitByte,
 		
@@ -731,7 +729,7 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	
 	// balance
 	if(lpFDat->bBalance){
-		for(i=0;i<inWaveFmt.nChannels;i++){
+		for(i=0;i<informat.channels;i++){
 			for(i2=0;i2<*lpdwPointsInBuf;i2++) 
 				lpFilterBuf[i][i2] *= lpFDat->dBalance[i];
 		}
@@ -740,7 +738,7 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 
 	// file mixing
 	if(lpFDat->bMixFile){ 
-		MixFile(inWaveFmt,lpFilterBuf,
+		MixFile(informat,lpFilterBuf,
 			*lpdwPointsInBuf,n64OutSize,
 			lpFDat->dMixLevel,lpFDat->dMixStartTime[0]);
 	}
@@ -757,56 +755,56 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	//---------------------------------------------------
 	// notice: 
 	// If LR-mixing has been executed, number of channels become 1/2 from here,
-	// so use 'outWaveFmt.nChannels' instead of 'inWaveFmt.nChannels'
+	// so use 'outformat.channels' instead of 'informat.channels'
 
 	// synthesize sine waves
 	if(lpFDat->dwAddSinNum){
-		for(i=0;i<outWaveFmt.nChannels;i++)
+		for(i=0;i<outformat.channels;i++)
 			AddSinCurve(lpFilterBuf[i],
-			*lpdwPointsInBuf,inWaveFmt.nSamplesPerSec,i,
+			*lpdwPointsInBuf,informat.rate,i,
 			lpFDat->dwAddSinNum,lpFDat->dwAddSinFreq,
 			lpFDat->dAddSinDb,lpFDat->dwAddSinPhase);
 	}
 	
 	// noise gate
 	if(lpFDat->bNgate)
-		NOISEGATE_FREQ(lpFilterBuf,*lpdwPointsInBuf,outWaveFmt.nChannels);	
+		NOISEGATE_FREQ(lpFilterBuf,*lpdwPointsInBuf,outformat.channels);	
 
 	// FIR
 	if(lpFDat->dwFIRFilter != NO_FILTER){
-		for(i=0;i<outWaveFmt.nChannels;i++)
+		for(i=0;i<outformat.channels;i++)
 			FIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_FIR_NORMAL,i);
 	}
 
 	// FIR-EQ
 	if(lpFDat->bFIREQ){
-		for(i=0;i<outWaveFmt.nChannels;i++) FIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_FIR_EQ,i);
+		for(i=0;i<outformat.channels;i++) FIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_FIR_EQ,i);
 	}
 
 	// IIR 
-	if(lpFDat->dwIIRFilter != NO_FILTER) for(i=0;i<outWaveFmt.nChannels;i++)
+	if(lpFDat->dwIIRFilter != NO_FILTER) for(i=0;i<outformat.channels;i++)
 		IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_NORMAL,i);
 
 
 	// (de)emphasis
-	if(lpFDat->bDemp) for(i=0;i<outWaveFmt.nChannels;i++)
+	if(lpFDat->bDemp) for(i=0;i<outformat.channels;i++)
 		IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_DEMP,i);
 
 	// shelving EQ low
-	if(lpFDat->bSVEQL) for(i=0;i<outWaveFmt.nChannels;i++)
+	if(lpFDat->bSVEQL) for(i=0;i<outformat.channels;i++)
 		IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_SVEQL,i);
 
 	// shelving EQ high
-	if(lpFDat->bSVEQH) for(i=0;i<outWaveFmt.nChannels;i++)
+	if(lpFDat->bSVEQH) for(i=0;i<outformat.channels;i++)
 		IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_SVEQH,i);
 
 	// peaking EQ high
-	if(lpFDat->bPKEQ) for(i=0;i<outWaveFmt.nChannels;i++)
+	if(lpFDat->bPKEQ) for(i=0;i<outformat.channels;i++)
 		IIR(lpFilterBuf[i],*lpdwPointsInBuf,ID_IIR_PKEQ,i);
 
 	// phase invert
 	if(lpFDat->bPhaseInv){
-		for(i=0;i<outWaveFmt.nChannels;i++){
+		for(i=0;i<outformat.channels;i++){
 			for(i2=0;i2<*lpdwPointsInBuf;i2++) 
 				lpFilterBuf[i][i2] = - lpFilterBuf[i][i2];
 		}
@@ -814,24 +812,24 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 
 	// compressor
 	if(lpFDat->bComp){
-		COMPRESS(inWaveFmt.nSamplesPerSec,lpFilterBuf,*lpdwPointsInBuf,outWaveFmt.nChannels,
+		COMPRESS(informat.rate,lpFilterBuf,*lpdwPointsInBuf,outformat.channels,
 			lpFDat->dCompTh,lpFDat->dCompRatio,
 			lpFDat->dCompAttack,lpFDat->dCompRelease,0);
 	}
 
 	// volume
 	if(lpFDat->dVolume != 1.0){
-		for(i=0;i<outWaveFmt.nChannels;i++){
+		for(i=0;i<outformat.channels;i++){
 			for(i2=0;i2<*lpdwPointsInBuf;i2++) 
 				lpFilterBuf[i][i2] *= lpFDat->dVolume;
 		}
 	}				
 
 	// fade in/out
-	for(i=0;i<outWaveFmt.nChannels;i++)
+	for(i=0;i<outformat.channels;i++)
 		FADEINOUT(lpFilterBuf[i],*lpdwPointsInBuf,
 
-		inWaveFmt,lpFDat->dwFadeIn,lpFDat->dwFadeOut,
+		informat,lpFDat->dwFadeIn,lpFDat->dwFadeOut,
 		n64OutSize,n64DataSize
 		);
 
@@ -839,50 +837,50 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 
 	// down sampling(48k -> 44.1k)
 	if(lpFDat->bRsmp){
-		for(i=0;i<outWaveFmt.nChannels;i++)
+		for(i=0;i<outformat.channels;i++)
 			RSAMP(lpFilterBuf[i],*lpdwPointsInBuf,i,lpdwRealPointsInBuf);
 	}
 
 	// notice:
 	// sampling rate of output is changed when re-sampling has been executed, so
 	// use '*lpdwRealPointsInBuf' instead of '*lpdwPointsInBuf', and
-	// use 'outWaveFmt' instead of 'inWaveFmt' from here.
+	// use 'outformat' instead of 'informat' from here.
 
 	// calclate RMS or average for normalizer
 	if(dwCurrentNormalMode == NORMAL_AVG){
-		for(i=0;i<outWaveFmt.nChannels;i++) 
+		for(i=0;i<outformat.channels;i++) 
 			SET_AVG(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
 	}
 
 	if(dwCurrentNormalMode == NORMAL_RMS){
-		for(i=0;i<outWaveFmt.nChannels;i++) 
+		for(i=0;i<outformat.channels;i++) 
 			SET_RMS(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
 	}
 
 	// normalizer
 	if(dwCurrentNormalMode == NORMAL_EXEC){
 
-		for(i=0;i<outWaveFmt.nChannels;i++){
+		for(i=0;i<outformat.channels;i++){
 			for(i2=0;i2<*lpdwRealPointsInBuf;i2++) 
 				lpFilterBuf[i][i2] *= dNormalGain[i];
 		}
 
 		// compressor(limiter)
 		if(lpFDat->bNormalUseCompressor)
-			COMPRESS(outWaveFmt.nSamplesPerSec,lpFilterBuf,*lpdwRealPointsInBuf,outWaveFmt.nChannels,
+			COMPRESS(outformat.rate,lpFilterBuf,*lpdwRealPointsInBuf,outformat.channels,
 			lpFDat->dNormalTh,lpFDat->dNormalRatio,
 			lpFDat->dNormalAttack,lpFDat->dNormalRelease,1);
 	}
 
 	// search peak,
-	for(i=0;i<outWaveFmt.nChannels;i++) SET_PEAK(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
+	for(i=0;i<outformat.channels;i++) SET_PEAK(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
 
 	// restore wave level
 	if( CONFIG::get().pre_normalization ){
 		if(dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC)
 		{
-			const double maxlevel = GetMaxWaveLevel(outWaveFmt);
-			for(i=0;i<outWaveFmt.nChannels;i++){
+			const double maxlevel = GetMaxWaveLevel(outformat);
+			for(i=0;i<outformat.channels;i++){
 				for(i2=0;i2<*lpdwRealPointsInBuf;i2++) lpFilterBuf[i][i2] *= maxlevel;
 			}
 		}
@@ -892,7 +890,7 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	if(lpFDat->bDither){
 		if(dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC)
 		{		
-			for(i=0;i<outWaveFmt.nChannels;i++)
+			for(i=0;i<outformat.channels;i++)
 			{
 				DITHER(lpFilterBuf[i],*lpdwRealPointsInBuf,i,lpFDat->dDitherAmp);
 			}
@@ -931,10 +929,10 @@ BOOL ReadOption(int argc, char *argv_org[]){
 	wsprintf(SzCurDir,"%s\\",SzCurDir); // add '\'
 
 	memset(SzUserDef,0,sizeof(char)*3*CHR_BUF);
-	memset(&InputWaveFmt,0,sizeof(WAVEFORMATEX));
-	memset(&WriteWaveFmt,0,sizeof(WAVEFORMATEX));
-	SetWaveFmt(&InputWaveFmt,2,44100,16,WAVE_FORMAT_PCM);
-	N64FileDataSize = 180 * InputWaveFmt.nAvgBytesPerSec;
+	memset(&InputWaveFmt,0,sizeof(WAVFMT));
+	memset(&WriteWaveFmt,0,sizeof(WAVFMT));
+	SetWaveFormat(InputWaveFmt,WAVE_FORMAT_PCM, 2,44100,16);
+	N64FileDataSize = 180 * InputWaveFmt.avgbyte;
 
 	// read config from file mapping or configuration file
 	argc2 = 0; 
@@ -1689,13 +1687,13 @@ BOOL ReadOption(int argc, char *argv_org[]){
 		// specify input format
 		else if(strcmp(argv[i],"-format")==0){
 			N64FileDataSize = atoi(argv[i+1]);
-			InputWaveFmt.nSamplesPerSec = atoi(argv[i+2]);
-			InputWaveFmt.nChannels = atoi(argv[i+3]);
-			InputWaveFmt.wBitsPerSample = atoi(argv[i+4]);
-			InputWaveFmt.wFormatTag = atoi(argv[i+5]);
-			if(InputWaveFmt.wBitsPerSample <= 24) InputWaveFmt.wFormatTag = WAVE_FORMAT_PCM;
-			SetWaveFmt(&InputWaveFmt,InputWaveFmt.nChannels,InputWaveFmt.nSamplesPerSec,InputWaveFmt.wBitsPerSample,InputWaveFmt.wFormatTag);
-			N64FileDataSize = N64FileDataSize*InputWaveFmt.nAvgBytesPerSec;
+			InputWaveFmt.rate = atoi(argv[i+2]);
+			InputWaveFmt.channels = atoi(argv[i+3]);
+			InputWaveFmt.bits = atoi(argv[i+4]);
+			InputWaveFmt.tag = atoi(argv[i+5]);
+			if(InputWaveFmt.bits <= 24) InputWaveFmt.tag = WAVE_FORMAT_PCM;
+			SetWaveFormat(InputWaveFmt,InputWaveFmt.tag, InputWaveFmt.channels,InputWaveFmt.rate,InputWaveFmt.bits);
+			N64FileDataSize = N64FileDataSize*InputWaveFmt.avgbyte;
 			i+=5; i2+=6;
 		}
 
@@ -1857,7 +1855,7 @@ BOOL SetParam(){
 	// analyze the format of input file 
 	if(!BlHeadOffset && !BlNoSignal)
 	{
-		if(!GetWaveFormat(SzReadFile,&InputWaveFmt,&N64FileDataSize,&N64FileOffset,szErr))
+		if(!GetWaveFormat(SzReadFile,InputWaveFmt,N64FileDataSize,N64FileOffset,szErr))
 		{
 			fprintf(stderr,"\n");
 			fprintf(stderr,szErr);
@@ -1877,19 +1875,19 @@ BOOL SetParam(){
 
 	// set buffer size
 	dwFoo = 1; 
-	while((double)dwFoo/InputWaveFmt.nAvgBytesPerSec*1000. < DwBufSize*100.) dwFoo = dwFoo << 1;
+	while((double)dwFoo/InputWaveFmt.avgbyte*1000. < DwBufSize*100.) dwFoo = dwFoo << 1;
 	DwBufSize = dwFoo;
 
 	/* obsolete
 	dwFoo = 1; 
-	while((double)dwFoo/InputWaveFmt.nAvgBytesPerSec*1000. < DwPipeBufSize*100.) dwFoo = dwFoo << 1;
+	while((double)dwFoo/InputWaveFmt.avgbyte*1000. < DwPipeBufSize*100.) dwFoo = dwFoo << 1;
 	DwPipeBufSize = dwFoo;
 	*/
 
-	fprintf(stderr,"tag = %u, ",InputWaveFmt.wFormatTag);
-	fprintf(stderr,"%u ch, ",InputWaveFmt.nChannels);
-	fprintf(stderr,"%u Hz, ",InputWaveFmt.nSamplesPerSec);
-	fprintf(stderr,"%u bit, ",InputWaveFmt.wBitsPerSample);
+	fprintf(stderr,"tag = %u, ",InputWaveFmt.tag);
+	fprintf(stderr,"%u ch, ",InputWaveFmt.channels);
+	fprintf(stderr,"%u Hz, ",InputWaveFmt.rate);
+	fprintf(stderr,"%u bit, ",InputWaveFmt.bits);
 	fprintf(stderr,"offset = %d byte\n",N64FileOffset);
 
 	if(N64FileDataSize < 4 * 1024 * 1024)
@@ -1899,7 +1897,7 @@ BOOL SetParam(){
 		dFoo = (double)N64FileDataSize/1024/1024;
 		fprintf(stderr,"data size = %.2lf Mbyte, ",dFoo);
 	}
-	dFoo = (double)N64FileDataSize/InputWaveFmt.nAvgBytesPerSec;
+	dFoo = (double)N64FileDataSize/InputWaveFmt.avgbyte;
 	fprintf(stderr,"time = %.2lf sec \n",dFoo);
 
 	/* obsolete
@@ -1965,23 +1963,23 @@ BOOL SetParam(){
 
 	// get output format
 
-	SetWaveFmt(&WriteWaveFmt,InputWaveFmt.nChannels,InputWaveFmt.nSamplesPerSec,InputWaveFmt.wBitsPerSample,InputWaveFmt.wFormatTag);
+	SetWaveFormat(WriteWaveFmt,InputWaveFmt.tag, InputWaveFmt.channels,InputWaveFmt.rate,InputWaveFmt.bits);
 
 	// LR-mixing,
 	if(FDAT.bMixLR)
 	{ 
-		if(InputWaveFmt.nChannels == 1) FDAT.bMixLR = false;
-		else SetWaveFmt(&WriteWaveFmt,1,WriteWaveFmt.nSamplesPerSec,WriteWaveFmt.wBitsPerSample,WriteWaveFmt.wFormatTag);
+		if(InputWaveFmt.channels == 1) FDAT.bMixLR = false;
+		else SetWaveFormat(WriteWaveFmt,WriteWaveFmt.tag, 1,WriteWaveFmt.rate,WriteWaveFmt.bits);
 	}
 
 	// change bit of output file
 	if(FDAT.dwBitChange)
-		SetWaveFmt(&WriteWaveFmt,WriteWaveFmt.nChannels,WriteWaveFmt.nSamplesPerSec,(WORD)FDAT.dwBitChange,(WORD)FDAT.dwBitChangeTag);
+		SetWaveFormat(WriteWaveFmt,(WORD)FDAT.dwBitChangeTag, WriteWaveFmt.channels,WriteWaveFmt.rate,(WORD)FDAT.dwBitChange);
 
 	// re-sampling
 	if(FDAT.bRsmp)
 	{
-		FDAT.dwRsmpInFreq = WriteWaveFmt.nSamplesPerSec;
+		FDAT.dwRsmpInFreq = WriteWaveFmt.rate;
 	
 		if(FDAT.dwRsmpInFreq != 48000){
 			fprintf(stderr,"\n-rsmp: Input frequency must be 48000 hz.\n");
@@ -1989,14 +1987,14 @@ BOOL SetParam(){
 		}
 		
 		FDAT.dwRsmpOutFreq = 44100;
-		SetWaveFmt(&WriteWaveFmt,WriteWaveFmt.nChannels,FDAT.dwRsmpOutFreq,WriteWaveFmt.wBitsPerSample,WriteWaveFmt.wFormatTag);
+		SetWaveFormat(WriteWaveFmt,WriteWaveFmt.tag, WriteWaveFmt.channels, FDAT.dwRsmpOutFreq, WriteWaveFmt.bits );
 	}
 
 	fprintf(stderr,"\noutput: ");
-	fprintf(stderr,"tag = %u, ",WriteWaveFmt.wFormatTag);
-	fprintf(stderr,"%u ch, ",WriteWaveFmt.nChannels);
-	fprintf(stderr,"%u Hz, ",WriteWaveFmt.nSamplesPerSec);
-	fprintf(stderr,"%u bit\n",WriteWaveFmt.wBitsPerSample);
+	fprintf(stderr,"tag = %u, ",WriteWaveFmt.tag);
+	fprintf(stderr,"%u ch, ",WriteWaveFmt.channels);
+	fprintf(stderr,"%u Hz, ",WriteWaveFmt.rate);
+	fprintf(stderr,"%u bit\n",WriteWaveFmt.bits);
 
 	if(BlEndless)
 	{
@@ -2008,7 +2006,7 @@ BOOL SetParam(){
 
 	if(BlTextOut)
 	{
-		if(WriteWaveFmt.wBitsPerSample == 64){
+		if(WriteWaveFmt.bits == 64){
 			fprintf(stderr,"\nCannot create 64bit text file.\n");
 			return false;
 		}
@@ -2028,7 +2026,7 @@ BOOL SetParam(){
 	
 	// -cuttail 
 	if(BlCutTail){
-		DbEndTime[0] = (double)N64FileDataSize/InputWaveFmt.nAvgBytesPerSec - DbEndTime[0];
+		DbEndTime[0] = (double)N64FileDataSize/InputWaveFmt.avgbyte - DbEndTime[0];
 		if(DbEndTime[0] < 0) DbEndTime[0] = 0;
 	}
 	
@@ -2038,8 +2036,8 @@ BOOL SetParam(){
 
 			if(DbStartTime[i] > DbEndTime[i]) DbEndTime[i] = DbStartTime[i];
 			
-			N64OffsetBlk[i] = InputWaveFmt.nBlockAlign*(LONGLONG)(DbStartTime[i]*(double)InputWaveFmt.nSamplesPerSec);
-			N64DataSizeBlk[i] = InputWaveFmt.nBlockAlign*(LONGLONG)((DbEndTime[i]-DbStartTime[i])*(double)InputWaveFmt.nSamplesPerSec);
+			N64OffsetBlk[i] = InputWaveFmt.block*(LONGLONG)(DbStartTime[i]*(double)InputWaveFmt.rate);
+			N64DataSizeBlk[i] = InputWaveFmt.block*(LONGLONG)((DbEndTime[i]-DbStartTime[i])*(double)InputWaveFmt.rate);
 		}
 
 	}
@@ -2051,13 +2049,13 @@ BOOL SetParam(){
 	// adjust alignment
 	for(i=0;i<DwCopyBlock;i++){
 		
-		N64OffsetBlk[i] = N64OffsetBlk[i] / (InputWaveFmt.nChannels * (InputWaveFmt.wBitsPerSample/8)) * InputWaveFmt.nBlockAlign;
+		N64OffsetBlk[i] = N64OffsetBlk[i] / (InputWaveFmt.channels * (InputWaveFmt.bits/8)) * InputWaveFmt.block;
 		
 		// add header offset to block offset
 		N64OffsetBlk[i] += N64FileOffset; 
 		
 		N64DataSizeBlk[i] 
-			= N64DataSizeBlk[i] / (InputWaveFmt.nChannels * (InputWaveFmt.wBitsPerSample/8)) * InputWaveFmt.nBlockAlign;
+			= N64DataSizeBlk[i] / (InputWaveFmt.channels * (InputWaveFmt.bits/8)) * InputWaveFmt.block;
 	}
 
 	// offset and size of eace block
@@ -2074,12 +2072,12 @@ BOOL SetParam(){
 	// get total output size
 	N64TotalDataSize = 0;	
 	for(i=0;i<DwCopyBlock;i++) N64TotalDataSize += N64DataSizeBlk[i];
-	if(memcmp(&InputWaveFmt,&WriteWaveFmt,sizeof(WAVEFORMATEX)) != 0){
+	if(memcmp(&InputWaveFmt,&WriteWaveFmt,sizeof(WAVFMT)) != 0){
 		N64RealTotalDataSize = 
-			WriteWaveFmt.nBlockAlign * 
+			WriteWaveFmt.block * 
 			(LONGLONG)((double)N64TotalDataSize 
-			/ (double)InputWaveFmt.nAvgBytesPerSec 
-			* (double)WriteWaveFmt.nSamplesPerSec
+			/ (double)InputWaveFmt.avgbyte 
+			* (double)WriteWaveFmt.rate
 			);
 	}
 	else N64RealTotalDataSize = N64TotalDataSize;
@@ -2087,8 +2085,8 @@ BOOL SetParam(){
 	// add no sound part
 	if(DbAddSp[0] > 0 || DbAddSp[1] > 0)
 	{
-		DwAddSp[0] = (DWORD)(DbAddSp[0] * WriteWaveFmt.nAvgBytesPerSec);
-		DwAddSp[1] = (DWORD)(DbAddSp[1] * WriteWaveFmt.nAvgBytesPerSec);
+		DwAddSp[0] = (DWORD)(DbAddSp[0] * WriteWaveFmt.avgbyte);
+		DwAddSp[1] = (DWORD)(DbAddSp[1] * WriteWaveFmt.avgbyte);
 	}
 
 	// if data size < 4G, then don't use extra chunk
@@ -2274,7 +2272,7 @@ BOOL SetParam(){
 	}
 
 	// dither
-	if(WriteWaveFmt.wBitsPerSample >= 24) FDAT.bDither = false;
+	if(WriteWaveFmt.bits >= 24) FDAT.bDither = false;
 	if(FDAT.bDither) fprintf(stderr,"dither: x%6.3lf\n",FDAT.dDitherAmp);
 
 	// LR-mixing
@@ -2331,7 +2329,7 @@ BOOL SetParam(){
 		fprintf(stderr,"level = %6.3lf, ",FDAT.dADPlevel);
 		fprintf(stderr,"length = %d, ",FDAT.dwADPleng);
 			fprintf(stderr,"delay = %d(%.2lf msec)\n"
-				,(FDAT.dwADPleng-1)/2,(double)(FDAT.dwADPleng-1)/2*1000/InputWaveFmt.nSamplesPerSec);
+				,(FDAT.dwADPleng-1)/2,(double)(FDAT.dwADPleng-1)/2*1000/InputWaveFmt.rate);
 		fprintf(stderr,"delay time of input = %d msec, ",FDAT.dwADPDelayTime);
 		fprintf(stderr,"training time = %d sec, ",DwADPTrainTime);
 		fprintf(stderr,"loss = %6.3lf db\n",FDAT.dADPDb);
@@ -2361,7 +2359,7 @@ BOOL SetParam(){
 		
 		fprintf(stderr,"length = %d, ",FDAT.dwFIRleng);
 		fprintf(stderr,"delay = %d(%.2lf msec), "
-			,(FDAT.dwFIRleng-1)/2,(double)(FDAT.dwFIRleng-1)/2*1000/InputWaveFmt.nSamplesPerSec);
+			,(FDAT.dwFIRleng-1)/2,(double)(FDAT.dwFIRleng-1)/2*1000/InputWaveFmt.rate);
 		fprintf(stderr,"loss = %.2lf db, ",FDAT.dFIRDb);
 		if(FDAT.dwFIRCutLow > FDAT.dwFIRCutHigh) FDAT.dwFIRCutHigh = FDAT.dwFIRCutLow;
 		
@@ -2388,7 +2386,7 @@ BOOL SetParam(){
 		fprintf(stderr,"FIR-EQ:\n");
 		fprintf(stderr,"length = %d, ",FDAT.dwEQleng);
 		fprintf(stderr,"delay = %d(%.2lf msec), "
-			,(FDAT.dwEQleng-1)/2,(double)(FDAT.dwEQleng-1)/2*1000/InputWaveFmt.nSamplesPerSec);
+			,(FDAT.dwEQleng-1)/2,(double)(FDAT.dwEQleng-1)/2*1000/InputWaveFmt.rate);
 		fprintf(stderr,"loss = %.2lf db, ",FDAT.dEQDb);
 		fprintf(stderr,"Q = %.2lf\n",FDAT.dEQ_Q);
 
@@ -2505,7 +2503,7 @@ BOOL SetParam(){
 			
 			fprintf(stderr,"length = %d, ",FDAT.dwNoSndFIRleng);
 			fprintf(stderr,"delay = %d(%.2lf msec), "
-				,(FDAT.dwNoSndFIRleng-1)/2,(double)(FDAT.dwNoSndFIRleng-1)/2*1000/InputWaveFmt.nSamplesPerSec);
+				,(FDAT.dwNoSndFIRleng-1)/2,(double)(FDAT.dwNoSndFIRleng-1)/2*1000/InputWaveFmt.rate);
 			fprintf(stderr,"loss = %.2lf db, ",FDAT.dNoSndFIRDb);
 			if(FDAT.dwNoSndFIRCutLow > FDAT.dwNoSndFIRCutHigh) 
 				FDAT.dwNoSndFIRCutHigh = FDAT.dwNoSndFIRCutLow;
@@ -2526,7 +2524,7 @@ BOOL SetParam(){
 	if(FDAT.bSplit){
 		
 		if(FDAT.dSplitTime[DwCurSplitNo]){  // -split1,2,3
-			FDAT.n64SplitByte = (LONGLONG)((double)InputWaveFmt.nAvgBytesPerSec*FDAT.dSplitTime[DwCurSplitNo]);
+			FDAT.n64SplitByte = (LONGLONG)((double)InputWaveFmt.avgbyte*FDAT.dSplitTime[DwCurSplitNo]);
 		} 
 
 		// no nomilizer
@@ -2545,11 +2543,11 @@ BOOL SetParam(){
 		fprintf(stderr,"\n");
 		
 		if(DbFadeInTime > 0){
-			FDAT.dwFadeIn  = InputWaveFmt.nBlockAlign*(DWORD)(DbFadeInTime*(double)WriteWaveFmt.nSamplesPerSec);
+			FDAT.dwFadeIn  = InputWaveFmt.block*(DWORD)(DbFadeInTime*(double)WriteWaveFmt.rate);
 			fprintf(stderr,"fade in: %lf sec\n",DbFadeInTime);
 		}
 		if(DbFadeOutTime > 0){
-			FDAT.dwFadeOut = InputWaveFmt.nBlockAlign*(DWORD)(DbFadeOutTime*(double)WriteWaveFmt.nSamplesPerSec);
+			FDAT.dwFadeOut = InputWaveFmt.block*(DWORD)(DbFadeOutTime*(double)WriteWaveFmt.rate);
 			fprintf(stderr,"fade out: %lf sec\n",DbFadeOutTime);
 		}
 		
@@ -2564,7 +2562,7 @@ BOOL SetParam(){
 		GetFreeHddSpace64(&n64HddSize,SzWriteFile);
 
 		n64Foo = (ULONGLONG)((double)(N64RealTotalDataSize+DwAddSp[0]+DwAddSp[1])
-			*((double)WriteWaveFmt.nAvgBytesPerSec/InputWaveFmt.nAvgBytesPerSec));
+			*((double)WriteWaveFmt.avgbyte/InputWaveFmt.avgbyte));
 
 		if(n64HddSize < WAVEHDRSIZE(BlExtChunkOfHdr)+n64Foo){
 			fprintf(stderr,"\nSpace of hdd (=%d Mbyte) is not enough.\n",n64HddSize/1024/1024);
@@ -2575,10 +2573,7 @@ BOOL SetParam(){
 
 	/////////////////////
 
-	WAVFMT wavfmt;
-	wavfmt.channels = InputWaveFmt.nChannels;
-	wavfmt.rate = InputWaveFmt.nSamplesPerSec;
-	wavfmt.bits = InputWaveFmt.wBitsPerSample;
+	WAVFMT wavfmt = InputWaveFmt;
 
 	// DC offset
 	if( CONFIG::get().use_dcoffset ){
@@ -2687,12 +2682,12 @@ BOOL FilterBody()
 #endif
 
 	// buffer size of filter
-	dwFilterBufSize2 = DwBufSize/InputWaveFmt.nBlockAlign;
+	dwFilterBufSize2 = DwBufSize/InputWaveFmt.block;
 	i = 1; while(i<dwFilterBufSize2) i = i << 1; // set align = 2^x  (for 24 bit file)
 	dwFilterBufSize2 = i;
 
 	// number of channels of output file
-	dwFilterBufChn = WriteWaveFmt.nChannels;
+	dwFilterBufChn = WriteWaveFmt.channels;
 	
 	if(!InitFilters(&FDAT,
 		dwFilterBufSize2,
@@ -2741,21 +2736,21 @@ BOOL FilterBody()
 	lpBuffer = (BYTE*)malloc(DwBufSize+1024); 
 	dwOutBufSize = DwBufSize;
 	if(FDAT.bRsmp) dwOutBufSize *= 2; // size *= 2 when re-sampling
-	if(WriteWaveFmt.wBitsPerSample > InputWaveFmt.wBitsPerSample){
+	if(WriteWaveFmt.bits > InputWaveFmt.bits){
 
-		if(InputWaveFmt.wBitsPerSample == 8){
-			if(WriteWaveFmt.wBitsPerSample == 24) dwOutBufSize *= 4;
-			else dwOutBufSize *= WriteWaveFmt.wBitsPerSample/InputWaveFmt.wBitsPerSample;
+		if(InputWaveFmt.bits == 8){
+			if(WriteWaveFmt.bits == 24) dwOutBufSize *= 4;
+			else dwOutBufSize *= WriteWaveFmt.bits/InputWaveFmt.bits;
 		}
-		if(InputWaveFmt.wBitsPerSample == 16){
-			if(WriteWaveFmt.wBitsPerSample == 24) dwOutBufSize *= 2;
-			else dwOutBufSize *= WriteWaveFmt.wBitsPerSample/InputWaveFmt.wBitsPerSample;
+		if(InputWaveFmt.bits == 16){
+			if(WriteWaveFmt.bits == 24) dwOutBufSize *= 2;
+			else dwOutBufSize *= WriteWaveFmt.bits/InputWaveFmt.bits;
 		}
-		else if(InputWaveFmt.wBitsPerSample == 24){
-			if(WriteWaveFmt.wBitsPerSample == 32) dwOutBufSize *= 2;
+		else if(InputWaveFmt.bits == 24){
+			if(WriteWaveFmt.bits == 32) dwOutBufSize *= 2;
 			else dwOutBufSize *= 4;
 		}
-		else dwOutBufSize *= WriteWaveFmt.wBitsPerSample/InputWaveFmt.wBitsPerSample;
+		else dwOutBufSize *= WriteWaveFmt.bits/InputWaveFmt.bits;
 
 	}
 	lpWriteBuffer = (BYTE*)malloc(dwOutBufSize+1024); 
@@ -2763,7 +2758,7 @@ BOOL FilterBody()
 	// create buffer for filter
 	dwFoo = dwFilterBufSize2;
 	if(FDAT.bRsmp) dwFoo *= 2; // size *= 2 when re-sampling
-	for(i=0;i<InputWaveFmt.nChannels;i++) lpFilterBuf[i] = (double*)malloc(sizeof(double)*dwFoo+1024); 
+	for(i=0;i<InputWaveFmt.channels;i++) lpFilterBuf[i] = (double*)malloc(sizeof(double)*dwFoo+1024); 
 
 	// open input file
 	if(!OpenReadFile(&hdReadFile,SzReadFile,BlStdin)){
@@ -2798,7 +2793,7 @@ BOOL FilterBody()
 			if(BlStdout)
 			{
 				n64Foo = N64RealTotalDataSize+DwAddSp[0]+DwAddSp[1];
-				WriteWaveHeader(hdWriteFile,&WriteWaveFmt,n64Foo,BlExtChunkOfHdr);
+				WriteWaveHeader(hdWriteFile,WriteWaveFmt,n64Foo,BlExtChunkOfHdr);
 			}
 			else if(hdWriteFile != NULL){
 				// move file pointer of output file
@@ -2814,7 +2809,7 @@ BOOL FilterBody()
 	}
 
 	// add space to head
-	AddSpase(hdWriteFile,DwAddSp[0],WriteWaveFmt);
+	AddSpace(hdWriteFile,DwAddSp[0]);
 
 	//-------------------------------------------------------------------
 	//-------------------------------------------------------------------
@@ -2859,7 +2854,7 @@ BOOL FilterBody()
 		ClearAllFilters();
 
 
-		dwFoo = (DWORD)(DbShiftTime * WriteWaveFmt.nSamplesPerSec / 1000);
+		dwFoo = (DWORD)(DbShiftTime * WriteWaveFmt.rate / 1000);
 		dwCutHeadOutPoints = dwFoo;
 		dwAddTailOutPoints = dwFoo;
 
@@ -2886,13 +2881,13 @@ BOOL FilterBody()
 				fprintf(stderr,"offset = %.2lf M",dFoo);
 				
 				if(!(BlEndless && !BlCutFile)){ 
-					dFoo = (double)N64OffsetBlk[dwBlockNo]/InputWaveFmt.nAvgBytesPerSec;
+					dFoo = (double)N64OffsetBlk[dwBlockNo]/InputWaveFmt.avgbyte;
 					fprintf(stderr,"(%.2lf sec), ",dFoo);
 					
 					dFoo = (double)n64BlockDataSize/1024/1024;
 					fprintf(stderr,"size = %.2lf M",dFoo);
 					
-					dFoo = (double)n64BlockDataSize/InputWaveFmt.nAvgBytesPerSec;
+					dFoo = (double)n64BlockDataSize/InputWaveFmt.avgbyte;
 					fprintf(stderr,"(%.2lf sec)",dFoo);
 				}
 				else fprintf(stderr," (endless mode)");
@@ -2908,7 +2903,7 @@ BOOL FilterBody()
 				if(FDAT.bSplit)
 					fprintf(stderr,"split file: [%3d] %.2lf sec (%lu M)\n",
 					DwCurSplitNo,
-					(double)FDAT.n64SplitByte/InputWaveFmt.nAvgBytesPerSec,
+					(double)FDAT.n64SplitByte/InputWaveFmt.avgbyte,
 					FDAT.n64SplitByte/1024/1024);
 			}
 
@@ -2953,8 +2948,8 @@ BOOL FilterBody()
 				else dwReadByte = (DWORD)(n64BlockDataSize - (n64InputSize-dwRemainByte));
 				
 				// align the boundary if bit of input file is 24
-				if(InputWaveFmt.wBitsPerSample == 24) 
-					dwReadByte =  dwReadByte / (InputWaveFmt.nChannels * (InputWaveFmt.wBitsPerSample/8)) * InputWaveFmt.nBlockAlign;
+				if(InputWaveFmt.bits == 24) 
+					dwReadByte =  dwReadByte / (InputWaveFmt.channels * (InputWaveFmt.bits/8)) * InputWaveFmt.block;
 
 				// when current block is over, 
 				if(dwReadByte == 0){
@@ -2963,18 +2958,18 @@ BOOL FilterBody()
 					if(dwBlockNo == DwCopyBlock-1 && dwAddTailOutPoints){
 
 						// shiftting. add space to the tail of buffer
-						if(InputWaveFmt.wBitsPerSample == 8) memset(lpBuffer,0x80,DwBufSize);
+						if(InputWaveFmt.bits == 8) memset(lpBuffer,0x80,DwBufSize);
 						else memset(lpBuffer,0,DwBufSize);
 							
-						if(InputWaveFmt.wBitsPerSample == 24)
-							dwFoo =  DwBufSize / (InputWaveFmt.nChannels * (InputWaveFmt.wBitsPerSample/8)) * InputWaveFmt.nBlockAlign;
+						if(InputWaveFmt.bits == 24)
+							dwFoo =  DwBufSize / (InputWaveFmt.channels * (InputWaveFmt.bits/8)) * InputWaveFmt.block;
 						
 						if(dwAddTailOutPoints > dwFoo){
 							dwSetSize = dwFoo;
-							dwAddTailOutPoints -= dwFoo/InputWaveFmt.nBlockAlign;
+							dwAddTailOutPoints -= dwFoo/InputWaveFmt.block;
 						}
 						else{
-							dwSetSize = dwAddTailOutPoints*InputWaveFmt.nBlockAlign;
+							dwSetSize = dwAddTailOutPoints*InputWaveFmt.block;
 							dwAddTailOutPoints = 0;
 						}
 					}
@@ -2991,7 +2986,7 @@ BOOL FilterBody()
 							
 							// move remained data to head
 							memmove(lpBuffer,
-								lpBuffer+dwPointsInBuf*InputWaveFmt.nBlockAlign,
+								lpBuffer+dwPointsInBuf*InputWaveFmt.block,
 								dwRemainByte);
 							
 							// fill buffer from input file
@@ -3015,7 +3010,7 @@ BOOL FilterBody()
 					}
 					else // if input file's name is 'nosignal'
 					{
-						if(InputWaveFmt.wBitsPerSample == 8) memset(lpBuffer,0x80,dwReadByte);
+						if(InputWaveFmt.bits == 8) memset(lpBuffer,0x80,dwReadByte);
 						else memset(lpBuffer,0,dwReadByte);
 						dwSetSize = dwReadByte;
 						n64InputSize += dwSetSize;
@@ -3068,8 +3063,8 @@ BOOL FilterBody()
 							else // dwCutHeadOutPoints <= dwRealPointsInBuf
 							{
 								dwRealPointsInBuf -= dwCutHeadOutPoints;
-								dwPointsInBuf -= (DWORD)((double)dwCutHeadOutPoints/WriteWaveFmt.nSamplesPerSec*InputWaveFmt.nSamplesPerSec);
-								for(i=0;i<WriteWaveFmt.nChannels;i++)
+								dwPointsInBuf -= (DWORD)((double)dwCutHeadOutPoints/WriteWaveFmt.rate*InputWaveFmt.rate);
+								for(i=0;i<WriteWaveFmt.channels;i++)
 									memmove(lpFilterBuf[i],lpFilterBuf[i]+dwCutHeadOutPoints,sizeof(double)*dwRealPointsInBuf);
 								dwCutHeadOutPoints = 0; // not do shiftting anymore
 							}
@@ -3095,18 +3090,18 @@ BOOL FilterBody()
 								if(!BlWaveOut){
 									
 #ifdef USEWIN32API
-									if(!WriteData(hdWriteFile,lpWriteBuffer,dwRealPointsInBuf*WriteWaveFmt.nBlockAlign,&dwWriteByte
+									if(!WriteData(hdWriteFile,lpWriteBuffer,dwRealPointsInBuf*WriteWaveFmt.block,&dwWriteByte
 										/* obsolete
 										,BlCreatePipe,hProcessInfo
 										*/
 										)){
 										// if fail, then write header and exit.
 										if(BlWaveHdrOut && !BlStdout) 
-											WriteWaveHeader(hdWriteFile,&WriteWaveFmt,n64RealTotalOutSize+DwAddSp[0],BlExtChunkOfHdr);
+											WriteWaveHeader(hdWriteFile,WriteWaveFmt,n64RealTotalOutSize+DwAddSp[0],BlExtChunkOfHdr);
 										goto L_ERR;
 									}
 #else
-									WriteData(hdWriteFile,lpWriteBuffer,dwRealPointsInBuf*WriteWaveFmt.nBlockAlign,&dwWriteByte,BlCreatePipe);
+									WriteData(hdWriteFile,lpWriteBuffer,dwRealPointsInBuf*WriteWaveFmt.block,&dwWriteByte,BlCreatePipe);
 #endif
 									
 									
@@ -3115,7 +3110,7 @@ BOOL FilterBody()
 								// waveout
 								else 
 								{
-									dwWriteByte = dwRealPointsInBuf*WriteWaveFmt.nBlockAlign;
+									dwWriteByte = dwRealPointsInBuf*WriteWaveFmt.block;
 									PlayWave(lpWriteBuffer,dwWriteByte);
 								}
 #endif
@@ -3124,8 +3119,8 @@ BOOL FilterBody()
 						}
 						
 						// renew the size of output
-						n64RealOutSize += dwRealPointsInBuf*WriteWaveFmt.nBlockAlign;
-						n64OutSize += dwPointsInBuf * InputWaveFmt.nBlockAlign;
+						n64RealOutSize += dwRealPointsInBuf*WriteWaveFmt.block;
+						n64OutSize += dwPointsInBuf * InputWaveFmt.block;
 						
 						// show the current status
 						if(BlVerbose){
@@ -3149,13 +3144,13 @@ BOOL FilterBody()
 						{
 							n64RealTotalOutSize += n64RealOutSize;
 							n64TotalOutSize += n64OutSize;
-							dwRemainByte = dwSetSize - dwPointsInBuf *InputWaveFmt.nBlockAlign;
+							dwRemainByte = dwSetSize - dwPointsInBuf *InputWaveFmt.block;
 							
 							// add space to tail
-							AddSpase(hdWriteFile,DwAddSp[1],WriteWaveFmt);
+							AddSpace(hdWriteFile,DwAddSp[1]);
 							
 							// write wave header
-							if(BlWaveHdrOut && !BlStdout) WriteWaveHeader(hdWriteFile,&WriteWaveFmt,n64RealTotalOutSize+DwAddSp[0]+DwAddSp[1],BlExtChunkOfHdr);
+							if(BlWaveHdrOut && !BlStdout) WriteWaveHeader(hdWriteFile,WriteWaveFmt,n64RealTotalOutSize+DwAddSp[0]+DwAddSp[1],BlExtChunkOfHdr);
 							
 							// close output file handle
 #ifdef USEWIN32API
@@ -3240,7 +3235,7 @@ BOOL FilterBody()
 									if(BlStdout)
 									{ 
 										n64Foo = N64RealTotalDataSize+DwAddSp[0]+DwAddSp[1];
-										WriteWaveHeader(hdWriteFile,&WriteWaveFmt,n64Foo,BlExtChunkOfHdr);
+										WriteWaveHeader(hdWriteFile,WriteWaveFmt,n64Foo,BlExtChunkOfHdr);
 									}
 									else if(hdWriteFile != NULL)
 									{
@@ -3284,11 +3279,11 @@ BOOL FilterBody()
 							if(FDAT.bSplit)
 								fprintf(stderr,"split file: [%3d] %.2lf sec (%lu M)\n"
 								,DwCurSplitNo,
-								(double)FDAT.n64SplitByte/InputWaveFmt.nAvgBytesPerSec,
+								(double)FDAT.n64SplitByte/InputWaveFmt.avgbyte,
 								FDAT.n64SplitByte/1024/1024);
 							
 							// add space to head
-							AddSpase(hdWriteFile,DwAddSp[0],WriteWaveFmt);
+							AddSpace(hdWriteFile,DwAddSp[0]);
 
 					}  
 					// change output file
@@ -3299,7 +3294,7 @@ BOOL FilterBody()
 				{
 					// now, normalizer is searching the peak of output.
 					
-					n64OutSize += dwPointsInBuf * InputWaveFmt.nBlockAlign;
+					n64OutSize += dwPointsInBuf * InputWaveFmt.block;
 
 					if(BlVerbose)
 						ShowStatus(WriteWaveFmt,SzRealWriteFile,
@@ -3361,10 +3356,10 @@ L_EXITBLOCK:
 	fprintf(stderr,"\n");
 
 	// add space to tail
-	AddSpase(hdWriteFile,DwAddSp[1],WriteWaveFmt);
+	AddSpace(hdWriteFile,DwAddSp[1]);
 
 	// write wave header
-	if(BlWaveHdrOut && !BlStdout) WriteWaveHeader(hdWriteFile,&WriteWaveFmt,n64RealTotalOutSize+DwAddSp[0]+DwAddSp[1],BlExtChunkOfHdr);
+	if(BlWaveHdrOut && !BlStdout) WriteWaveHeader(hdWriteFile,WriteWaveFmt,n64RealTotalOutSize+DwAddSp[0]+DwAddSp[1],BlExtChunkOfHdr);
 
 	// close file handle of output
 #ifdef USEWIN32API

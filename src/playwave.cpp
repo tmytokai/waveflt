@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <mmsystem.h>
 
+#include "waveformat.h"
+
+
 // status
 #define ID_PREPARE 0
 #define ID_OPEN 1
@@ -101,7 +104,7 @@ VOID CALLBACK MyWaveOutProc(HWAVEOUT hWaveOut,UINT msg,DWORD inst,DWORD dwP1,DWO
 
 //-------------------------------------------------------------------
 // open device
-BOOL OpenWaveDevice(UINT uDeviceID,WAVEFORMATEX waveFmt,DWORD dwWaveBlockByte)
+BOOL OpenWaveDevice(UINT uDeviceID,WAVFMT waveFmt,DWORD dwWaveBlockByte)
 {
 	int i;
 	
@@ -111,9 +114,12 @@ BOOL OpenWaveDevice(UINT uDeviceID,WAVEFORMATEX waveFmt,DWORD dwWaveBlockByte)
 
 	if(!SetWaveHdr(WaveHdr,WAVEHDR_BUFNUM,dwWaveBlockByte)) return false;
 	
+	WAVEFORMATEX waveFmtEx;
+	memcpy(&waveFmtEx,&waveFmt,sizeof(WAVFMT));
+	waveFmtEx.cbSize = 0;
 	PlayStatus = ID_PREPARE;
 	if(waveOutOpen(&HWaveOut, uDeviceID,
-		&waveFmt, (DWORD)MyWaveOutProc, 0, CALLBACK_FUNCTION ) != MMSYSERR_NOERROR ){
+		&waveFmtEx, (DWORD)MyWaveOutProc, 0, CALLBACK_FUNCTION ) != MMSYSERR_NOERROR ){
 		
 		fprintf(stderr, "Could not open wave device(ID = %d)\n",uDeviceID);
 		

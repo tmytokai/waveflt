@@ -664,6 +664,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\wave.h"
+				>
+			</File>
+			<File
 				RelativePath="src\waveflt.h"
 				>
 			</File>

@@ -10,6 +10,8 @@
 #endif
 #include <math.h>
 
+#include "waveformat.h"
+
 //------------------------------------------------
 // fbank.c
 void ClearFltBank();
@@ -179,7 +181,7 @@ void ClearNGATE()
 
 //--------------------------------------------------------------------
 // prepare
-void prepareNGATE(WAVEFORMATEX waveFmt,
+void prepareNGATE(WAVFMT waveFmt,
 				  double dThreshold,  // dB
 				  double dRelease, // msec
 				  double dAttack, // msec
@@ -188,7 +190,7 @@ void prepareNGATE(WAVEFORMATEX waveFmt,
 {
 	DWORD i,i2;
 	
-	for(i=0;i<waveFmt.nChannels;i++)
+	for(i=0;i<waveFmt.channels;i++)
 	{
 		if(NG_dGain[i] == NULL) NG_dGain[i] = (double*)malloc(sizeof(double)*NG_BAND+1024);
 		if(NG_dThreshold[i] == NULL) NG_dThreshold[i] = (double*)malloc(sizeof(double)*NG_BAND+1024);

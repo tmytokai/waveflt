@@ -2,6 +2,10 @@
 //
 // note: I used here inline assembler of VC++.
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 #include <malloc.h>
 
 #include "filter.h"
