@@ -1,6 +1,8 @@
 #ifndef _WAVE_H
 #define _WAVE_H
 
+#include <stdio.h>
+
 #include "waveformat.h"
 
 
@@ -10,7 +12,7 @@ void SetWaveFormat(WAVFMT& format,
 				   const unsigned int rate, 
 				   const unsigned short bits );
 
-void WriteWaveHeader( HANDLE hdWriteFile, const WAVFMT& format, const LONGLONG n64WaveDataSize ,const BOOL bUseExtChunk );
+void WriteWaveHeader ( FILE* fp, const WAVFMT& format, const __int64 size, const bool extchunk );
 
 const bool IsWaveFormatValid( const WAVFMT& format,  char* errmsg );
 
@@ -20,14 +22,8 @@ const bool GetWaveFormat(const char* filename, // name or 'stdin'
 				   unsigned long long& offset, // offset to data chunk (byte)
 				   char* errmsg );
 
-LONGLONG SeekStdin(LPBYTE lpBuffer,
-			   DWORD dwBufSize,
-			   LONGLONG n64SeekPointer,
-			   LONGLONG n64CurFilePointer  // dwSeekPointer > dwCurFilePointer
-			   );
-
 void WaveLevel(double dLevel[2],  // output of left and right
-			   const BYTE* lpWaveData,  // input
+			   const unsigned char* lpWaveData,  // input
 			   const WAVFMT& format);
 
 const double GetMaxWaveLevel(const WAVFMT& format);

@@ -925,61 +925,6 @@ BOOL CloseWaveDevice(BOOL);
 
 
 
-//--------------------------------------------------
-// io.c
-
-#ifdef USEWIN32API
-BOOL OpenReadFile(HANDLE* hdReadFile,char* szReadFile,
-#else
-BOOL OpenReadFile(FILE** hdReadFile,char* szReadFile,
-#endif
-					BOOL bStdin // stdin 
-					);
-
-#ifdef USEWIN32API
-BOOL OpenWriteFile(HANDLE* hdWriteFile,char* szWriteFile,
-				   /* obsolete
-				   PROCESS_INFORMATION* pProInfo,
-				   */
-#else
-BOOL OpenWriteFile(FILE** hdWriteFile,char* szWriteFile,
-#endif
-					BOOL bStdout // stdou4
-/* obsolete
-					BOOL bCreatePipe, // create pipe
-					char* szPipeCmd, // command of pipe
-					DWORD dwPipeSize  // buffer size of pipe
-*/
-					);
-
-#ifdef USEWIN32API
-void ReadData(HANDLE,BYTE*,DWORD,DWORD*);
-#else
-void ReadData(FILE*,BYTE*,DWORD,DWORD*);
-#endif
-
-#ifdef USEWIN32API
-BOOL WriteData(HANDLE hdWriteFile,BYTE* lpBuffer,DWORD dwWriteByte,DWORD* lpdwByte
-/* obsolete
-			   ,BOOL bCreatePipe,
-			   PROCESS_INFORMATION hProcessInfo
-			   */
-			   );
-#else
-BOOL WriteData(FILE* hdWriteFile,BYTE* lpBuffer,DWORD dwWriteByte,DWORD* lpdwByte,
-/* obsolete
-			   BOOL bCreatePipe
-*/
-			   );
-#endif
-
-BOOL WriteTextData(HANDLE hdWriteFile,
-				   double* lpFilterBuf[2], // buffer
-				   DWORD dwPointsInBuf, // points of data in buffer
-				   WAVFMT waveFmt);
-
-
-
 // outfile.c
 void SetOutputFileName(LPSTR lpszBaseFile,  // base name
 						 LPSTR lpszOutputFile, // output file name

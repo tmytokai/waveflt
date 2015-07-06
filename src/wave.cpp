@@ -1,11 +1,7 @@
 // common wave functions
 
-#ifdef WIN32
-#include <windows.h>
-#define USEWIN32API  // use win32 APIs
-#endif
-
 #include <stdio.h>
+#include <string.h>
 #include <io.h> // _setmode
 #include <fcntl.h> // _O_BINARY
 #include <assert.h>
@@ -30,58 +26,49 @@ void SetWaveFormat(WAVFMT& format,
 }
 
 
-void WriteWaveHeader( HANDLE hdWriteFile, const WAVFMT& format, const LONGLONG n64WaveDataSize ,const BOOL bUseExtChunk )
+void WriteWaveHeader ( FILE* fp, const WAVFMT& format, const __int64 size, const bool extchunk )
 {	
-	DWORD dwFoo;
-	DWORD dwByte; 
-	LARGE_INTEGER LI; 
-	DWORD dwFileType;
-	DWORD dwHeadSize;
+	unsigned int tmp;
 
-	dwHeadSize = 44;
-	if( bUseExtChunk ) dwHeadSize += (8 + 8 + 4);
+	if( fp == NULL) return;
 
-	if(hdWriteFile == NULL) return;
+	unsigned int headsize = 44;
+	if( extchunk ) headsize += (8 + 8 + 4);
 
-	// get type of file
-	dwFileType = GetFileType(hdWriteFile);
-	
 	// move file pointer
-	if(dwFileType != FILE_TYPE_PIPE){
-		LI.QuadPart = 0;
-		SetFilePointer(hdWriteFile,LI.LowPart, &LI.HighPart,FILE_BEGIN);
-	}
+	__int64 pos64 = 0;
+	_fseeki64( fp , pos64, SEEK_SET);
 	
 	// RIFF (8)
-	WriteFile(hdWriteFile, "RIFF",4, &dwByte, NULL);
-	if(n64WaveDataSize >= 0xFFFFFFFF-dwHeadSize+8) dwFoo = 0xFFFFFFFF; // = 4G
-	else dwFoo = ((DWORD)n64WaveDataSize + dwHeadSize) - 8;
-	WriteFile(hdWriteFile, &dwFoo,sizeof(DWORD), &dwByte, NULL);
+	fwrite( "RIFF", 1, 4, fp );
+	if( size >= 0xFFFFFFFF-headsize+8) tmp = 0xFFFFFFFF; // = 4G
+	else tmp = ((unsigned int)size + headsize) - 8;
+	fwrite( &tmp, 1, sizeof(unsigned int), fp);
 
 	// WAVE (4)
-	WriteFile(hdWriteFile, "WAVE",4, &dwByte, NULL);
+	fwrite( "WAVE", 1, 4, fp );
 
 	// format chunk (24)
-	WriteFile(hdWriteFile, "fmt ",4, &dwByte, NULL);
-	dwFoo = 16;
-	WriteFile(hdWriteFile, &dwFoo,sizeof(DWORD), &dwByte, NULL);
-	WriteFile(hdWriteFile, &format, sizeof(WAVFMT), &dwByte, NULL);
+	fwrite( "fmt ",1 , 4, fp );
+	tmp = 16;
+	fwrite( &tmp, 1, sizeof(unsigned int), fp);
+	fwrite( &format, 1, sizeof(WAVFMT), fp );
 	
 	// waveflt chunk (extra chunk)
-	if(bUseExtChunk){
-			WriteFile(hdWriteFile, "wflt",4, &dwByte, NULL);
-			dwFoo = sizeof(LONGLONG) + sizeof(DWORD);
-			WriteFile(hdWriteFile, &dwFoo,sizeof(DWORD), &dwByte, NULL);
-			WriteFile(hdWriteFile, &n64WaveDataSize, sizeof(LONGLONG), &dwByte, NULL);
-			dwFoo = 0;
-			WriteFile(hdWriteFile, &dwFoo,sizeof(DWORD), &dwByte, NULL);
+	if(extchunk){
+			fwrite( "wflt",1, 4, fp );
+			tmp = sizeof(__int64) + sizeof(unsigned int);
+			fwrite( &tmp, 1, sizeof(unsigned int), fp);
+			fwrite( &size, 1,  sizeof(__int64), fp );
+			tmp = 0;
+			fwrite( &tmp, 1, sizeof(unsigned int), fp);
 	}
 	
 	// data chunk (8  + datasize)
-	WriteFile(hdWriteFile, "data",4, &dwByte, NULL);
-	if(n64WaveDataSize >= 0xFFFFFFFF-dwHeadSize+8) dwFoo = 0xFFFFFFFF-dwHeadSize+8; // = 4G
-	else dwFoo = (DWORD)n64WaveDataSize;
-	WriteFile(hdWriteFile, &dwFoo,sizeof(DWORD), &dwByte, NULL);
+	fwrite( "data", 1, 4, fp );
+	if( size >= 0xFFFFFFFF-headsize+8) tmp = 0xFFFFFFFF-headsize+8; // = 4G
+	else tmp = (unsigned int)size;
+	fwrite( &tmp, 1, sizeof(unsigned int), fp);
 }
 
 
@@ -265,47 +252,10 @@ const bool GetWaveFormat(const char* filename, // name or 'stdin'
 
 
 
-
-//-------------------------------------------------------------------
-// seek from stdin
-LONGLONG SeekStdin(LPBYTE lpBuffer,
-			   DWORD dwBufSize,
-			   LONGLONG n64SeekPointer,
-			   LONGLONG n64CurFilePointer  // n64SeekPointer > n64CurFilePointer
-			   )
-{
-	
-	DWORD dwByte,dwReadByte;
-	LONGLONG n64ReadSize,n64TotalByte;
-
-	if(n64SeekPointer <= n64CurFilePointer) return 0;
-
-	n64ReadSize = n64SeekPointer - n64CurFilePointer;
-	n64TotalByte = 0;
-
-	while(1){
-
-		if(n64ReadSize > n64TotalByte + dwBufSize) dwReadByte = dwBufSize;
-		else dwReadByte = (DWORD)(n64ReadSize - n64TotalByte);
-		if(dwReadByte == 0) break;
-
-#ifdef USEWIN32API // use win32 API 
-		ReadFile(GetStdHandle(STD_INPUT_HANDLE),lpBuffer,dwReadByte,&dwByte, NULL);
-#else  
-		dwByte = fread(lpBuffer,1,dwReadByte,stdin);
-#endif	
-		if(dwByte == 0) break;
-		n64TotalByte += dwByte;
-	}
-
-	return n64TotalByte;
-}
-
-
 //-------------------------------------------------------------------
 // change byte-data to double-data 
 void WaveLevel(double dLevel[2],  // output of left and right
-			   const BYTE* lpWaveData,  // input
+			   const unsigned char* lpWaveData,  // input
 			   const WAVFMT& format)
 { 	
 	long i;
@@ -327,7 +277,7 @@ void WaveLevel(double dLevel[2],  // output of left and right
 	else if(format.bits==24){	// 24 bit
 		for(i=0;i<format.channels;i++){
 			nData[i] = 0;
-			memcpy((LPBYTE)(nData+i)+1,lpWaveData+3*i,3);
+			memcpy((unsigned char*)(nData+i)+1,lpWaveData+3*i,3);
 			nData[i] /= 256;
 		}
 	}

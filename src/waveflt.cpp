@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "wave.h"
+#include "io.h"
 
 #include "filter.h"
 #include "buffer.h"
@@ -32,7 +33,7 @@ DWORD DwBufSize = 10; // buffer size
 BOOL BlHeadOffset = false; // specify header offset of input file 
 BOOL BlNoChkHdd = false; // no check space of HDD
 BOOL BlWaveHdrOut = true; // output wave header
-BOOL BlExtChunkOfHdr = true; // use extra wave header
+bool BlExtChunkOfHdr = true; // use extra wave header
 BOOL BlUseSSE2 = true; // use sse2
 
 LONGLONG N64OutOffset; // byte, offset of input file
@@ -2637,14 +2638,8 @@ BOOL FilterBody()
 	DWORD dwRemainByte; //byte, unused data size remained in buffer.
 
 	// hadle of files
-#ifdef USEWIN32API
-	HANDLE hdReadFile = NULL;
-	HANDLE hdWriteFile = NULL;
-	LARGE_INTEGER LI; // for SetFilePointer()
-#else
 	FILE* hdReadFile = NULL;
 	FILE* hdWriteFile = NULL;
-#endif
 
 	BOOL bChangeFile = false; // if true, change output file
 	double dNormalGain[2] = {0,0}; // gain for normalizer
@@ -2761,14 +2756,12 @@ BOOL FilterBody()
 	for(i=0;i<InputWaveFmt.channels;i++) lpFilterBuf[i] = (double*)malloc(sizeof(double)*dwFoo+1024); 
 
 	// open input file
-	if(!OpenReadFile(&hdReadFile,SzReadFile,BlStdin)){
+	if(!OpenReadFile(&hdReadFile,SzReadFile)){
 		goto L_ERR;
 	}
 	
 	// open output file
-	if(!OpenWriteFile(&hdWriteFile,SzWriteFile,
-		BlStdout
-		)){
+	if(!OpenWriteFile(&hdWriteFile,SzWriteFile)){
 		goto L_ERR;
 	}
 
@@ -2793,16 +2786,12 @@ BOOL FilterBody()
 			if(BlStdout)
 			{
 				n64Foo = N64RealTotalDataSize+DwAddSp[0]+DwAddSp[1];
-				WriteWaveHeader(hdWriteFile,WriteWaveFmt,n64Foo,BlExtChunkOfHdr);
+				WriteWaveHeader(hdWriteFile,WriteWaveFmt,n64Foo, BlExtChunkOfHdr);
 			}
 			else if(hdWriteFile != NULL){
 				// move file pointer of output file
-#ifdef USEWIN32API
-				LI.QuadPart = WAVEHDRSIZE(BlExtChunkOfHdr);
-				SetFilePointer(hdWriteFile,LI.LowPart, &LI.HighPart,FILE_BEGIN);
-#else
-				fseek(hdWriteFile,WAVEHDRSIZE(BlExtChunkOfHdr),SEEK_SET);
-#endif
+				__int64 pos64 = WAVEHDRSIZE(BlExtChunkOfHdr);
+				_fseeki64( hdWriteFile , pos64, SEEK_SET);
 			}
 			
 		}
@@ -2912,12 +2901,10 @@ BOOL FilterBody()
 			if(!BlStdin)  // hdd
 			{
 				if( dwBlockNo == 0 || N64OffsetBlk[dwBlockNo] != N64OffsetBlk[dwBlockNo-1] + N64DataSizeBlk[dwBlockNo-1] ){
-#ifdef USEWIN32API
-					LI.QuadPart = N64OffsetBlk[dwBlockNo];
-					SetFilePointer(hdReadFile,LI.LowPart, &LI.HighPart,FILE_BEGIN);
-#else
-					fseek(hdReadFile,N64OffsetBlk[dwBlockNo],SEEK_SET);
-#endif
+
+					__int64 pos64 = N64OffsetBlk[dwBlockNo];
+					_fseeki64( hdReadFile , pos64, SEEK_SET);
+
 					std::vector<Filter*>::iterator it = filters.begin();
 					for( ; it != filters.end(); ++it ){
 						(*it)->inputfile_seeked();
@@ -2991,7 +2978,7 @@ BOOL FilterBody()
 							
 							// fill buffer from input file
 							if(dwReadByte > dwRemainByte){
-								ReadData(hdReadFile,lpBuffer+dwRemainByte,dwReadByte-dwRemainByte,&dwSetSize);
+								dwSetSize = ReadData(hdReadFile,lpBuffer+dwRemainByte,dwReadByte-dwRemainByte);
 								n64PointerStdin += dwSetSize;
 								n64InputSize += dwSetSize;
 								
@@ -3002,7 +2989,7 @@ BOOL FilterBody()
 							dwRemainByte = 0;
 						}
 						else{ // read data from input file
-							ReadData(hdReadFile,lpBuffer,dwReadByte,&dwSetSize);
+							dwSetSize = ReadData(hdReadFile,lpBuffer,dwReadByte);
 							n64PointerStdin += dwSetSize;
 							n64InputSize += dwSetSize;
 						}
@@ -3089,20 +3076,13 @@ BOOL FilterBody()
 								// write to the output file
 								if(!BlWaveOut){
 									
-#ifdef USEWIN32API
-									if(!WriteData(hdWriteFile,lpWriteBuffer,dwRealPointsInBuf*WriteWaveFmt.block,&dwWriteByte
-										/* obsolete
-										,BlCreatePipe,hProcessInfo
-										*/
-										)){
+									dwWriteByte = WriteData(hdWriteFile, lpWriteBuffer, dwRealPointsInBuf*WriteWaveFmt.block );
+									if( dwWriteByte != dwRealPointsInBuf*WriteWaveFmt.block ){
 										// if fail, then write header and exit.
 										if(BlWaveHdrOut && !BlStdout) 
 											WriteWaveHeader(hdWriteFile,WriteWaveFmt,n64RealTotalOutSize+DwAddSp[0],BlExtChunkOfHdr);
 										goto L_ERR;
 									}
-#else
-									WriteData(hdWriteFile,lpWriteBuffer,dwRealPointsInBuf*WriteWaveFmt.block,&dwWriteByte,BlCreatePipe);
-#endif
 									
 									
 								}
@@ -3220,9 +3200,7 @@ BOOL FilterBody()
 			
 							
 							// open new output file
-							if(!OpenWriteFile(&hdWriteFile,SzWriteFile,
-								BlStdout
-								))
+							if(!OpenWriteFile(&hdWriteFile,SzWriteFile))
 							{
 								goto L_ERR;
 							}
@@ -3240,14 +3218,10 @@ BOOL FilterBody()
 									else if(hdWriteFile != NULL)
 									{
 										// move file pointer
-#ifdef USEWIN32API
-										LI.QuadPart = WAVEHDRSIZE(BlExtChunkOfHdr);
-										SetFilePointer(hdWriteFile,LI.LowPart, &LI.HighPart,FILE_BEGIN);
-#else
-										fseek(hdWriteFile,WAVEHDRSIZE(BlExtChunkOfHdr),SEEK_SET);
-#endif
+										__int64 pos64 = WAVEHDRSIZE(BlExtChunkOfHdr);
+										_fseeki64( hdWriteFile, pos64, SEEK_SET);
 									}
-									
+
 								}
 							}
 							
