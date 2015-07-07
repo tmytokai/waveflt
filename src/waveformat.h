@@ -1,7 +1,9 @@
-// standard WAVE format struct
+// WAVE format class
 
 #ifndef _WAVEFORMAT_H
 #define _WAVEFORMAT_H
+
+#include <string>
 
 #ifndef WAVE_FORMAT_PCM
 #define WAVE_FORMAT_PCM 0x0001
@@ -13,12 +15,54 @@
 
 typedef struct
 {
-    unsigned short  tag;      // type of format
+    unsigned short  tag;         // type of format
     unsigned short  channels;    // channels
     unsigned int    rate;        // sampling rate
     unsigned int    avgbyte;     // = rate * block
     unsigned short  block;       // = channels * bits / 8
     unsigned short  bits;        // number of bits
-} WAVFMT;
+    unsigned short  size;        // extra size
+} WAVEFORMAT_RAW;
+
+
+class WaveFormat
+{
+  private:
+
+    WAVEFORMAT_RAW raw;
+    unsigned long long datasize;  // data size (byte)
+    unsigned long long offset;    // offset to data chunk (byte)
+
+  public:
+
+    const unsigned short tag() const{ return raw.tag;}
+    const unsigned short channels() const{ return raw.channels;}
+    const unsigned int   rate() const{ return raw.rate;}
+    const unsigned int   avgbyte()const{ return raw.avgbyte;}
+    const unsigned short block() const{ return raw.block;}
+    const unsigned short bits() const{ return raw.bits; }
+    const unsigned long long get_datasize() const{ return datasize; }
+    const unsigned long long get_offset() const{ return offset;}
+	const WAVEFORMAT_RAW& get_raw() const{ return raw;  }
+
+	void clear();
+
+    void set( const unsigned short _tag,	
+              const unsigned short _channels, 
+              const unsigned int _rate, 
+              const unsigned short _bits );
+
+    void read( FILE *fp );
+    void read( const std::string& filename );
+	void write( FILE* fp, const unsigned long long datasize, const bool extchunk );
+
+    const double GetMaxWaveLevel();
+    void is_valid();
+
+  private:
+
+    const int GetChunkID( FILE* fp,  char* chunk,  unsigned int& chunksize );
+
+};
 
 #endif

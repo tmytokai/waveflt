@@ -11,7 +11,7 @@
 void FADEINOUT(double* lpFilterBuf, // filter buffer
 				   DWORD dwPointsInBuf, // points of data 
 
-				   WAVFMT waveFmt,
+				   WaveFormat waveFmt,
 				   DWORD dwFadeIn, // byte, size of fade in
 				   DWORD dwFadeOut, // byte, size of fade out
 
@@ -40,7 +40,7 @@ void FADEINOUT(double* lpFilterBuf, // filter buffer
 			lpFilterBuf[i] = dGain * lpFilterBuf[i];
 		}		
 	
-		n64Pos+=waveFmt.block;
+		n64Pos+=waveFmt.block();
 	}
 	
 	return;

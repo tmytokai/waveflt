@@ -59,7 +59,7 @@ const unsigned int WriteData( FILE* fp, const unsigned char* buffer, const unsig
 }
 
 
-const bool WriteTextData( FILE* fp, double* buffer[2], const unsigned int size, const WAVFMT format)
+const bool WriteTextData( FILE* fp, double* buffer[2], const unsigned int size, const WaveFormat format)
 {
 	if( fp == NULL) return true;
 
@@ -68,7 +68,7 @@ const bool WriteTextData( FILE* fp, double* buffer[2], const unsigned int size, 
 		char out[CHR_BUF];
 		int level = (int)buffer[0][pos];
 		_snprintf(out, CHR_BUF,"%12d",level);
-		if(format.channels == 2){
+		if(format.channels() == 2){
 			level = (int)buffer[1][pos];
 			_snprintf(out, CHR_BUF,"%s %12d",out,level);
 		}

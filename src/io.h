@@ -8,7 +8,7 @@ const __int64 SeekStdin( unsigned char* buffer,
 			   const __int64 pos_current  // pos_seek > pos_current
 			   );
 const unsigned int WriteData( FILE* fp, const unsigned char* buffer, const unsigned int size );
-const bool WriteTextData( FILE* fp,  double* buffer[2], const unsigned int size, const WAVFMT format);
+const bool WriteTextData( FILE* fp,  double* buffer[2], const unsigned int size, const WaveFormat format);
 const bool OpenReadFile( FILE** fp, const char* filename );
 const bool OpenWriteFile( FILE** fp, const char* filename );
 

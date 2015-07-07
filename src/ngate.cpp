@@ -181,7 +181,7 @@ void ClearNGATE()
 
 //--------------------------------------------------------------------
 // prepare
-void prepareNGATE(WAVFMT waveFmt,
+void prepareNGATE(WaveFormat waveFmt,
 				  double dThreshold,  // dB
 				  double dRelease, // msec
 				  double dAttack, // msec
@@ -190,7 +190,7 @@ void prepareNGATE(WAVFMT waveFmt,
 {
 	DWORD i,i2;
 	
-	for(i=0;i<waveFmt.channels;i++)
+	for(i=0;i<waveFmt.channels();i++)
 	{
 		if(NG_dGain[i] == NULL) NG_dGain[i] = (double*)malloc(sizeof(double)*NG_BAND+1024);
 		if(NG_dThreshold[i] == NULL) NG_dThreshold[i] = (double*)malloc(sizeof(double)*NG_BAND+1024);

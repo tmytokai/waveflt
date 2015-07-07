@@ -310,90 +310,6 @@ typedef struct
 
 
 
-// filter.c
-#if 0
-void  CopyBufferBtoD(BYTE* lpBuffer,  // input, buffer (BYTE*)
-						DWORD dwByte, // size of lpBuffer
-
-						double* lpFilterBuf[2], // output, buffer of wave data (double*) (L-R)
-						LPDWORD lpdwPointsInBuf, // points of data in lpFilterBuf
-						WAVFMT waveFmt
-						);
-
-void CopyBufferDtoB(BYTE* lpBuffer,  // output, buffer(BYTE*)
-						   
-						   double* lpFilterBuf[2], // input, buffer(double*)
-						   DWORD dwPointsInBuf, // points in lpFilterBuf
-						   WAVFMT waveFmt,
-   						   BOOL bRound,
-						   
-						   DWORD* lpdwSaturate  // number of saturation
-						   );
-
-void ClearAllFilters();
-void UnprepareAllFilters();
-
-BOOL InitFilters(LPFILTER_DATA lpFDat,
-				 DWORD dwFilterPoints, // points of data in filter buffer
-				 WAVFMT inWaveFmt,
-				 WAVFMT outWaveFmt,
-				 char* lpszErr);
-
-
-void SetDefaultOption(LPFILTER_DATA lpFDat);
-
-void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
-
-				 double* lpFilterBuf[2],  // (input / output) buffer of wave data
-				 LPDWORD lpdwPointsInBuf, // (input / output) data points in buffer
-				 LPDWORD lpdwRealPointsInBuf, // (output) output data points
-				 // note: if inWaveFmt.nSamplesPerSec = outWaveFmt.nSamplesPerSec,
-				 // then *lpdwPointsInBuf = *lpdwRealPointsInBuf.
-
-				 BOOL* lpbChangeFile, // if return value of *lpbChangeFile is true, change output file
- /* obsolete
-				 BOOL bADPtrainMode, // if true , now ADP is in the training mode  
-				 */
-				 DWORD dwCurrentNormalMode, // current mode of normalizer
-				 double dNormalGain[2], // L-R, gain for normalizer
-				 DWORD dwCurFileNo,  // current file number
-
-				 /* obsolete
-				 HWND hWndLockon, // hwnd of 'lockon'
-				 */
-
-				 LONGLONG n64OutSize, // byte, total output size
-				 LONGLONG n64DataSize, // byte, total data size of wave
-				 WAVFMT inWaveFmt, // format of input
-				 WAVFMT outWaveFmt // format of output
-				 );
-#endif
-
-
-
-/* obsolete
-//--------------------------------------------------
-// adp.c
-void PrepareADP(DWORD dwADPleng,  // length
-				double dDB,   // loss
-				double dbLevel, 
-				DWORD dwBufferSize,
-				DWORD dwChn
-				);
-
-void unprepareADP();
-void ClearADPCoef();
-void ADPLMS(double* lpFilterBuf, // buffer
-			DWORD dwPointsInBuf, // points
-			DWORD dwChn
-			);
-
-
-void ClearADPBuf();
-DWORD GetADPCoef(double* coef[2]);
-
-*/
-
 
 //----------------------------
 // conv.c
@@ -546,24 +462,6 @@ DWORD GetIIREQimpulse(double* imp,DWORD N,DWORD dwChn);
 
 
 
-/* obsolete
-//--------------------------------------------------
-// wavesh.c
-DWORD SHRINK_MDCT(double* lpFilterBuf, // filter buffer
-			DWORD dwPointsInBuf, // points
-			DWORD dwCh			// channel
-			);
-
-void unprepareShrink();
-void ClearShrink();
-
-void prepareShrink(DWORD dwShLeng,
-				   WAVFMT waveFmt,
-				   double dThreshold  // dB
-				   );
-*/
-
-
 //--------------------------------------------------
 // rsmp.c
 void prepareRsmp(DWORD dwInputFreq, DWORD dwOutputFreq, 
@@ -587,7 +485,7 @@ DWORD GetRSMPCoef(double** h,DWORD dwInputFreq,LPDWORD lpdwUp);
 // mixfile.c
 void ClearMixFile();
 void CloseMixFile();
-void MixFile(WAVFMT waveOrgFmt, 
+void MixFile(WaveFormat waveOrgFmt, 
 			 double* lpFilterBuf[2],
 			 DWORD dwPoints, // points in buffer
 			 LONGLONG n64OutSize, // output size of data
@@ -596,7 +494,7 @@ void MixFile(WAVFMT waveOrgFmt,
 			 );
 
 BOOL OpenMixFile(char* szMixFile,
-				 WAVFMT waveOrgFmt, 
+				 WaveFormat waveOrgFmt, 
 				 DWORD dwBufSize, // points of data in buffer
 				 double dMixStartTime, // start time in mixing file
 				 char* lpszErr
@@ -623,7 +521,7 @@ void unprepareCOMP();
 
 //--------------------------------------------------
 // split.c
-VOID SPLIT(WAVFMT waveFmt, 
+VOID SPLIT(WaveFormat waveFmt, 
 		   DWORD* lpdwPointsInBuf, // points in buffer
 		   LONGLONG n64TotalOutSize, // total output size
 		   DWORD dwNoSndCurNo,
@@ -664,7 +562,7 @@ VOID DCOFFSET(double* lpFilterBuf, // buffer
 
 VOID AUTODCOFFSET(double* lpFilterBuf[2], // buffer (L-R)
 			  DWORD dwPointsInBuf, // points
-			  WAVFMT waveFmt,  // format
+			  WaveFormat waveFmt,  // format
 			  DWORD dwTrainSec // sec, training time
 			  );
 
@@ -709,7 +607,7 @@ void IMDCT_fast(double* x,	// N
 void FADEINOUT(double* lpFilterBuf, // filter buffer
 				   DWORD dwPointsInBuf, // points of data in buffer
 
-				   WAVFMT waveFmt,
+				   WaveFormat waveFmt,
 				   DWORD dwFadeIn, // points of fade in
 				   DWORD dwFadeOut, // points of fase out
 
@@ -794,7 +692,7 @@ void NOISEGATE_FREQ(double* lpFilterBuf[2], // filter buffer
 			);
 void unprepareNGATE();
 void ClearNGATE();
-void prepareNGATE(WAVFMT waveFmt,
+void prepareNGATE(WaveFormat waveFmt,
 				  double dThreshold,  // dB
 				  double dRelease, // msec
 				  double dAttack, // msec
@@ -831,27 +729,17 @@ void DeleteInputFile();
 int GetArgv(char*,char[MAX_ARGC][CHR_BUF],int);
 void ShowAbout();
 BOOL GetCmdLineFromFile(char*,char*);
-void ShowStatus(WAVFMT waveFmt,  
+void ShowStatus(WaveFormat waveFmt,  
 				char* szWriteFile, // name of output file
-/* obsolete
-				BOOL bCreatePipe, // pipe mode
-*/
 				LONGLONG u64DataSize,  // output size 
 				LONGLONG u64TotalSize, // total size of output file
 				double dPeak,	   // peak
-/* obsolete
-				BOOL bADPtrain, // ADP training mode
-*/
 				BOOL bNormalGain, // now, normalizer is searching peak
 				BOOL bStdin // stdin mode
 				);
 
 
 #ifdef USEWIN32API
-/* obsolete
-BOOL ExecCommand(LPSTR lpszCommandLine,PROCESS_INFORMATION*,BOOL,BOOL);
-BOOL ExecPipeCommand(LPSTR,PROCESS_INFORMATION*,HANDLE*);
-*/
 BOOL GetFileMappingData(int,char*[ ],LPSTR,LPSTR);
 VOID GetFreeHddSpace64(ULONGLONG*,LPSTR);
 #endif
@@ -869,7 +757,7 @@ VOID SetCommandStrings(
 					   LPSTR lpszUserDef2,
 					   LPSTR lpszUserDef3,
 					   SYSTEMTIME sysTime, // current time
-					   WAVFMT waveFmt,
+					   WaveFormat waveFmt,
 					   LONGLONG n64DataSize // data size
 #ifndef DEF_WAVEFLT
 					   ,HWND hWnd,  // hwnd of lockon
@@ -896,7 +784,7 @@ BOOL ExchangeTime(LPSTR lpTime,double* lpSec);
 
 BOOL ShowPeakWave(char* lpszFile, // name of input file
 			 DWORD dwBufSize,
-			 WAVFMT waveFmt,
+			 WaveFormat waveFmt,
 			 LONGLONG n64Offset,  // offset 
 			 LONGLONG n64DataSize);
 
@@ -905,20 +793,20 @@ void GetGainForNormalizer(double dNormalGain[2],
 							DWORD dwCurrentNormalMode,
 							double dNormalLevel,
 							LONGLONG n64TotalOutSize,
-							WAVFMT waveFmt);
+							WaveFormat waveFmt);
 /* obsolete
 void OutputADPFilterChr(char* lpszSaveDir,DWORD dwChn,DWORD dwSampleRate);
 */
 
-void OutputFIRFilterChr(char* lpszSaveDir,WAVFMT waveFmt,DWORD dwFIRnum);
-void OutputIIRFilterChr(char* lpszSaveDir,WAVFMT waveFmt,DWORD dwFIRnum);
+void OutputFIRFilterChr(char* lpszSaveDir,WaveFormat waveFmt,DWORD dwFIRnum);
+void OutputIIRFilterChr(char* lpszSaveDir,WaveFormat waveFmt,DWORD dwFIRnum);
 void printIIRcoef(DWORD dwIirNum);
-void OutputRsmpChr(char* lpszSaveDir,WAVFMT waveFmt);
+void OutputRsmpChr(char* lpszSaveDir,WaveFormat waveFmt);
 
 //--------------------------------------------------
 // playwave.c
 #ifdef USEWIN32API
-BOOL OpenWaveDevice(UINT,WAVFMT,DWORD);
+BOOL OpenWaveDevice(UINT,WaveFormat,DWORD);
 BOOL PlayWave(BYTE*,DWORD);
 BOOL CloseWaveDevice(BOOL);
 #endif

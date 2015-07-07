@@ -104,7 +104,7 @@ VOID CALLBACK MyWaveOutProc(HWAVEOUT hWaveOut,UINT msg,DWORD inst,DWORD dwP1,DWO
 
 //-------------------------------------------------------------------
 // open device
-BOOL OpenWaveDevice(UINT uDeviceID,WAVFMT waveFmt,DWORD dwWaveBlockByte)
+BOOL OpenWaveDevice(UINT uDeviceID,WaveFormat waveFmt,DWORD dwWaveBlockByte)
 {
 	int i;
 	
@@ -115,7 +115,7 @@ BOOL OpenWaveDevice(UINT uDeviceID,WAVFMT waveFmt,DWORD dwWaveBlockByte)
 	if(!SetWaveHdr(WaveHdr,WAVEHDR_BUFNUM,dwWaveBlockByte)) return false;
 	
 	WAVEFORMATEX waveFmtEx;
-	memcpy(&waveFmtEx,&waveFmt,sizeof(WAVFMT));
+	memcpy(&waveFmtEx,&waveFmt.get_raw(),sizeof(WAVEFORMATEX));
 	waveFmtEx.cbSize = 0;
 	PlayStatus = ID_PREPARE;
 	if(waveOutOpen(&HWaveOut, uDeviceID,

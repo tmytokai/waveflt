@@ -2,14 +2,14 @@
 
 #include "dcoffset.h"
 
-DcOffset::DcOffset( const WAVFMT& _input_format )
+DcOffset::DcOffset( const WaveFormat& _input_format )
     : Filter( _input_format )
 {
-    offset.resize( output_format.channels );
-    for( int i=0; i < output_format.channels; ++i) offset[i] = 0;
+    offset.resize( output_format.channels() );
+    for( int i=0; i < output_format.channels(); ++i) offset[i] = 0;
 }
 
-DcOffset::DcOffset( const WAVFMT& _input_format, const std::vector<double>& _offset )
+DcOffset::DcOffset( const WaveFormat& _input_format, const std::vector<double>& _offset )
     : Filter( _input_format ), offset( _offset )
 {}
 
@@ -35,9 +35,9 @@ const double DcOffset::get_offset( const int channel ) const
 void DcOffset::show_config() const
 {
 	fprintf(stderr,"DC offset: " );
-	for( int i=0; i < output_format.channels; ++i){
+	for( int i=0; i < output_format.channels(); ++i){
 		fprintf(stderr,"ch%d = %lf ", i, offset[i] );
-		if( i < output_format.channels-1 ) fprintf(stderr,", " );
+		if( i < output_format.channels()-1 ) fprintf(stderr,", " );
 	}
 	fprintf(stderr,"\n" );
 }
@@ -57,7 +57,7 @@ void DcOffset::process( Buffer& buffer )
 	check_input_format( buffer.format );
 
     if( ! buffer.points ) return;
-    for( int i=0; i < output_format.channels; ++i){
+    for( int i=0; i < output_format.channels(); ++i){
 		for( unsigned int i2=0; i2 < buffer.points; ++i2 ) buffer.buffer[i][i2] += offset[i];
     }
 
@@ -116,7 +116,7 @@ VOID DCOFFSET(double* lpFilterBuf, // buffer
 // AUTO DC adjustment 
 VOID AUTODCOFFSET(double* lpFilterBuf[2], // buffer (L-R)
 			  DWORD dwPointsInBuf, // points
-			  WAVFMT waveFmt,  // format
+			  WaveFormat waveFmt,  // format
 			  DWORD dwTrainSec // sec, training time
 			  ){
 
@@ -124,12 +124,12 @@ VOID AUTODCOFFSET(double* lpFilterBuf[2], // buffer (L-R)
 	double dFoo;
 
 	if(dwPointsInBuf 
-		&& DbDCoffTotal < (double)waveFmt.rate * 60 * dwTrainSec){ 
+		&& DbDCoffTotal < (double)waveFmt.rate() * 60 * dwTrainSec){ 
 		
 		// initialize
 		if(BlDCoffFirstBuffer){
 			
-			for(i2=0;i2<waveFmt.channels;i2++){
+			for(i2=0;i2<waveFmt.channels();i2++){
 				DbAutoOffset[i2] = 0;
 				for(i=0;i<dwPointsInBuf;i++) DbAutoOffset[i2] += lpFilterBuf[i2][i];
 				DbAutoOffset[i2] /= dwPointsInBuf;
@@ -139,7 +139,7 @@ VOID AUTODCOFFSET(double* lpFilterBuf[2], // buffer (L-R)
 		}
 		else // training
 		{ 
-			for(i2=0;i2<waveFmt.channels;i2++){
+			for(i2=0;i2<waveFmt.channels();i2++){
 				for(i=0;i<dwPointsInBuf;i++) DbAutoOffset[i2] += lpFilterBuf[i2][i];
 			}
 		}
@@ -150,7 +150,7 @@ VOID AUTODCOFFSET(double* lpFilterBuf[2], // buffer (L-R)
 	
 	// adjust offset
 	if(DbDCoffTotal > 0){
-		for(i2=0;i2<waveFmt.channels;i2++){
+		for(i2=0;i2<waveFmt.channels();i2++){
 			dFoo = DbAutoOffset[i2]/DbDCoffTotal;
 			for(i=0;i<dwPointsInBuf;i++) lpFilterBuf[i2][i] -= dFoo;
 		}

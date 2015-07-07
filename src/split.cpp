@@ -230,7 +230,7 @@ VOID NOSOUND(double* lpFilterBuf[2], // buffer
 
 //-----------------------------------------------
 // split file at specified size
-VOID SPLIT(WAVFMT waveFmt, 
+VOID SPLIT(WaveFormat waveFmt, 
 		   DWORD* lpdwPointsInBuf, // points in buffer
 		   LONGLONG n64TotalOutSize, // total output size
 		   DWORD DwCurSplitNo,
@@ -245,12 +245,12 @@ VOID SPLIT(WAVFMT waveFmt,
 	DWORD dwFoo;
 	
 	// get current output size
-	n64FileSize = n64TotalOutSize +(*lpdwPointsInBuf)*waveFmt.block; 
+	n64FileSize = n64TotalOutSize +(*lpdwPointsInBuf)*waveFmt.block(); 
 
 	if(n64FileSize >= *lpn64SplitByte){  
 
 		// decrease points of buffer
-		*lpdwPointsInBuf = (DWORD)((*lpn64SplitByte-n64TotalOutSize)/waveFmt.block);
+		*lpdwPointsInBuf = (DWORD)((*lpn64SplitByte-n64TotalOutSize)/waveFmt.block());
 		*bChangeFile = true;
 		
 		dwFoo = DwCurSplitNo+1;
@@ -260,7 +260,7 @@ VOID SPLIT(WAVFMT waveFmt,
 			
 			// -split2,3
 			if(lpdSplitTime[dwFoo])
-				*lpn64SplitByte = (LONGLONG)((double)waveFmt.avgbyte*lpdSplitTime[dwFoo]);
+				*lpn64SplitByte = (LONGLONG)((double)waveFmt.avgbyte()*lpdSplitTime[dwFoo]);
 			
 			// -splitbm
 			if(lpn64SplitByteMalti[dwFoo]) *lpn64SplitByte = lpn64SplitByteMalti[dwFoo];

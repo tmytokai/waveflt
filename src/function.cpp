@@ -64,7 +64,7 @@ void AddSpace(FILE* hdWriteFile,DWORD dwSize)
 
 //----------------------------
 // show current status
-void ShowStatus(WAVFMT waveFmt,  
+void ShowStatus(WaveFormat waveFmt,  
 				char* szWriteFile, // name of output file
 /* obsolete
 				BOOL bCreatePipe, // pipe mode
@@ -87,7 +87,7 @@ void ShowStatus(WAVFMT waveFmt,
 //	WIN32_FIND_DATA findData;
 #endif
 
-	dTime = (double)u64DataSize/waveFmt.avgbyte;
+	dTime = (double)u64DataSize/waveFmt.avgbyte();
 	
 	/* obsolete
 	if(bADPtrain) //ADP training mode
@@ -466,7 +466,7 @@ VOID SetCommandStrings(
 					   LPSTR lpszUserDef2,
 					   LPSTR lpszUserDef3,
 					   SYSTEMTIME sysTime, // current time
-					   WAVFMT waveFmt,
+					   WaveFormat waveFmt,
 					   LONGLONG n64DataSize // data size
 #ifndef DEF_WAVEFLT
 					   ,HWND hWnd,  // hwnd of lockon
@@ -993,7 +993,7 @@ void GetPeakFromFile(
 #else
 				FILE* hdFile,
 #endif
-				WAVFMT waveFmt,
+				WaveFormat waveFmt,
 				LONGLONG n64Offset, 
 				LONGLONG n64DataSize,
 
@@ -1026,16 +1026,16 @@ void GetPeakFromFile(
 	fseek(hdFile,n64Offset,SEEK_SET);
 #endif
 
-	for(i=0;i<waveFmt.channels;i++){dPeak[i] = dAvg[i] = dRms[i] = 0;}
-	dMaxWaveLevel = GetMaxWaveLevel(waveFmt);
+	for(i=0;i<waveFmt.channels();i++){dPeak[i] = dAvg[i] = dRms[i] = 0;}
+	dMaxWaveLevel = waveFmt.GetMaxWaveLevel();
 	n64SearchedByte = 0;
 	while(n64SearchedByte < n64DataSize){
 		
 		if(n64DataSize > n64SearchedByte + dwBufSize) dwReadByte = dwBufSize;
 		else dwReadByte = (DWORD)(n64DataSize - n64SearchedByte);
 		
-		if(waveFmt.bits == 24) 
-			dwReadByte =  dwReadByte / (waveFmt.channels * (waveFmt.bits/8)) * waveFmt.block;
+		if(waveFmt.bits() == 24) 
+			dwReadByte =  dwReadByte / (waveFmt.channels() * (waveFmt.bits()/8)) * waveFmt.block();
 
 #ifdef USEWIN32API
 		ReadFile(hdFile,lpBuffer,dwReadByte,&dwByte, NULL);
@@ -1046,11 +1046,11 @@ void GetPeakFromFile(
 
 		if(dwByte == 0) break;
 		
-		for(i = 0; i < dwByte;  i += waveFmt.block)
+		for(i = 0; i < dwByte;  i += waveFmt.block())
 		{
 			WaveLevel(dLevel,lpBuffer+i,waveFmt);
 			
-			for(i2=0;i2<waveFmt.channels;i2++){
+			for(i2=0;i2<waveFmt.channels();i2++){
 
 				// normalize (-1 -> 1)
 				dLevel[i2] /= dMaxWaveLevel; 
@@ -1071,13 +1071,13 @@ void GetPeakFromFile(
 	}
 	
 	// result
-	for(i=0;i<waveFmt.channels;i++){
-		dAvg[i] /= (double)(n64SearchedByte/waveFmt.block);
-		dRms[i] /= (double)(n64SearchedByte/waveFmt.block);
+	for(i=0;i<waveFmt.channels();i++){
+		dAvg[i] /= (double)(n64SearchedByte/waveFmt.block());
+		dRms[i] /= (double)(n64SearchedByte/waveFmt.block());
 		dRms[i] = sqrt(dRms[i]);
 	}
 
-	for(i=0;i<waveFmt.channels;i++){
+	for(i=0;i<waveFmt.channels();i++){
 		lpdAvg[i] = dAvg[i];
 		lpdRms[i] = dRms[i];
 		lpdPeak[i] = dPeak[i];
@@ -1092,7 +1092,7 @@ void GetPeakFromFile(
 // show peak,avg,RMS of file
 BOOL ShowPeakWave(char* lpszFile, // name of input file
 			 DWORD dwBufSize,
-			 WAVFMT waveFmt, // format of file
+			 WaveFormat waveFmt, // format of file
 			 LONGLONG n64Offset,  // offset 
 			 LONGLONG n64DataSize) // size of data
 {
@@ -1179,7 +1179,7 @@ void GetGainForNormalizer(double dNormalGain[2],
 							DWORD dwCurrentNormalMode,
 							double dNormalLevel,
 							LONGLONG n64TotalOutSize,
-							WAVFMT waveFmt){
+							WaveFormat waveFmt){
 	
 	double dMaxPeak[2],dMax;
 	double dFoo[2];
@@ -1192,15 +1192,15 @@ void GetGainForNormalizer(double dNormalGain[2],
 	
 	if(dwCurrentNormalMode == NORMAL_AVG){
 		GET_AVG(dFoo);
-		dFoo[0] /= (n64TotalOutSize/waveFmt.block);
-		dFoo[1] /= (n64TotalOutSize/waveFmt.block);
+		dFoo[0] /= (n64TotalOutSize/waveFmt.block());
+		dFoo[1] /= (n64TotalOutSize/waveFmt.block());
 		fprintf(stderr,"average: L = %6.3lf dB, R = %6.3lf dB\n",
 			20*log10(dFoo[0]),20*log10(dFoo[1]));
 	}
 	else if(dwCurrentNormalMode == NORMAL_RMS){
 		GET_RMS(dFoo);
-		dFoo[0] /= (n64TotalOutSize/waveFmt.block);
-		dFoo[1] /= (n64TotalOutSize/waveFmt.block);
+		dFoo[0] /= (n64TotalOutSize/waveFmt.block());
+		dFoo[1] /= (n64TotalOutSize/waveFmt.block());
 		dFoo[0] = sqrt(dFoo[0]);
 		dFoo[1] = sqrt(dFoo[1]);
 		fprintf(stderr,"RMS: L = %6.3lf dB, R = %6.3lf dB\n",
@@ -1320,7 +1320,7 @@ void OutputADPFilterChr(char* lpszSaveDir,DWORD dwChn,DWORD dwSampleRate)
 
 //---------------------------------
 //  write out characteristics of FIR filter to file
-void OutputFIRFilterChr(char* lpszSaveDir,WAVFMT waveFmt,DWORD dwFIRnum)
+void OutputFIRFilterChr(char* lpszSaveDir,WaveFormat waveFmt,DWORD dwFIRnum)
 {
 	char szImp[MAX_PATH],szChr[MAX_PATH]; 
 	double *coef;
@@ -1333,7 +1333,7 @@ void OutputFIRFilterChr(char* lpszSaveDir,WAVFMT waveFmt,DWORD dwFIRnum)
 
 	fprintf(stderr,"\n");
 	fprintf(stderr,"Write characteristics of FIR filter to:\n");
-	WriteFilterChr(szImp,szChr,coef,dwFIRleng,waveFmt.rate,waveFmt.rate/2);
+	WriteFilterChr(szImp,szChr,coef,dwFIRleng,waveFmt.rate(),waveFmt.rate()/2);
 
 }
 
@@ -1341,7 +1341,7 @@ void OutputFIRFilterChr(char* lpszSaveDir,WAVFMT waveFmt,DWORD dwFIRnum)
 
 //---------------------------------
 //  write out characteristics of IIR filter to file
-void OutputIIRFilterChr(char* lpszSaveDir,WAVFMT waveFmt,DWORD dwIirNum){
+void OutputIIRFilterChr(char* lpszSaveDir,WaveFormat waveFmt,DWORD dwIirNum){
 	
 	double* impulse;
 	DWORD dwLength;
@@ -1359,7 +1359,7 @@ void OutputIIRFilterChr(char* lpszSaveDir,WAVFMT waveFmt,DWORD dwIirNum){
 
 	fprintf(stderr,"\n");
 	fprintf(stderr,"Write characteristics of IIR filter to:\n");
-	WriteFilterChr(szImp,szChr,impulse,dwLength,waveFmt.rate,waveFmt.rate/2);
+	WriteFilterChr(szImp,szChr,impulse,dwLength,waveFmt.rate(),waveFmt.rate()/2);
 
 	free(impulse);
 }
@@ -1393,7 +1393,7 @@ void printIIRcoef(DWORD dwIirNum){
 
 //---------------------------------
 //  write out characteristics of FIR filter of re-sampling to file
-void OutputRsmpChr(char* lpszSaveDir,WAVFMT waveFmt)
+void OutputRsmpChr(char* lpszSaveDir,WaveFormat waveFmt)
 {
 	DWORD dwFIRleng,dwUp;
 	char szChr[MAX_PATH]; 
@@ -1401,11 +1401,11 @@ void OutputRsmpChr(char* lpszSaveDir,WAVFMT waveFmt)
 
 	wsprintf(szChr,"%s\\rsmp_chr.txt",lpszSaveDir);
 	
-	dwFIRleng = GetRSMPCoef(&h,waveFmt.rate,&dwUp);
+	dwFIRleng = GetRSMPCoef(&h,waveFmt.rate(),&dwUp);
 	
 	fprintf(stderr,"\n");
 	fprintf(stderr,"Write characteristics of re-sampling to:\n");
-	WriteFilterChr(NULL,szChr,h,dwFIRleng,waveFmt.rate*dwUp,waveFmt.rate/2);
+	WriteFilterChr(NULL,szChr,h,dwFIRleng,waveFmt.rate()*dwUp,waveFmt.rate()/2);
 
 	free(h);
 	

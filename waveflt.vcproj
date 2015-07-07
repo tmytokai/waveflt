@@ -406,6 +406,10 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\src\waveformat.cpp"
+				>
+			</File>
 			<Filter
 				Name="Filter"
 				>
@@ -656,6 +660,10 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
+				RelativePath=".\src\buffer.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\config.h"
 				>
 			</File>
@@ -682,10 +690,6 @@
 			<Filter
 				Name="Filter"
 				>
-				<File
-					RelativePath=".\src\buffer.h"
-					>
-				</File>
 				<File
 					RelativePath=".\src\dcoffset.h"
 					>

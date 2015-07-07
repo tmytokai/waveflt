@@ -11,10 +11,10 @@ class Buffer
 public:
 	std::vector<double*> buffer;
     unsigned int points;
-    WAVFMT format;
+    WaveFormat format;
 
-	Buffer( const WAVFMT& _format):format(_format){
-		buffer.resize( format.channels );
+	Buffer( const WaveFormat& _format):format(_format){
+		buffer.resize( format.channels() );
 	}
 };
 

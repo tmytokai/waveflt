@@ -12,8 +12,8 @@ private:
     std::vector<double> offset;
 
 public:
-    DcOffset( const WAVFMT& _input_format );
-    DcOffset( const WAVFMT& _input_format, const std::vector<double>& _offset );
+    DcOffset( const WaveFormat& _input_format );
+    DcOffset( const WaveFormat& _input_format, const std::vector<double>& _offset );
 	virtual ~DcOffset();
 
     void set_offset( const int channel, const double value );
