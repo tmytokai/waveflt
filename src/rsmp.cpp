@@ -173,7 +173,7 @@ void RSAMP( double* lpFilterBuf, // filter buffer
 		   DWORD dwPointsInBuf,
 			DWORD dwCh,
 
-			LPDWORD lpdwAfterPoints
+			unsigned int* lpdwAfterPoints
 			)
 {
 	if( !dwPointsInBuf ) return;

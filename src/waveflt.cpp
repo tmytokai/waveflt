@@ -158,7 +158,7 @@ void CopyBufferBtoD(BYTE* lpBuffer,  // input, buffer (BYTE*)
 						DWORD dwByte, // size of lpBuffer
 
 						double* lpFilterBuf[2], // output, buffer of wave data (double*) (L-R)
-						LPDWORD lpdwPointsInBuf, // points of data in lpFilterBuf
+						unsigned int* lpdwPointsInBuf, // points of data in lpFilterBuf
 						WaveFormat format
 						)
 {
@@ -635,10 +635,8 @@ void ExitCtrlC(int nRet){
 void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 
 				 double* lpFilterBuf[2],  // (input / output) buffer of wave data
-				 LPDWORD lpdwPointsInBuf, // (input / output) data points in buffer
-				 LPDWORD lpdwRealPointsInBuf, // (output) output data points
-				 // note: if informat.rate = outformat.rate,
-				 // then *lpdwPointsInBuf = *lpdwRealPointsInBuf.
+				 unsigned int* lpdwPointsInBuf, // (input / output) data points in buffer
+				 unsigned int& points_before_resampling, 
 
 				 BOOL* lpbChangeFile, // if return value of *lpbChangeFile is true, change output file
 				 DWORD dwCurrentNormalMode, // current mode of normalizer
@@ -654,14 +652,6 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	DWORD dwPointsInBufBeforeSplit; // for RewindBufFIR()
 	BOOL bChangeFile = false;
 	static double dNoiseShape[MAX_CHN]; // buffer of noise shaper
-
-	// adjust DC offset 
-	/*
-	if(lpFDat->bOffset){
-		for(i=0;i<informat.channels;i++)
-			DCOFFSET(lpFilterBuf[i],*lpdwPointsInBuf,lpFDat->dOffset[i]);
-	}
-	*/
 
 	Buffer buffer(informat);
 	for(i=0;i<informat.channels();i++) buffer.buffer[i] = lpFilterBuf[i];
@@ -834,47 +824,43 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 		n64OutSize,n64DataSize
 		);
 
-	*lpdwRealPointsInBuf = *lpdwPointsInBuf;
-
 	// down sampling(48k -> 44.1k)
+	points_before_resampling = *lpdwPointsInBuf;
 	if(lpFDat->bRsmp){
+		unsigned int points_tmp;
 		for(i=0;i<outformat.channels();i++)
-			RSAMP(lpFilterBuf[i],*lpdwPointsInBuf,i,lpdwRealPointsInBuf);
+			RSAMP(lpFilterBuf[i],*lpdwPointsInBuf,i,&points_tmp);
+		*lpdwPointsInBuf = points_tmp;
 	}
-
-	// notice:
-	// sampling rate of output is changed when re-sampling has been executed, so
-	// use '*lpdwRealPointsInBuf' instead of '*lpdwPointsInBuf', and
-	// use 'outformat' instead of 'informat' from here.
 
 	// calclate RMS or average for normalizer
 	if(dwCurrentNormalMode == NORMAL_AVG){
 		for(i=0;i<outformat.channels();i++) 
-			SET_AVG(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
+			SET_AVG(lpFilterBuf[i],*lpdwPointsInBuf,i);			
 	}
 
 	if(dwCurrentNormalMode == NORMAL_RMS){
 		for(i=0;i<outformat.channels();i++) 
-			SET_RMS(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
+			SET_RMS(lpFilterBuf[i],*lpdwPointsInBuf,i);			
 	}
 
 	// normalizer
 	if(dwCurrentNormalMode == NORMAL_EXEC){
 
 		for(i=0;i<outformat.channels();i++){
-			for(i2=0;i2<*lpdwRealPointsInBuf;i2++) 
+			for(i2=0;i2<*lpdwPointsInBuf;i2++) 
 				lpFilterBuf[i][i2] *= dNormalGain[i];
 		}
 
 		// compressor(limiter)
 		if(lpFDat->bNormalUseCompressor)
-			COMPRESS(outformat.rate(),lpFilterBuf,*lpdwRealPointsInBuf,outformat.channels(),
+			COMPRESS(outformat.rate(),lpFilterBuf,*lpdwPointsInBuf,outformat.channels(),
 			lpFDat->dNormalTh,lpFDat->dNormalRatio,
 			lpFDat->dNormalAttack,lpFDat->dNormalRelease,1);
 	}
 
 	// search peak,
-	for(i=0;i<outformat.channels();i++) SET_PEAK(lpFilterBuf[i],*lpdwRealPointsInBuf,i);			
+	for(i=0;i<outformat.channels();i++) SET_PEAK(lpFilterBuf[i],*lpdwPointsInBuf,i);			
 
 	// restore wave level
 	if( CONFIG::get().pre_normalization ){
@@ -882,7 +868,7 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 		{
 			const double maxlevel = outformat.GetMaxWaveLevel();
 			for(i=0;i<outformat.channels();i++){
-				for(i2=0;i2<*lpdwRealPointsInBuf;i2++) lpFilterBuf[i][i2] *= maxlevel;
+				for(i2=0;i2<*lpdwPointsInBuf;i2++) lpFilterBuf[i][i2] *= maxlevel;
 			}
 		}
 	}
@@ -893,7 +879,7 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 		{		
 			for(i=0;i<outformat.channels();i++)
 			{
-				DITHER(lpFilterBuf[i],*lpdwRealPointsInBuf,i,lpFDat->dDitherAmp);
+				DITHER(lpFilterBuf[i],*lpdwPointsInBuf,i,lpFDat->dDitherAmp);
 			}
 		}
 
@@ -2617,14 +2603,14 @@ BOOL FilterBody()
 
 	LONGLONG n64TotalOutSize; // byte, total output data size
 	LONGLONG n64OutSize; // byte, output data size in each block
-	DWORD dwPointsInBuf = 0; // points of data in 'lpFilterBuf'
+	unsigned int points;
+	unsigned int points_before_resampling;
 
 	LONGLONG n64InputSize; 	// byte, input data size in each block
 
 	// if re-sampling is not executed,  n64RealTotalOutSize = n64TotalOutSize.
 	LONGLONG n64RealTotalOutSize; // byte, total 'real' output data size. 
 	LONGLONG n64RealOutSize; // byte, 'real' output data size in each block
-	DWORD dwRealPointsInBuf = 0; // 'real' points of data in 'lpFilterBuf'
 
 	LONGLONG n64BlockDataSize; // byte, copy size of each block
 	DWORD dwSetSize; // byte, size of data set to 'lpBuffer' when reading
@@ -2848,7 +2834,7 @@ BOOL FilterBody()
 			dwSetSize = 0;
 			dwRemainByte = 0;
 			n64OutSize = 0;
-			dwPointsInBuf = 0;
+			points = 0;
 			n64InputSize = 0;
 			n64RealOutSize = 0;
 			bChangeFile = false;
@@ -2924,15 +2910,15 @@ BOOL FilterBody()
 				
 				// caluculate read size of data from input file
 				if(BlEndless && !BlCutFile) dwReadByte = DwBufSize;  
-				else if(n64BlockDataSize > (n64InputSize-dwRemainByte) + DwBufSize) dwReadByte = DwBufSize;
-				else dwReadByte = (DWORD)(n64BlockDataSize - (n64InputSize-dwRemainByte));
+				else if(n64BlockDataSize > n64InputSize + DwBufSize) dwReadByte = DwBufSize;
+				else dwReadByte = (DWORD)(n64BlockDataSize - n64InputSize);
 				
 				// align the boundary if bit of input file is 24
 				if(InputWaveFmt.bits() == 24) 
 					dwReadByte =  dwReadByte / (InputWaveFmt.channels() * (InputWaveFmt.bits()/8)) * InputWaveFmt.block();
 
 				// when current block is over, 
-				if(dwReadByte == 0){
+				if(dwReadByte == 0 && dwRemainByte == 0){
 
 					// shiftting.  (at the last block, shiftting should be done.)
 					if(dwBlockNo == DwCopyBlock-1 && dwAddTailOutPoints){
@@ -2961,32 +2947,17 @@ BOOL FilterBody()
 				
 					// from input file
 					if(!BlNoSignal){
-						
+
 						if(dwRemainByte){
-							
-							// move remained data to head
-							memmove(lpBuffer,
-								lpBuffer+dwPointsInBuf*InputWaveFmt.block(),
-								dwRemainByte);
-							
-							// fill buffer from input file
-							if(dwReadByte > dwRemainByte){
-								dwSetSize = ReadData(hdReadFile,lpBuffer+dwRemainByte,dwReadByte-dwRemainByte);
-								n64PointerStdin += dwSetSize;
-								n64InputSize += dwSetSize;
-								
-								dwSetSize += dwRemainByte;
-							}
-							else dwSetSize = dwReadByte;
-							
-							dwRemainByte = 0;
+													
+							if(dwReadByte + dwRemainByte > DwBufSize) dwReadByte = DwBufSize-dwRemainByte;
 						}
-						else{ // read data from input file
-							dwSetSize = ReadData(hdReadFile,lpBuffer,dwReadByte);
-							n64PointerStdin += dwSetSize;
-							n64InputSize += dwSetSize;
-						}
-						
+
+						dwSetSize = ReadData(hdReadFile,lpBuffer+dwRemainByte, dwReadByte);
+						n64PointerStdin += dwSetSize;
+						n64InputSize += dwSetSize;
+						dwSetSize += dwRemainByte;
+						dwRemainByte = 0;
 					}
 					else // if input file's name is 'nosignal'
 					{
@@ -3002,7 +2973,7 @@ BOOL FilterBody()
 				}
 
 				// set data to buffer(double type)
-				CopyBufferBtoD(lpBuffer,dwSetSize,lpFilterBuf,&dwPointsInBuf,InputWaveFmt);
+				CopyBufferBtoD(lpBuffer,dwSetSize,lpFilterBuf,&points,InputWaveFmt);
 
 				//-----------------------------------------------
 				// filtering
@@ -3012,14 +2983,13 @@ BOOL FilterBody()
 					&FDAT,  
 					
 					lpFilterBuf,  // buffer
-					&dwPointsInBuf, // points
-					&dwRealPointsInBuf, // output points
+					&points, // points
+					points_before_resampling,
 					
 					&bChangeFile,
 					dwCurrentNormalMode,
 					dNormalGain,
 					DwCurSplitNo,
-
 					
 					n64TotalOutSize+n64OutSize,N64TotalDataSize,
 					InputWaveFmt,
@@ -3035,31 +3005,31 @@ BOOL FilterBody()
 						
 						// shiftting. (cut some data from the head of output.)
 						if(dwCutHeadOutPoints){
-							if(dwCutHeadOutPoints > dwRealPointsInBuf){
-								dwCutHeadOutPoints -= dwRealPointsInBuf;
-								dwRealPointsInBuf = 0;
-								dwPointsInBuf = 0;
+							if(dwCutHeadOutPoints > points){
+								dwCutHeadOutPoints -= points;
+								points = 0;
+								points_before_resampling = 0;
 							}
-							else // dwCutHeadOutPoints <= dwRealPointsInBuf
+							else
 							{
-								dwRealPointsInBuf -= dwCutHeadOutPoints;
-								dwPointsInBuf -= (DWORD)((double)dwCutHeadOutPoints/WriteWaveFmt.rate()*InputWaveFmt.rate());
+								points -= dwCutHeadOutPoints;
+								points_before_resampling = (unsigned int)((double)dwCutHeadOutPoints/WriteWaveFmt.rate()*InputWaveFmt.rate());
 								for(i=0;i<WriteWaveFmt.channels();i++)
-									memmove(lpFilterBuf[i],lpFilterBuf[i]+dwCutHeadOutPoints,sizeof(double)*dwRealPointsInBuf);
+									memmove(lpFilterBuf[i],lpFilterBuf[i]+dwCutHeadOutPoints,sizeof(double)*points);
 								dwCutHeadOutPoints = 0; // not do shiftting anymore
 							}
 						}
 						
-						if(dwRealPointsInBuf){
+						if(points){
 							
 							if(BlTextOut){ // text out
-								WriteTextData(hdWriteFile,lpFilterBuf,dwRealPointsInBuf,WriteWaveFmt);
+								WriteTextData(hdWriteFile,lpFilterBuf,points,WriteWaveFmt);
 							}
 							else
 							{
 								
 								CopyBufferDtoB(lpWriteBuffer,lpFilterBuf,
-									dwRealPointsInBuf,
+									points,
 									WriteWaveFmt,
 									FDAT.bDither,
 									
@@ -3069,8 +3039,8 @@ BOOL FilterBody()
 								// write to the output file
 								if(!BlWaveOut){
 									
-									dwWriteByte = WriteData(hdWriteFile, lpWriteBuffer, dwRealPointsInBuf*WriteWaveFmt.block() );
-									if( dwWriteByte != dwRealPointsInBuf*WriteWaveFmt.block() ){
+									dwWriteByte = WriteData(hdWriteFile, lpWriteBuffer, points*WriteWaveFmt.block() );
+									if( dwWriteByte != points*WriteWaveFmt.block() ){
 										// if fail, then write header and exit.
 										if(BlWaveHdrOut && !BlStdout) 
 											WriteWaveFmt.write(hdWriteFile,n64RealTotalOutSize+DwAddSp[0],BlExtChunkOfHdr);
@@ -3083,7 +3053,7 @@ BOOL FilterBody()
 								// waveout
 								else 
 								{
-									dwWriteByte = dwRealPointsInBuf*WriteWaveFmt.block();
+									dwWriteByte = points*WriteWaveFmt.block();
 									PlayWave(lpWriteBuffer,dwWriteByte);
 								}
 #endif
@@ -3092,8 +3062,8 @@ BOOL FilterBody()
 						}
 						
 						// renew the size of output
-						n64RealOutSize += dwRealPointsInBuf*WriteWaveFmt.block();
-						n64OutSize += dwPointsInBuf * InputWaveFmt.block();
+						n64RealOutSize += points*WriteWaveFmt.block();
+						n64OutSize += points_before_resampling * InputWaveFmt.block();
 						
 						// show the current status
 						if(BlVerbose){
@@ -3117,8 +3087,12 @@ BOOL FilterBody()
 						{
 							n64RealTotalOutSize += n64RealOutSize;
 							n64TotalOutSize += n64OutSize;
-							dwRemainByte = dwSetSize - dwPointsInBuf *InputWaveFmt.block();
+							const unsigned int remain_offset = points_before_resampling * InputWaveFmt.block();
+							dwRemainByte = dwSetSize - remain_offset;
 							
+							// move remained data to head
+							memmove(lpBuffer, lpBuffer+remain_offset, dwRemainByte);
+
 							// add space to tail
 							AddSpace(hdWriteFile,DwAddSp[1]);
 							
@@ -3261,7 +3235,7 @@ BOOL FilterBody()
 				{
 					// now, normalizer is searching the peak of output.
 					
-					n64OutSize += dwPointsInBuf * InputWaveFmt.block();
+					n64OutSize += points_before_resampling * InputWaveFmt.block();
 
 					if(BlVerbose)
 						ShowStatus(WriteWaveFmt,SzRealWriteFile,

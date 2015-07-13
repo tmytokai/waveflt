@@ -476,7 +476,7 @@ void RSAMP( double* lpFilterBuf, // filter buffer
 		   DWORD dwPointsInBuf,
 			DWORD dwCh,
 
-			LPDWORD lpdwAfterPoints
+			unsigned int* lpdwAfterPoints
 			);
 DWORD GetRSMPCoef(double** h,DWORD dwInputFreq,LPDWORD lpdwUp);
 
@@ -522,7 +522,7 @@ void unprepareCOMP();
 //--------------------------------------------------
 // split.c
 VOID SPLIT(WaveFormat waveFmt, 
-		   DWORD* lpdwPointsInBuf, // points in buffer
+		   unsigned int* lpdwPointsInBuf, // points in buffer
 		   LONGLONG n64TotalOutSize, // total output size
 		   DWORD dwNoSndCurNo,
 		   BOOL* bChangeFile, // if bChangeFile = true, then file is changed
@@ -534,7 +534,7 @@ VOID SPLIT(WaveFormat waveFmt,
 
 
 VOID NOSOUND(double* lpFilterBuf[2], // buffer
-			  DWORD* lpdwPointsInBuf, // points of data in buffer
+			  unsigned int* lpdwPointsInBuf, // points of data in buffer
 			   BOOL* lpbChangeFile, // if *lpbChangeFile = true, change output file
 			   /* obsolete
 			   HWND hWnd, // HWND of LockOn

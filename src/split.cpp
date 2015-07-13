@@ -60,7 +60,7 @@ void PrepareNOSOUND(DWORD dwNoSndMode, DWORD dwNoSndSuspend, long nSamplesPerSec
 //------------------------------------------
 // split at no sound part
 VOID NOSOUND(double* lpFilterBuf[2], // buffer
-			  DWORD* lpdwPointsInBuf, // points of data in buffer
+			  unsigned int* lpdwPointsInBuf, // points of data in buffer
 			   BOOL* lpbChangeFile, // if *lpbChangeFile = true, change output file
 			   /* obsolete
 			   HWND hWnd, // HWND of LockOn
@@ -231,7 +231,7 @@ VOID NOSOUND(double* lpFilterBuf[2], // buffer
 //-----------------------------------------------
 // split file at specified size
 VOID SPLIT(WaveFormat waveFmt, 
-		   DWORD* lpdwPointsInBuf, // points in buffer
+		   unsigned int* lpdwPointsInBuf, // points in buffer
 		   LONGLONG n64TotalOutSize, // total output size
 		   DWORD DwCurSplitNo,
 		   BOOL* bChangeFile, // if bChangeFile = true, then file is changed
