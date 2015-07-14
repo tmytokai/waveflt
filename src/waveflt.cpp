@@ -1819,11 +1819,6 @@ BOOL SetParam(){
 		DwNormalMode = NORMAL_NOT;
 		DbNormalLevel = 0;
 
-/* obsolete
-		// no ADP training mode
-		DwADPTrainTime = 0; 
-*/
-
 		// endless mode is set
 		BlEndless = true;
 
@@ -1840,29 +1835,12 @@ BOOL SetParam(){
 		N64FileDataSize = InputWaveFmt.get_datasize();
 		N64FileOffset = InputWaveFmt.get_offset();
 	}
-	/* obsolete
-	else
-	{ // -format
-		if(!IsWaveFormatValid(InputWaveFmt,szErr))
-		{
-			fprintf(stderr,"\n");
-			fprintf(stderr,szErr);
-			return false;
-		}
-	}
-	*/
 	// notice: if input is stdin, file pointer has already moved at N64FileOffset byte.
 
 	// set buffer size
 	dwFoo = 1; 
 	while((double)dwFoo/InputWaveFmt.avgbyte()*1000. < DwBufSize*100.) dwFoo = dwFoo << 1;
 	DwBufSize = dwFoo;
-
-	/* obsolete
-	dwFoo = 1; 
-	while((double)dwFoo/InputWaveFmt.avgbyte*1000. < DwPipeBufSize*100.) dwFoo = dwFoo << 1;
-	DwPipeBufSize = dwFoo;
-	*/
 
 	fprintf(stderr,"tag = %u, ",InputWaveFmt.tag());
 	fprintf(stderr,"%u ch, ",InputWaveFmt.channels());
@@ -1879,13 +1857,6 @@ BOOL SetParam(){
 	}
 	dFoo = (double)N64FileDataSize/InputWaveFmt.avgbyte();
 	fprintf(stderr,"time = %.2lf sec \n",dFoo);
-
-	/* obsolete
-	fprintf(stderr,"input file: ");
-	if(BlStdin)	fprintf(stderr,"stdin\n");
-	else if(BlNoSignal) fprintf(stderr,"nosignal\n");
-	else fprintf(stderr,"%s\n",SzReadFile);
-*/
 
 	// if -info option is specified, finish here.
 	if(BlFileInfo)
@@ -1908,11 +1879,6 @@ BOOL SetParam(){
 		SetOutputFileName(SzOrgWriteFile,SzWriteFile,0);
 
 #ifdef WIN32
-	/* obsolete
-	// -pipeout 
-	if(BlCreatePipe) BlStdout = true;
-	*/
-
 	// wave out
 	if(strcmp(SzOrgWriteFile,"waveout")==0)
 	{
@@ -1925,9 +1891,6 @@ BOOL SetParam(){
 	if(strcmp(SzOrgWriteFile,"stdout")==0)	BlStdout = true;
 	
 	if(BlStdout 
-		/* obsolete
-		&& !BlCreatePipe
-		*/
 		) // stdout
 	{
 		// don't split file
@@ -2081,18 +2044,6 @@ BOOL SetParam(){
 	strcpy(SzRealWriteFile,SzWriteFile);
 
 #ifdef WIN32
-	/* obsolete
-	// -exec 
-	if(BlExecCom) 
-		SetCommandStrings(false,SzExecCmd,SzExecComand,SzRealWriteFile,SzUserDef[0],SzUserDef[1],SzUserDef[2],SystemTime,WriteWaveFmt,n64Foo);
-	
-	// -pipeout 
-	if(BlCreatePipe)
-	{ 
-		SetCommandStrings(true,SzPipeCmd,SzPipeComand,SzRealWriteFile,SzUserDef[0],SzUserDef[1],SzUserDef[2],SystemTime,WriteWaveFmt,n64Foo);
-		strcpy(SzWriteFile,"stdout");
-	}
-	*/
 
 	// wave out
 	if(strcmp(SzOrgWriteFile,"waveout")==0)	strcpy(SzWriteFile,"waveout");
@@ -2100,20 +2051,6 @@ BOOL SetParam(){
 
 	// stdout
 	if(strcmp(SzOrgWriteFile,"stdout")==0) strcpy(SzWriteFile,"stdout");
-
-#if 0 // obsolete
-	fprintf(stderr,"output file: ");
-	if(BlStdout) // stdout 
-	{
-		/* obsolete
-		if(BlCreatePipe) fprintf(stderr,"[pipe] %s\n",SzPipeCmd);
-		else */
-			if(BlWaveOut)	fprintf(stderr,"[waveout]\n");
-		else fprintf(stderr,"[stdout]\n");
-	}
-	// HDD or NULL
-	else fprintf(stderr,"%s\n",SzWriteFile);
-#endif
 
 	// if name of output file is the same as input file, rename input file to *.bkp.
 	if(strcmp(SzReadFile,SzOrgWriteFile)==0)
@@ -2180,18 +2117,9 @@ BOOL SetParam(){
 	
 	CONFIG::status();
 
-	/* obsolete
-	if(BlExecCom)fprintf(stderr,"-exec: %s\n",SzExecCmd);	
-	*/
 	fprintf(stderr,"buffer size: %ldk\n",DwBufSize/1024);
-	/* obsolete
-	if(BlCreatePipe) fprintf(stderr,"buffer size of pipe: %ldk\n",DwPipeBufSize/1024);
-	*/
 	if(FDAT.dVolume != 1.0) fprintf(stderr,"volume: %lf\n",FDAT.dVolume);
 	if(FDAT.bBalance) fprintf(stderr,"balance: L = %.3lf, R = %.3lf\n",FDAT.dBalance[0],FDAT.dBalance[1]);
-/* obsolete
-	if(HdWndLkm) fprintf(stderr,"window handle of LockOn: %lu",HdWndLkm);
-*/
 	if(strlen(SzUserDef[0])) fprintf(stderr,"udef1: %%1 = %s\n",SzUserDef[0]);
 	if(strlen(SzUserDef[1])) fprintf(stderr,"udef2: %%2 = %s\n",SzUserDef[1]);
 	if(strlen(SzUserDef[2])) fprintf(stderr,"udef3: %%3 = %s\n",SzUserDef[2]);
@@ -2283,45 +2211,6 @@ BOOL SetParam(){
 		fprintf(stderr,"attack = %4.0lf msec, release = %4.0lf msec, RMS = %d\n",
 			FDAT.dNgateAttack,FDAT.dNgateRelease,FDAT.dwNgateRMS);
 	}
-	
-	/* obsolete
-	// MDCT shrinkage filter
-	if(FDAT.bWaveSh){
-		fprintf(stderr,"\n");
-		fprintf(stderr,"MDCT shrinkage filter:\n");
-		fprintf(stderr,"level = %lf, ",FDAT.dWaveShLowLevel);
-		
-		fprintf(stderr,"length =  %d, ",FDAT.dwWaveShleng);
-		fprintf(stderr,"threshold = %lf\n",FDAT.dWaveShLevel);
-		
-		if(FDAT.dwWaveShleng & (FDAT.dwWaveShleng-1)){
-			fprintf(stderr,"\nFilter length of MDCT must be 2^m.\n");
-			return false;
-		}
-	}
-	*/
-
-/* obsolete
-	// ADP
-	if(FDAT.bADP){
-		fprintf(stderr,"\n");
-		fprintf(stderr,"ADP filter:\n");
-		fprintf(stderr,"level = %6.3lf, ",FDAT.dADPlevel);
-		fprintf(stderr,"length = %d, ",FDAT.dwADPleng);
-			fprintf(stderr,"delay = %d(%.2lf msec)\n"
-				,(FDAT.dwADPleng-1)/2,(double)(FDAT.dwADPleng-1)/2*1000/InputWaveFmt.rate);
-		fprintf(stderr,"delay time of input = %d msec, ",FDAT.dwADPDelayTime);
-		fprintf(stderr,"training time = %d sec, ",DwADPTrainTime);
-		fprintf(stderr,"loss = %6.3lf db\n",FDAT.dADPDb);
-		
-		// filter length must be odd number
-		if(FDAT.dwADPleng % 2 == 0){
-			fprintf(stderr,"\nLength of ADP filter must be odd number.\n");
-			return false;
-		}
-		
-	}
-*/
 
 	//----------------
 	
@@ -2447,12 +2336,6 @@ BOOL SetParam(){
 		if(FDAT.dwNoSndMode == NOSND_HEADCUTONLY){
 			fprintf(stderr,"headcutting: level = %6.2lf dB\n",FDAT.dNoSndBoundHead);
 		}
-		/* obsolete
-		else if(FDAT.dwNoSndMode == NOSND_STOP && HdWndLkm){
-			fprintf(stderr,"nosound_stop: level = %6.2lf dB, stop recording = %d msec\n",
-				FDAT.dNoSndBoundHead,FDAT.dwNoSndRecStop);
-		}
-		*/
 		else{
 			fprintf(stderr,"nosound: mode %d\n",FDAT.dwNoSndMode-1);
 			fprintf(stderr,"%d msec, sound level = %6.2lf dB, nosound leve = %6.2lf dB\n",
@@ -2602,25 +2485,14 @@ BOOL FilterBody()
 	DWORD dwOutBufSize; // buffer size of lpWriteBuffer
 
 	LONGLONG n64TotalOutSize; // byte, total output data size
-	LONGLONG n64OutSize; // byte, output data size in each block
-	unsigned int points;
-	unsigned int points_before_resampling;
-
-	LONGLONG n64InputSize; 	// byte, input data size in each block
 
 	// if re-sampling is not executed,  n64RealTotalOutSize = n64TotalOutSize.
 	LONGLONG n64RealTotalOutSize; // byte, total 'real' output data size. 
-	LONGLONG n64RealOutSize; // byte, 'real' output data size in each block
-
-	LONGLONG n64BlockDataSize; // byte, copy size of each block
-	DWORD dwSetSize; // byte, size of data set to 'lpBuffer' when reading
-	DWORD dwRemainByte; //byte, unused data size remained in buffer.
 
 	// hadle of files
 	FILE* hdReadFile = NULL;
 	FILE* hdWriteFile = NULL;
 
-	BOOL bChangeFile = false; // if true, change output file
 	double dNormalGain[2] = {0,0}; // gain for normalizer
 	DWORD dwCurrentNormalMode; // current mode of normalizer
 	LONGLONG n64PointerStdin;  // byte, current file pointer of stdin
@@ -2628,10 +2500,9 @@ BOOL FilterBody()
 	DWORD dwAddTailOutPoints; // points for shiftting([-shift). add space to the tail of output
 	
 	// ,and others
-	DWORD dwBlockNo,dwNormalLoop,dwNormalExec;
+	DWORD dwNormalLoop,dwNormalExec;
 	DWORD i,dwFoo;
 	BOOL bReturn = false; // return value
-	DWORD dwReadByte;  // read size of data specified at fread()
 	DWORD dwWriteByte;  // write size of data returned after fwrite()
 	DWORD dwSeed; // for seed of rand
 	double dFoo;
@@ -2829,8 +2700,17 @@ BOOL FilterBody()
 		//-----------------------------
 		// main loop
 		//-----------------------------
-		for(dwBlockNo = 0; dwBlockNo < DwCopyBlock ;dwBlockNo++){
-			
+		for( unsigned int block_no = 0; block_no < DwCopyBlock ;block_no++){
+
+			DWORD dwSetSize; // byte, size of data set to 'lpBuffer' when reading
+			DWORD dwRemainByte; //byte, unused data size remained in buffer.
+			unsigned long long n64OutSize; // byte, output data size in each block
+			unsigned int points;
+			unsigned int points_before_resampling;
+			unsigned long long n64InputSize; 	// byte, input data size in each block
+			unsigned long long n64RealOutSize; // byte, 'real' output data size in each block
+			BOOL bChangeFile = false; // if true, change output file
+
 			dwSetSize = 0;
 			dwRemainByte = 0;
 			n64OutSize = 0;
@@ -2838,24 +2718,23 @@ BOOL FilterBody()
 			n64InputSize = 0;
 			n64RealOutSize = 0;
 			bChangeFile = false;
-			n64BlockDataSize = N64DataSizeBlk[dwBlockNo];
 			
 			if(
 				(dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC)){
 				fprintf(stderr,"\n----------------\n");
-				fprintf(stderr,"[block %d : ",dwBlockNo);
+				fprintf(stderr,"[block %d : ",block_no);
 
-				dFoo = (double)N64OffsetBlk[dwBlockNo]/1024/1024;
+				dFoo = (double)N64OffsetBlk[block_no]/1024/1024;
 				fprintf(stderr,"offset = %.2lf M",dFoo);
 				
 				if(!(BlEndless && !BlCutFile)){ 
-					dFoo = (double)N64OffsetBlk[dwBlockNo]/InputWaveFmt.avgbyte();
+					dFoo = (double)N64OffsetBlk[block_no]/InputWaveFmt.avgbyte();
 					fprintf(stderr,"(%.2lf sec), ",dFoo);
 					
-					dFoo = (double)n64BlockDataSize/1024/1024;
+					dFoo = (double)N64DataSizeBlk[block_no]/1024/1024;
 					fprintf(stderr,"size = %.2lf M",dFoo);
 					
-					dFoo = (double)n64BlockDataSize/InputWaveFmt.avgbyte();
+					dFoo = (double)N64DataSizeBlk[block_no]/InputWaveFmt.avgbyte();
 					fprintf(stderr,"(%.2lf sec)",dFoo);
 				}
 				else fprintf(stderr," (endless mode)");
@@ -2879,9 +2758,9 @@ BOOL FilterBody()
 			// move file pointer of input file
 			if(!BlStdin)  // hdd
 			{
-				if( dwBlockNo == 0 || N64OffsetBlk[dwBlockNo] != N64OffsetBlk[dwBlockNo-1] + N64DataSizeBlk[dwBlockNo-1] ){
+				if( block_no == 0 || N64OffsetBlk[block_no] != N64OffsetBlk[block_no-1] + N64DataSizeBlk[block_no-1] ){
 
-					__int64 pos64 = N64OffsetBlk[dwBlockNo];
+					__int64 pos64 = N64OffsetBlk[block_no];
 					_fseeki64( hdReadFile , pos64, SEEK_SET);
 
 					std::vector<Filter*>::iterator it = filters.begin();
@@ -2894,7 +2773,7 @@ BOOL FilterBody()
 			else // stdin
 			{
 				n64PointerStdin += SeekStdin(lpBuffer,DwBufSize,
-					N64OffsetBlk[dwBlockNo],
+					N64OffsetBlk[block_no],
 					n64PointerStdin
 					);
 
@@ -2907,11 +2786,13 @@ BOOL FilterBody()
 				//----------------------------------------------------------
 				// input
 				//----------------------------------------------------------
-				
+
+				DWORD dwReadByte;
+
 				// caluculate read size of data from input file
 				if(BlEndless && !BlCutFile) dwReadByte = DwBufSize;  
-				else if(n64BlockDataSize > n64InputSize + DwBufSize) dwReadByte = DwBufSize;
-				else dwReadByte = (DWORD)(n64BlockDataSize - n64InputSize);
+				else if(N64DataSizeBlk[block_no] > n64InputSize + DwBufSize) dwReadByte = DwBufSize;
+				else dwReadByte = (DWORD)(N64DataSizeBlk[block_no] - n64InputSize);
 				
 				// align the boundary if bit of input file is 24
 				if(InputWaveFmt.bits() == 24) 
@@ -2921,7 +2802,7 @@ BOOL FilterBody()
 				if(dwReadByte == 0 && dwRemainByte == 0){
 
 					// shiftting.  (at the last block, shiftting should be done.)
-					if(dwBlockNo == DwCopyBlock-1 && dwAddTailOutPoints){
+					if(block_no == DwCopyBlock-1 && dwAddTailOutPoints){
 
 						// shiftting. add space to the tail of buffer
 						if(InputWaveFmt.bits() == 8) memset(lpBuffer,0x80,DwBufSize);
@@ -3263,7 +3144,7 @@ L_EXITBLOCK:
 		
 		
 	}
-	// loop from for(dwBlockNo = 0; ...
+	// loop from for(block_no = 0; ...
 	//-----------------------------
 
 	
