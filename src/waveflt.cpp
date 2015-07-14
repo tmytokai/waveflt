@@ -45,33 +45,27 @@ BOOL BlEndless = false; // endless mode
 char SzUserDef[3][CHR_BUF]; // user defined strings
 SYSTEMTIME SystemTime; // system time
 
-/* obsolete
-// pipe
-#ifdef USEWIN32API
-PROCESS_INFORMATION hProcessInfo; 
-#endif
-DWORD DwPipeBufSize = 20; // pipe buffer size
-BOOL BlCreatePipe = false;  // use pipe
-char SzPipeComand[CHR_BUF]; // command of pipe (before replacement of strings)
-char SzPipeCmd[CHR_BUF]; // command of pipe (after replacement of strings)
-
-// command
-BOOL BlExecCom = false;  // コマンドを録音後に実行するか
-BOOL BlOpenWin = true;	// 別にウィンドウを表示するか
-char SzExecComand[CHR_BUF]; // 実行コマンド(置換前)
-char SzExecCmd[CHR_BUF]; // 実際に実行するコマンド
-*/
-
 // config of blocks
 unsigned long long N64TotalDataSize; // total data size of output
 unsigned long long N64RealTotalDataSize; // total data size of 'real' output file
-unsigned long long N64OffsetBlk[MAXCOPYBLOCK]; // byte, offset of each block
-unsigned long long N64DataSizeBlk[MAXCOPYBLOCK]; //  byte, copy size of each block
 double DbStartTime[MAXCOPYBLOCK]; // sec, start time of each block
 double DbEndTime[MAXCOPYBLOCK]; // sec, end time of each bloc
-DWORD DwCopyBlock = 1; // number of blocks
 BOOL BlCutTail = false;  // specified -cuttail option
 BOOL BlCutFile = false;  // execute cutting file
+
+
+DWORD DwCopyBlock = 1; // number of blocks
+unsigned long long N64OffsetBlk[MAXCOPYBLOCK]; // byte, offset of each block
+unsigned long long N64DataSizeBlk[MAXCOPYBLOCK]; //  byte, copy size of each block
+
+struct BlockData
+{
+	unsigned long long offset; // offset to block (byte)
+	unsigned long long datasize; //  data size of block (byte)
+};
+
+std::vector<BlockData> blockdata;
+
 
 
 // shift output file
@@ -106,19 +100,8 @@ DWORD DwAddSp[2] = {0,0};
 // input is 'nosound'
 BOOL BlNoSignal = false;
 
-/* obsolete
-// HWND of 'lockon'
-HWND HdWndLkm = NULL;
-*/
-
 // print characteristics of resampling
 BOOL BlRsmpOutFilter; 
-
-/* obsolete
-// print characteristics of ADP filter
-BOOL BlADPOutFilter; 
-DWORD DwADPTrainTime; // sec, training time of ADP filter
-*/
 
 // print characteristics of FIR filter
 BOOL BlFIROutFilter;  
@@ -2438,6 +2421,13 @@ BOOL SetParam(){
 
 	WaveFormat wavfmt = InputWaveFmt;
 
+	// setup blocks
+	blockdata.resize(DwCopyBlock);
+	for( unsigned int i = 0; i < DwCopyBlock; ++i ){
+		blockdata[i].offset = N64OffsetBlk[i];
+		blockdata[i].datasize = N64DataSizeBlk[i];
+	}
+
 	// DC offset
 	if( CONFIG::get().use_dcoffset ){
 		Filter* filter = new DcOffset( wavfmt, CONFIG::get().dcoffset);
@@ -2700,7 +2690,8 @@ BOOL FilterBody()
 		//-----------------------------
 		// main loop
 		//-----------------------------
-		for( unsigned int block_no = 0; block_no < DwCopyBlock ;block_no++){
+		unsigned int block_size = blockdata.size();
+		for( unsigned int block_no = 0; block_no < block_size ;block_no++){
 
 			DWORD dwSetSize; // byte, size of data set to 'lpBuffer' when reading
 			DWORD dwRemainByte; //byte, unused data size remained in buffer.
@@ -2724,17 +2715,17 @@ BOOL FilterBody()
 				fprintf(stderr,"\n----------------\n");
 				fprintf(stderr,"[block %d : ",block_no);
 
-				dFoo = (double)N64OffsetBlk[block_no]/1024/1024;
+				dFoo = (double)blockdata[block_no].offset/1024/1024;
 				fprintf(stderr,"offset = %.2lf M",dFoo);
 				
 				if(!(BlEndless && !BlCutFile)){ 
-					dFoo = (double)N64OffsetBlk[block_no]/InputWaveFmt.avgbyte();
+					dFoo = (double)blockdata[block_no].offset/InputWaveFmt.avgbyte();
 					fprintf(stderr,"(%.2lf sec), ",dFoo);
 					
-					dFoo = (double)N64DataSizeBlk[block_no]/1024/1024;
+					dFoo = (double)blockdata[block_no].datasize/1024/1024;
 					fprintf(stderr,"size = %.2lf M",dFoo);
 					
-					dFoo = (double)N64DataSizeBlk[block_no]/InputWaveFmt.avgbyte();
+					dFoo = (double)blockdata[block_no].datasize/InputWaveFmt.avgbyte();
 					fprintf(stderr,"(%.2lf sec)",dFoo);
 				}
 				else fprintf(stderr," (endless mode)");
@@ -2758,9 +2749,9 @@ BOOL FilterBody()
 			// move file pointer of input file
 			if(!BlStdin)  // hdd
 			{
-				if( block_no == 0 || N64OffsetBlk[block_no] != N64OffsetBlk[block_no-1] + N64DataSizeBlk[block_no-1] ){
+				if( block_no == 0 || blockdata[block_no].offset != blockdata[block_no-1].offset + blockdata[block_no-1].datasize ){
 
-					__int64 pos64 = N64OffsetBlk[block_no];
+					__int64 pos64 = blockdata[block_no].offset;
 					_fseeki64( hdReadFile , pos64, SEEK_SET);
 
 					std::vector<Filter*>::iterator it = filters.begin();
@@ -2773,7 +2764,7 @@ BOOL FilterBody()
 			else // stdin
 			{
 				n64PointerStdin += SeekStdin(lpBuffer,DwBufSize,
-					N64OffsetBlk[block_no],
+					blockdata[block_no].offset,
 					n64PointerStdin
 					);
 
@@ -2791,8 +2782,8 @@ BOOL FilterBody()
 
 				// caluculate read size of data from input file
 				if(BlEndless && !BlCutFile) dwReadByte = DwBufSize;  
-				else if(N64DataSizeBlk[block_no] > n64InputSize + DwBufSize) dwReadByte = DwBufSize;
-				else dwReadByte = (DWORD)(N64DataSizeBlk[block_no] - n64InputSize);
+				else if(blockdata[block_no].datasize > n64InputSize + DwBufSize) dwReadByte = DwBufSize;
+				else dwReadByte = (DWORD)(blockdata[block_no].datasize - n64InputSize);
 				
 				// align the boundary if bit of input file is 24
 				if(InputWaveFmt.bits() == 24) 
@@ -2802,7 +2793,7 @@ BOOL FilterBody()
 				if(dwReadByte == 0 && dwRemainByte == 0){
 
 					// shiftting.  (at the last block, shiftting should be done.)
-					if(block_no == DwCopyBlock-1 && dwAddTailOutPoints){
+					if(block_no == block_size -1 && dwAddTailOutPoints){
 
 						// shiftting. add space to the tail of buffer
 						if(InputWaveFmt.bits() == 8) memset(lpBuffer,0x80,DwBufSize);
