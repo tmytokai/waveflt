@@ -19,7 +19,6 @@ enum
 	ID_list,
 	ID_plst,
 	ID_junk,
-	ID_wflt, // extension
 	ID_unknown
 };
 
@@ -76,15 +75,9 @@ void WaveFormat::read( FILE *fp )
 			offset += byte;  
 			is_valid();
 		}
-		else if( id == ID_wflt ){
-			offset += 8;
-			byte = fread( &datasize, 1, sizeof(unsigned long long), fp);
-			if(byte != sizeof(unsigned long long)) throw( std::string(  "Invalid wflt chunk." ) );
-			offset += byte;  
-		}
 		else if( id == ID_data ){
 			offset += 8;
-			if( datasize == 0) datasize = chunksize;
+			datasize = chunksize;
 			break;
 		}
 		else{
@@ -124,14 +117,13 @@ void WaveFormat::read( const std::string& filename )
 }
 
 
-void WaveFormat::write( FILE* fp, const unsigned long long datasize, const bool extchunk )
+void WaveFormat::write( FILE* fp, const unsigned long long datasize )
 {
 	unsigned int tmp;
 
 	if( fp == NULL) return;
 
-	unsigned int headsize = 44;
-	if( extchunk ) headsize += (4 + 4 + 8 + 4);
+	const unsigned int headsize = 44;
 
 	fseek( fp , 0, SEEK_SET);
 
@@ -150,19 +142,9 @@ void WaveFormat::write( FILE* fp, const unsigned long long datasize, const bool 
 	fwrite( &tmp, 1, sizeof(unsigned int), fp);
 	fwrite( &raw, 1, 16, fp );
 
-	// waveflt chunk (extra chunk)
-	if(extchunk){
-		fwrite( "wflt",1, 4, fp );
-		tmp = sizeof(unsigned long long) + sizeof(unsigned int);
-		fwrite( &tmp, 1, sizeof(unsigned int), fp);
-		fwrite( &datasize, 1,  sizeof(unsigned long long), fp );
-		tmp = 0;
-		fwrite( &tmp, 1, sizeof(unsigned int), fp);
-	}
-
 	// data chunk (8  + datasize)
 	fwrite( "data", 1, 4, fp );
-	if( datasize >= 0xFFFFFFFF-headsize+8) tmp = 0xFFFFFFFF-headsize+8; // = 4G
+	if( headsize + datasize >= 0xFFFFFFFF) tmp = 0xFFFFFFFF-headsize; // = 4G
 	else tmp = (unsigned int)datasize;
 	fwrite( &tmp, 1, sizeof(unsigned int), fp);
 }
@@ -230,7 +212,6 @@ const int WaveFormat::GetChunkID( FILE* fp,  char* chunk,  unsigned int& chunksi
 	if( strncmp(chunk,"LIST",4) ==0 ) return ID_list;
 	if( strncmp(chunk,"plst",4) ==0 ) return ID_plst;
 	if( strncmp(chunk,"JUNK",4) ==0 ) return ID_junk;
-	if( strncmp(chunk,"wflt",4) ==0 ) return ID_wflt;
 
 	return ID_unknown;
 }

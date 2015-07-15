@@ -81,7 +81,7 @@
 #define EQBANDS	10 // max band of EQ 
 #define MAX_EQDB	24 // dB, max level of EQ
 
-#define WAVEHDRSIZE(a) ( (a == true) ? 44 + (8 + 8 + 4) : 44)
+#define WAVEHDRSIZE() (44)
 
 // type of filter
 #define NO_FILTER	0
@@ -757,14 +757,7 @@ VOID SetCommandStrings(
 					   LPSTR lpszUserDef2,
 					   LPSTR lpszUserDef3,
 					   SYSTEMTIME sysTime, // current time
-					   WaveFormat waveFmt,
-					   LONGLONG n64DataSize // data size
-#ifndef DEF_WAVEFLT
-					   ,HWND hWnd,  // hwnd of lockon
-					   DWORD dwRecTime, // recording time(sec) : if n64DataSize = 0, use this parameter
-					   BOOL bOpenConsole, // open console
-					   WORD wSaveMode // save mode
-#endif
+					   WaveFormat waveFmt
 					   );
 
 /* obsolete

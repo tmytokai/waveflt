@@ -101,34 +101,6 @@ sec = 180, freq = 44100, chn = 2, bit = 16, tag = 1
 <br><br>
 出力時に WAVE ヘッダを出力しません。出力は生の wave データのみになります。
 
-
-<br><br>
-<hr><a name="noextrahdr">
-[-noextrahdr] : 拡張 WAVE ヘッダ出力なし
-<br><br>
-拡張した WAVE ヘッダを出力せずに従来の WAVE ヘッダを出力します。
-<br><br>
-WAVEFLT は 4G 以上のファイルを扱うために独自に拡張した RIFF ヘッダを使用しているため、
-WAVEFLT で編集したデータは他のツールで使用できない場合があります。その場合は
-このオプションを指定してください。
-なおデータサイズが 4G 未満の場合は拡張ヘッダを出力せずに従来の RIFF ヘッダを出力します。
-<br><br>
-またこのオプションを指定して作成した 4G 以上のファイルを WAVEFLT で編集する場合は
-<a href="option.htm#endless" target="main">-endless</a>オプションを
-指定する必要があります。
-
-<Pre>
-(WAVEFLT の拡張 RIFF フォーマットの仕様)
-
-・fmt_ と data チャンクの間に wflt チャンク(20 byte)を新設
-
-'wflt'        : 4byte
-チャンクサイズ: (DWORD) 4byte  (= 12)
-データサイズ  : (int64) 8byte  (wave データのサイズ)
-(リザーブ)    : (DWORD) 4byte
-</pre>
-
-
 <br><br>
 <hr><a name="endless">
 [-endless] : エンドレスモード

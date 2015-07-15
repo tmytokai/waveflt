@@ -66,15 +66,9 @@ void AddSpace(FILE* hdWriteFile,DWORD dwSize)
 // show current status
 void ShowStatus(WaveFormat waveFmt,  
 				char* szWriteFile, // name of output file
-/* obsolete
-				BOOL bCreatePipe, // pipe mode
-*/
 				LONGLONG u64DataSize,  // output size 
 				LONGLONG u64TotalSize, // total size of output file
 				double dPeak,	   // peak
-/* obsolete
-				BOOL bADPtrain, // ADP training mode
-				*/
 				BOOL bNormalGain, // now, normalizer is searching peak
 				BOOL bStdin // stdin mode
 				){
@@ -82,19 +76,9 @@ void ShowStatus(WaveFormat waveFmt,
 	double dTime;
 	double dFoo;
 
-#ifdef USEWIN32API
-//	HANDLE hFind;
-//	WIN32_FIND_DATA findData;
-#endif
 
 	dTime = (double)u64DataSize/waveFmt.avgbyte();
 	
-	/* obsolete
-	if(bADPtrain) //ADP training mode
-	{
-		fprintf(stderr,"\015[%.1lf s]   ",dTime);
-	}
-	else */		
 		if(bNormalGain){ // normalizer is searching peak
 		fprintf(stderr,"\015[%d %%]    ",
 			(DWORD)((double)u64DataSize/u64TotalSize*100.)
@@ -113,22 +97,6 @@ void ShowStatus(WaveFormat waveFmt,
 		}
 		
 		fprintf(stderr,"[peak: %6.3lf dB]",dPeak);
-
-#ifdef USEWIN32API
-		/* obsolete
-		// show size of real output file in pipe mode
-		if(bCreatePipe){
-			if((hFind = FindFirstFile(szWriteFile,&findData)) != INVALID_HANDLE_VALUE){
-				fprintf(stderr,", file ");
-
-				if(findData.nFileSizeLow < 1024*1024) fprintf(stderr,"%lu k",findData.nFileSizeLow/1024);
-				else fprintf(stderr,"%lu M",findData.nFileSizeLow/1024/1024);
-
-				FindClose(hFind);
-			}
-		}
-		*/
-#endif		
 
 		fprintf(stderr,"   ");
 
@@ -466,61 +434,15 @@ VOID SetCommandStrings(
 					   LPSTR lpszUserDef2,
 					   LPSTR lpszUserDef3,
 					   SYSTEMTIME sysTime, // current time
-					   WaveFormat waveFmt,
-					   LONGLONG n64DataSize // data size
-#ifndef DEF_WAVEFLT
-					   ,HWND hWnd,  // hwnd of lockon
-					   DWORD dwRecTime, // recording time(sec) : if n64DataSize = 0, use this parameter
-					   BOOL bOpenConsole, // open console
-					   WORD wSaveMode // save mode
-#endif
+					   WaveFormat waveFmt
 					   )
 {
 	CHAR fPath[MAX_PATH],fDrive[MAX_PATH],fName[MAX_PATH],fExt[MAX_PATH];
 	CHAR fPathM[MAX_PATH],fDriveM[MAX_PATH];
-	char szFileSize[CHR_BUF],szDataSize[CHR_BUF];
 	int i,i2,i3;
 	CHAR szStr[MAX_COM_LNG],lpszStrings[MAX_COM_LNG];
 	WORD wTime;
 	CHAR* szWeek[7] = {"SUN","MON","TUE","WED","THU","FRI","SAT"};
-	DWORD dwHeadSize;
-	LONGLONG n64FileSize;
-
-	// get header size
-	if(n64DataSize >= 0xFFFFFFFF-44) dwHeadSize = WAVEHDRSIZE(TRUE);
-	else dwHeadSize = WAVEHDRSIZE(FALSE);
-	
-#ifndef DEF_WAVEFLT
-	if(strlen(lpszCommandIn) >= MAX_COM_LNG)
-	{
-		MyMessageBox(hWnd,"コマンドが長すぎます。短くしてください","LOCK ON", MB_OK|MB_ICONERROR);
-		lpszCommand[0] = '\0';
-		return;
-	}
-	if(strlen(lpszFile) >= MAX_PATH)
-	{
-		MyMessageBox(hWnd,"ファイル名が長すぎます。短くしてください","LOCK ON", MB_OK|MB_ICONERROR);
-		lpszCommand[0] = '\0';
-		return;
-	}
-
-	// get file size
-	if(n64DataSize == 0)
-	{
-		GetDataSize(waveFmt,dwRecTime,&n64DataSize);
-	}
-
-	if(wSaveMode == SAVE_PIPE) 
-	{
-		dwHeadSize = WAVEHDRSIZE(FALSE);
-		if(n64DataSize > 0xFFFFFFFF-dwHeadSize) n64DataSize = 0xFFFFFFFF-dwHeadSize;
-	}
-#endif
-
-	n64FileSize = n64DataSize + dwHeadSize;
-
-	sprintf(szDataSize,"%I64d",n64DataSize);
-	sprintf(szFileSize,"%I64d",n64FileSize);
 
 	// get module path
 	GetModuleFileName(NULL,szStr,CHR_BUF);
@@ -725,32 +647,6 @@ VOID SetCommandStrings(
 					while(lpszFile[i3]!='\0' && i2 < MAX_COM_LNG)
 					{
 						lpszCommand[i2] = lpszFile[i3];
-						i2++;i3++;
-					}
-					i+=2;
-					
-					break;
-
-				// data size
-				case 'b':
-					
-					i3 = 0;
-					while(szDataSize[i3]!='\0' && i2 < MAX_COM_LNG)
-					{
-						lpszCommand[i2] = szDataSize[i3];
-						i2++;i3++;
-					}
-					i+=2;
-					
-					break;
-
-				// file size(header size + data size)
-				case 'B':
-					
-					i3 = 0;
-					while(szFileSize[i3]!='\0' && i2 < MAX_COM_LNG)
-					{
-						lpszCommand[i2] = szFileSize[i3];
 						i2++;i3++;
 					}
 					i+=2;

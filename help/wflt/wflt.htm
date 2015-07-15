@@ -22,10 +22,8 @@ PCM  形式 WAVE ファイル
 <br>
 データサイズ : 最大 8388608 Tbytes(*)
 <br><br>
-(*) wave フォーマットとして WAVEFLT 独自拡張フォーマットを使用。サイズが
-4G 以上のファイルは WAVEFLT 以外のソフトでは 4G として認識されます。
-<a href="option.htm#noextrahdr" target="main">-noextrahdr</a>も参照してください。
-
+(*) サイズが4G 以上のファイルは <a href="option.htm#endless" target="main">-endless</a> オプションを指定しないと 4G として認識されます。
+<br><br>
 <hr><a name="dosa"><font size=5>
 ☆ 動作環境
 </font>
@@ -108,10 +106,7 @@ waveflt -cfg "wfltsample.txt" input.wav out.wav
 
 <br><br>
 (4)
-4G 以上のファイルを出力する場合、
- wave フォーマットとして WAVEFLT 独自拡張フォーマットを使用します。その際、
-サイズが 4G 以上のファイルは WAVEFLT 以外のソフトでは 4G として認識されます。
-<a href="option.htm#noextrahdr" target="main">-noextrahdr</a>も参照してください。
+サイズが4G 以上のファイルは <a href="option.htm#endless" target="main">-endless</a> オプションを指定しないと 4G として認識されます。
 
 <br><br>
 (5) 入力ファイルと出力ファイルが同名の場合は入力ファイルを
@@ -213,8 +208,6 @@ waveflt -cfg "wfltsample.txt" input.wav out.wav
 <tr><td>%f</td><td>出力ファイルのファイル名(拡張子除く) (例) out</td></tr>
 <tr><td>%e</td><td>出力ファイルの拡張子 (例) .wav</td></tr>
 <tr><td>%a</td><td>パスを含むファイル名(%a = %d%p%f%e) (例) c:\tmp\out.wav</td></tr>
-<tr><td>%b</td><td>出力データサイズ(byte) </td></tr>
-<tr><td>%B</td><td>出力ファイル全体のサイズ(= %b + ヘッダサイズ)(byte) </td></tr>
 <tr><td>%%</td><td>% </td></tr>
 <tr><td>%^</td><td>"  </td></tr>
 <tr><td>%1</td><td>%1 -udef1 で指定したユーザー定義文字列</td></tr>
@@ -259,6 +252,11 @@ Copyright (c) 1999-2015 T.Tokairin
 ☆ 更新履歴
 </font>
 <pre>
+
+拡張 RIFF フォーマット廃止
+-noextrahdr オプション廃止
+置換文字列の%bと%Bを廃止
+
 
 Ver.2015.06.
 

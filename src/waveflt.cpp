@@ -33,7 +33,7 @@ DWORD DwBufSize = 10; // buffer size
 BOOL BlHeadOffset = false; // specify header offset of input file 
 BOOL BlNoChkHdd = false; // no check space of HDD
 BOOL BlWaveHdrOut = true; // output wave header
-bool BlExtChunkOfHdr = true; // use extra wave header
+//bool BlExtChunkOfHdr = true; // use extra wave header
 BOOL BlUseSSE2 = true; // use sse2
 
 LONGLONG N64OutOffset; // byte, offset of input file
@@ -1668,14 +1668,14 @@ BOOL ReadOption(int argc, char *argv_org[]){
 			BlWaveHdrOut = false;
 			i2++;
 		}
-
+/* obsolete
 		// no extra wave header
 		else if(strcmp(argv[i],"-noextrahdr")==0) 
 		{
 			BlExtChunkOfHdr = false;
 			i2++;
 		}
-
+*/
 		// set timestamp to creation time
 		else if(strcmp(argv[i],"-fstamp")==0 || strcmp(argv[i],"-tstamp")==0) 
 		{
@@ -1944,7 +1944,9 @@ BOOL SetParam(){
 	}
 
 	if(!BlWaveHdrOut) fprintf(stderr,"no wave header\n");
+/* obsolete
 	if(!BlExtChunkOfHdr) fprintf(stderr,"no extra wave header\n");
+*/
 
 	//----------------------------------------------
 	// get offsets and copy sizes of blocks.
@@ -2015,15 +2017,17 @@ BOOL SetParam(){
 		DwAddSp[1] = (DWORD)(DbAddSp[1] * WriteWaveFmt.avgbyte());
 	}
 
+	/* obsolete
 	// if data size < 4G, then don't use extra chunk
 	n64Foo = N64RealTotalDataSize+DwAddSp[0]+DwAddSp[1];
 	if(n64Foo <= 0xFFFFFFFF-44) BlExtChunkOfHdr = false;
+	*/
 
 	//-----------------------------
 	// get file name
 	//-----------------------------
 
-	SetCommandStrings(false,SzWriteFile,SzWriteFile,SzWriteFile,SzUserDef[0],SzUserDef[1],SzUserDef[2],SystemTime,WriteWaveFmt,n64Foo);
+	SetCommandStrings(false,SzWriteFile,SzWriteFile,SzWriteFile,SzUserDef[0],SzUserDef[1],SzUserDef[2],SystemTime,WriteWaveFmt);
 	strcpy(SzRealWriteFile,SzWriteFile);
 
 #ifdef WIN32
@@ -2410,7 +2414,7 @@ BOOL SetParam(){
 		n64Foo = (ULONGLONG)((double)(N64RealTotalDataSize+DwAddSp[0]+DwAddSp[1])
 			*((double)WriteWaveFmt.avgbyte()/InputWaveFmt.avgbyte()));
 
-		if(n64HddSize < WAVEHDRSIZE(BlExtChunkOfHdr)+n64Foo){
+		if(n64HddSize < WAVEHDRSIZE()+n64Foo){
 			fprintf(stderr,"\nSpace of hdd (=%d Mbyte) is not enough.\n",n64HddSize/1024/1024);
 			return false;
 		}
@@ -2626,11 +2630,11 @@ BOOL FilterBody()
 			if(BlStdout)
 			{
 				n64Foo = N64RealTotalDataSize+DwAddSp[0]+DwAddSp[1];
-				WriteWaveFmt.write(hdWriteFile, n64Foo, BlExtChunkOfHdr);
+				WriteWaveFmt.write(hdWriteFile, n64Foo);
 			}
 			else if(hdWriteFile != NULL){
 				// move file pointer of output file
-				__int64 pos64 = WAVEHDRSIZE(BlExtChunkOfHdr);
+				__int64 pos64 = WAVEHDRSIZE();
 				_fseeki64( hdWriteFile , pos64, SEEK_SET);
 			}
 			
@@ -2915,7 +2919,7 @@ BOOL FilterBody()
 									if( dwWriteByte != points*WriteWaveFmt.block() ){
 										// if fail, then write header and exit.
 										if(BlWaveHdrOut && !BlStdout) 
-											WriteWaveFmt.write(hdWriteFile,n64RealTotalOutSize+DwAddSp[0],BlExtChunkOfHdr);
+											WriteWaveFmt.write(hdWriteFile,n64RealTotalOutSize+DwAddSp[0]);
 										goto L_ERR;
 									}
 									
@@ -2969,7 +2973,7 @@ BOOL FilterBody()
 							AddSpace(hdWriteFile,DwAddSp[1]);
 							
 							// write wave header
-							if(BlWaveHdrOut && !BlStdout) WriteWaveFmt.write(hdWriteFile, n64RealTotalOutSize+DwAddSp[0]+DwAddSp[1],BlExtChunkOfHdr);
+							if(BlWaveHdrOut && !BlStdout) WriteWaveFmt.write(hdWriteFile, n64RealTotalOutSize+DwAddSp[0]+DwAddSp[1]);
 							
 							// close output file handle
 #ifdef USEWIN32API
@@ -3007,9 +3011,11 @@ BOOL FilterBody()
 								N64TotalDataSize -= n64TotalOutSize;
 								N64RealTotalDataSize -= n64RealTotalOutSize;
 
+								/*obsolete
 								// if data size < 4G, then don't use extra chunk
 								n64Foo = N64RealTotalDataSize+DwAddSp[0]+DwAddSp[1];
 								if(n64Foo <= 0xFFFFFFFF-44) BlExtChunkOfHdr = false;
+								*/
 							}
 
 							n64OutSize = 0;
@@ -3033,8 +3039,7 @@ BOOL FilterBody()
 								SetOutputFileName(SzOrgWriteFile,SzWriteFile,DwCurSplitNo);
 							else strcpy(SzWriteFile,"null");
 
-							n64Foo = N64RealTotalDataSize+DwAddSp[0]+DwAddSp[1];
-							SetCommandStrings(false,SzWriteFile,SzWriteFile,SzWriteFile,SzUserDef[0],SzUserDef[1],SzUserDef[2],SystemTime,WriteWaveFmt,n64Foo);
+							SetCommandStrings(false,SzWriteFile,SzWriteFile,SzWriteFile,SzUserDef[0],SzUserDef[1],SzUserDef[2],SystemTime,WriteWaveFmt);
 							strcpy(SzRealWriteFile,SzWriteFile);
 			
 							
@@ -3052,12 +3057,12 @@ BOOL FilterBody()
 									if(BlStdout)
 									{ 
 										n64Foo = N64RealTotalDataSize+DwAddSp[0]+DwAddSp[1];
-										WriteWaveFmt.write(hdWriteFile,n64Foo,BlExtChunkOfHdr);
+										WriteWaveFmt.write(hdWriteFile,n64Foo);
 									}
 									else if(hdWriteFile != NULL)
 									{
 										// move file pointer
-										__int64 pos64 = WAVEHDRSIZE(BlExtChunkOfHdr);
+										__int64 pos64 = WAVEHDRSIZE();
 										_fseeki64( hdWriteFile, pos64, SEEK_SET);
 									}
 
@@ -3172,7 +3177,7 @@ L_EXITBLOCK:
 	AddSpace(hdWriteFile,DwAddSp[1]);
 
 	// write wave header
-	if(BlWaveHdrOut && !BlStdout) WriteWaveFmt.write(hdWriteFile,n64RealTotalOutSize+DwAddSp[0]+DwAddSp[1],BlExtChunkOfHdr);
+	if(BlWaveHdrOut && !BlStdout) WriteWaveFmt.write(hdWriteFile,n64RealTotalOutSize+DwAddSp[0]+DwAddSp[1]);
 
 	// close file handle of output
 #ifdef USEWIN32API
