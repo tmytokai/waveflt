@@ -120,15 +120,19 @@ void ShowAbout(){
 	fprintf(stdout,"\n");
 	fprintf(stdout,"-cfg \"file\" : configuration file\n");
 	fprintf(stdout,"\n");
-	
+
+	/* obsolete
 	fprintf(stdout,"-tstamp : set timestamp to timestamp of input file\n");
+	*/
 	fprintf(stdout,"-info : file information (waveflt -info input.wav)\n");
 	fprintf(stdout,"-silent : silent mode\n");
 	fprintf(stdout,"-buf n : buffer size\n");
 	fprintf(stdout,"-headofs byte : header offset size\n");
 	fprintf(stdout,"-format sec freq chn bit tag : format of input file\n");
 	fprintf(stdout,"-nowavehdr : no wave header\n");
+	/* obsolete
 	fprintf(stdout,"-noextrahdr : no extra wave header\n");
+	*/
 	fprintf(stdout,"-endless : endless mode\n");	
 	fprintf(stdout,"-del : delete input file\n");
 	fprintf(stdout,"-nochkhdd : no check space of HDD\n");

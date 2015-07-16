@@ -124,13 +124,13 @@ HANDLE HdOutFileMap;  // use filemapping for config of the output file name
 // current file number
 DWORD DwCurSplitNo = 0; 
 
-
+/* obsolete
 // set filestamp to creation time
 BOOL BlFileStamp = false;
 #ifdef USEWIN32API
 FILETIME FtCreationTime,FtLastAccessTime,FtLastWriteTime;
 #endif
-
+*/
 
 FILTER_DATA FDAT;
 
@@ -1676,12 +1676,15 @@ BOOL ReadOption(int argc, char *argv_org[]){
 			i2++;
 		}
 */
+		/*obsolete
 		// set timestamp to creation time
 		else if(strcmp(argv[i],"-fstamp")==0 || strcmp(argv[i],"-tstamp")==0) 
 		{
 			BlFileStamp = true;
 			i2++;
 		}
+
+		*/
 
 		/* obsolete
 		// pipe
@@ -1770,11 +1773,13 @@ BOOL SetParam(){
 
 	ULONGLONG n64Foo;
 
+	/* obsolete
 #ifdef USEWIN32API
 	HANDLE hTimeFile;
 	SYSTEMTIME sysTime;
 	FILETIME ftLocal;
 #endif
+	*/
 
 	// get current system time
 	GetLocalTime(&SystemTime);
@@ -2067,6 +2072,7 @@ BOOL SetParam(){
 
 	fprintf(stderr,"option(s):\n");
 
+	/* obsolete
 	// show timestamp
 #ifdef USEWIN32API
 	if(BlFileStamp && !BlNoSignal)
@@ -2098,6 +2104,8 @@ BOOL SetParam(){
 					);
 	}
 #endif	
+	*/
+
 	if(BlUseSSE2){
 		if(CheckSSE2()) fprintf(stderr,"SSE2: supported\n");
 	}
@@ -2983,7 +2991,8 @@ BOOL FilterBody()
 							if(hdWriteFile != NULL) fclose(hdWriteFile);
 							hdWriteFile = NULL;
 #endif
-							
+			
+							/* obsolete
 #ifdef USEWIN32API
 							
 							// set timestamp
@@ -2999,6 +3008,7 @@ BOOL FilterBody()
 								}
 							}
 #endif	
+							*/
 
 
 							//---------------------------------------
@@ -3068,7 +3078,8 @@ BOOL FilterBody()
 
 								}
 							}
-							
+				
+							/* obsolete
 #ifdef USEWIN32API
 							// get local time
 							if(BlFileStamp && !BlNoSignal)
@@ -3086,6 +3097,7 @@ BOOL FilterBody()
 									);
 							}
 #endif	
+							*/
 							
 							fprintf(stderr,"\n\n----------------\nchange output\n");
 							fprintf(stderr,"output: ");
@@ -3188,6 +3200,7 @@ L_EXITBLOCK:
 	hdWriteFile = NULL;
 #endif
 	
+	/* obsolete
 #ifdef USEWIN32API
 	
 	// set timestamp
@@ -3203,6 +3216,7 @@ L_EXITBLOCK:
 		}
 	}
 #endif	
+	*/
 	
 	if(BlVerbose){
 		std::vector<Filter*>::iterator it = filters.begin();
