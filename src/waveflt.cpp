@@ -845,27 +845,22 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	// search peak,
 	for(i=0;i<outformat.channels();i++) SET_PEAK(lpFilterBuf[i],*lpdwPointsInBuf,i);			
 
-	// restore wave level
-	if( CONFIG::get().pre_normalization ){
-		if(dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC)
-		{
+	if(dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC){
+
+		// restore wave level
+		if( CONFIG::get().pre_normalization ){
 			const double maxlevel = outformat.GetMaxWaveLevel();
 			for(i=0;i<outformat.channels();i++){
 				for(i2=0;i2<*lpdwPointsInBuf;i2++) lpFilterBuf[i][i2] *= maxlevel;
 			}
 		}
-	}
 
-	// dither
-	if(lpFDat->bDither){
-		if(dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC)
-		{		
-			for(i=0;i<outformat.channels();i++)
-			{
+		// dither
+		if(lpFDat->bDither){
+			for(i=0;i<outformat.channels();i++){
 				DITHER(lpFilterBuf[i],*lpdwPointsInBuf,i,lpFDat->dDitherAmp);
 			}
 		}
-
 	}
 }
 
@@ -2984,13 +2979,15 @@ BOOL FilterBody()
 							if(BlWaveHdrOut && !BlStdout) WriteWaveFmt.write(hdWriteFile, n64RealTotalOutSize+DwAddSp[0]+DwAddSp[1]);
 							
 							// close output file handle
+/*
 #ifdef USEWIN32API
 							if(hdWriteFile != NULL) CloseHandle(hdWriteFile);
 							hdWriteFile = NULL;
 #else
+							*/
 							if(hdWriteFile != NULL) fclose(hdWriteFile);
 							hdWriteFile = NULL;
-#endif
+//#endif
 			
 							/* obsolete
 #ifdef USEWIN32API
@@ -3123,13 +3120,13 @@ BOOL FilterBody()
 				else 
 				{
 					// now, normalizer is searching the peak of output.
-					
+					n64RealOutSize += points*WriteWaveFmt.block();
 					n64OutSize += points_before_resampling * InputWaveFmt.block();
 
 					if(BlVerbose)
 						ShowStatus(WriteWaveFmt,SzRealWriteFile,
-						n64TotalOutSize+n64OutSize,
-						N64TotalDataSize,
+						n64RealTotalOutSize+n64RealOutSize,
+						N64RealTotalDataSize,
 						0,
 						true,
 						(BlEndless && !BlCutFile)
@@ -3260,13 +3257,12 @@ L_ERR:
 
 	// close file handles
 #ifdef USEWIN32API
-	if(hdReadFile) CloseHandle(hdReadFile);
-	if(hdWriteFile) CloseHandle(hdWriteFile);
+//	if(hdReadFile) CloseHandle(hdReadFile);
+//	if(hdWriteFile) CloseHandle(hdWriteFile);
 	CloseWaveDevice(!bReturn);
-#else
+#endif
 	if(hdReadFile) fclose(hdReadFile);
 	if(hdWriteFile) fclose(hdWriteFile);
-#endif
 	
 	// free mem
 	if(lpBuffer) free(lpBuffer);
