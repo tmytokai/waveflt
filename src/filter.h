@@ -31,7 +31,7 @@ protected:
 	void check_input_format( const WaveFormat& _input_format ) const{
 		assert( _input_format.channels() == input_format.channels() );
 		assert( _input_format.rate() == input_format.rate() );
-		assert( _input_format.bit()s == input_format.bits() );
+		assert( _input_format.bits() == input_format.bits() );
 	}
 };
 

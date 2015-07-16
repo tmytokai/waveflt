@@ -20,14 +20,14 @@ DcOffset::~DcOffset()
 
 void DcOffset::set_offset( const int channel, const double value )
 {
-    assert( channel < format.channels );
+    assert( channel < output_format.channels() );
 
     offset[ channel ] = value;
 }
 
 const double DcOffset::get_offset( const int channel ) const
 {
-    assert( channel < format.channels );
+    assert( channel < output_format.channels() );
 
     return offset[ channel ];
 }
