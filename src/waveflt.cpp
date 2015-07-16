@@ -61,7 +61,7 @@ unsigned long long N64DataSizeBlk[MAXCOPYBLOCK]; //  byte, copy size of each blo
 struct BlockData
 {
 	unsigned long long offset; // offset to block (byte)
-	unsigned long long datasize; //  data size of block (byte)
+	unsigned long long size; //  data size of block (byte)
 };
 
 std::vector<BlockData> blockdata;
@@ -2432,7 +2432,7 @@ BOOL SetParam(){
 	blockdata.resize(DwCopyBlock);
 	for( unsigned int i = 0; i < DwCopyBlock; ++i ){
 		blockdata[i].offset = N64OffsetBlk[i];
-		blockdata[i].datasize = N64DataSizeBlk[i];
+		blockdata[i].size = N64DataSizeBlk[i];
 	}
 
 	// DC offset
@@ -2476,7 +2476,6 @@ BOOL FilterBody()
 	
 	double* lpFilterBuf[2] = {NULL,NULL}; 	// LR-buffer for filter(double)
 	DWORD dwFilterBufSize2; // points, size of buffer 
-	DWORD dwFilterBufChn; // channels of buffer
 	BYTE* lpBuffer = NULL; // buffer for fread()
 	BYTE* lpWriteBuffer = NULL; // buffer for fwrite()
 	DWORD dwOutBufSize; // buffer size of lpWriteBuffer
@@ -2493,21 +2492,15 @@ BOOL FilterBody()
 	double dNormalGain[2] = {0,0}; // gain for normalizer
 	DWORD dwCurrentNormalMode; // current mode of normalizer
 	LONGLONG n64PointerStdin;  // byte, current file pointer of stdin
-	DWORD dwCutHeadOutPoints; // points for shiftting(-shift ). unless dwCutHeadOutPoints >0 , cut the head of output
-	DWORD dwAddTailOutPoints; // points for shiftting([-shift). add space to the tail of output
-	
+
 	// ,and others
 	DWORD dwNormalLoop,dwNormalExec;
-	DWORD i,dwFoo;
+	DWORD dwFoo;
 	BOOL bReturn = false; // return value
 	DWORD dwWriteByte;  // write size of data returned after fwrite()
 	DWORD dwSeed; // for seed of rand
-	double dFoo;
-	LONGLONG n64Foo;
 	char szErr[CHR_BUF];
 
-
-	//-------------------------------------------------------------------
 
 
 	//--------------------------
@@ -2525,12 +2518,9 @@ BOOL FilterBody()
 
 	// buffer size of filter
 	dwFilterBufSize2 = DwBufSize/InputWaveFmt.block();
-	i = 1; while(i<dwFilterBufSize2) i = i << 1; // set align = 2^x  (for 24 bit file)
-	dwFilterBufSize2 = i;
+	dwFoo = 1; while(dwFoo<dwFilterBufSize2) dwFoo = dwFoo << 1; // set align = 2^x  (for 24 bit file)
+	dwFilterBufSize2 = dwFoo;
 
-	// number of channels of output file
-	dwFilterBufChn = WriteWaveFmt.channels();
-	
 	if(!InitFilters(&FDAT,
 		dwFilterBufSize2,
 		InputWaveFmt,
@@ -2600,7 +2590,7 @@ BOOL FilterBody()
 	// create buffer for filter
 	dwFoo = dwFilterBufSize2;
 	if(FDAT.bRsmp) dwFoo *= 2; // size *= 2 when re-sampling
-	for(i=0;i<InputWaveFmt.channels();i++) lpFilterBuf[i] = (double*)malloc(sizeof(double)*dwFoo+1024); 
+	for(unsigned int i=0;i<InputWaveFmt.channels();i++) lpFilterBuf[i] = (double*)malloc(sizeof(double)*dwFoo+1024); 
 
 	// open input file
 	if(!OpenReadFile(&hdReadFile,SzReadFile)){
@@ -2632,8 +2622,7 @@ BOOL FilterBody()
 			
 			if(BlStdout)
 			{
-				n64Foo = N64RealTotalDataSize+DwAddSp[0]+DwAddSp[1];
-				WriteWaveFmt.write(hdWriteFile, n64Foo);
+				WriteWaveFmt.write(hdWriteFile, N64RealTotalDataSize+DwAddSp[0]+DwAddSp[1]);
 			}
 			else if(hdWriteFile != NULL){
 				// move file pointer of output file
@@ -2677,7 +2666,6 @@ BOOL FilterBody()
 	// loop 2 times when normalizer is executed.
 	for(dwNormalLoop = 0; dwNormalLoop <= dwNormalExec; dwNormalLoop++)
 	{
-		
 		//-----------------------
 		// initialize 
 		//-----------------------
@@ -2691,49 +2679,34 @@ BOOL FilterBody()
 
 
 		dwFoo = (DWORD)(DbShiftTime * WriteWaveFmt.rate() / 1000);
-		dwCutHeadOutPoints = dwFoo;
-		dwAddTailOutPoints = dwFoo;
+		DWORD dwCutHeadOutPoints = dwFoo; // points for shiftting(-shift ). unless dwCutHeadOutPoints >0 , cut the head of output
+		DWORD dwAddTailOutPoints = dwFoo; // points for shiftting([-shift). add space to the tail of output
 
 		//-----------------------------
 		// main loop
 		//-----------------------------
-		unsigned int block_size = blockdata.size();
-		for( unsigned int block_no = 0; block_no < block_size ;block_no++){
+		for( unsigned int block_no = 0; block_no < blockdata.size() ;block_no++){
 
-			DWORD dwSetSize; // byte, size of data set to 'lpBuffer' when reading
-			DWORD dwRemainByte; //byte, unused data size remained in buffer.
-			unsigned long long n64OutSize; // byte, output data size in each block
-			unsigned int points;
-			unsigned int points_before_resampling;
-			unsigned long long n64InputSize; 	// byte, input data size in each block
-			unsigned long long n64RealOutSize; // byte, 'real' output data size in each block
+			unsigned long long total_read_size = 0;  // total read size of block (byte)
+			unsigned int remain_size = 0; // size of unused data in buffer (byte)
+
+			unsigned int points = 0;
+			unsigned int points_before_resampling = 0;
+
+			unsigned long long n64OutSize = 0; // byte, output data size in each block
+			unsigned long long n64RealOutSize = 0; // byte, 'real' output data size in each block
 			BOOL bChangeFile = false; // if true, change output file
-
-			dwSetSize = 0;
-			dwRemainByte = 0;
-			n64OutSize = 0;
-			points = 0;
-			n64InputSize = 0;
-			n64RealOutSize = 0;
-			bChangeFile = false;
 			
-			if(
-				(dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC)){
+			if( dwCurrentNormalMode == NORMAL_NOT || dwCurrentNormalMode == NORMAL_EXEC ){
+
 				fprintf(stderr,"\n----------------\n");
 				fprintf(stderr,"[block %d : ",block_no);
-
-				dFoo = (double)blockdata[block_no].offset/1024/1024;
-				fprintf(stderr,"offset = %.2lf M",dFoo);
+				fprintf(stderr,"offset = %.2lf M", (double)blockdata[block_no].offset/1024/1024);
 				
 				if(!(BlEndless && !BlCutFile)){ 
-					dFoo = (double)blockdata[block_no].offset/InputWaveFmt.avgbyte();
-					fprintf(stderr,"(%.2lf sec), ",dFoo);
-					
-					dFoo = (double)blockdata[block_no].datasize/1024/1024;
-					fprintf(stderr,"size = %.2lf M",dFoo);
-					
-					dFoo = (double)blockdata[block_no].datasize/InputWaveFmt.avgbyte();
-					fprintf(stderr,"(%.2lf sec)",dFoo);
+					fprintf(stderr,"(%.2lf sec), ", (double)blockdata[block_no].offset/InputWaveFmt.avgbyte());
+					fprintf(stderr,"size = %.2lf M", (double)blockdata[block_no].size/1024/1024);
+					fprintf(stderr,"(%.2lf sec)", (double)blockdata[block_no].size/InputWaveFmt.avgbyte());
 				}
 				else fprintf(stderr," (endless mode)");
 				fprintf(stderr,"]\n");
@@ -2751,56 +2724,52 @@ BOOL FilterBody()
 					(double)FDAT.n64SplitByte/InputWaveFmt.avgbyte(),
 					FDAT.n64SplitByte/1024/1024);
 			}
-
 			
-			// move file pointer of input file
-			if(!BlStdin)  // hdd
-			{
-				if( block_no == 0 || blockdata[block_no].offset != blockdata[block_no-1].offset + blockdata[block_no-1].datasize ){
+			// seek to head of block
+			if( block_no == 0 || blockdata[block_no].offset != blockdata[block_no-1].offset + blockdata[block_no-1].size ){
 
+				if(!BlStdin)  // storage
+				{
 					__int64 pos64 = blockdata[block_no].offset;
 					_fseeki64( hdReadFile , pos64, SEEK_SET);
 
-					std::vector<Filter*>::iterator it = filters.begin();
-					for( ; it != filters.end(); ++it ){
-						(*it)->inputfile_seeked();
-					}
+					fprintf(stderr, "seek to  = %d\n", pos64 );
+				}
+				else // stdin
+				{
+					n64PointerStdin += SeekStdin(lpBuffer,DwBufSize,
+						blockdata[block_no].offset,
+						n64PointerStdin
+						);
 				}
 
-			}
-			else // stdin
-			{
-				n64PointerStdin += SeekStdin(lpBuffer,DwBufSize,
-					blockdata[block_no].offset,
-					n64PointerStdin
-					);
-
+				std::vector<Filter*>::iterator it = filters.begin();
+				for( ; it != filters.end(); ++it ){
+					(*it)->inputfile_seeked();
+				}
 			}
 
-			//-----------------------------
-			// filtering in each block
 			while(1){
 				
 				//----------------------------------------------------------
 				// input
 				//----------------------------------------------------------
 
-				DWORD dwReadByte;
+				unsigned int read_size = 0; // read size of data (byte)
 
-				// caluculate read size of data from input file
-				if(BlEndless && !BlCutFile) dwReadByte = DwBufSize;  
-				else if(blockdata[block_no].datasize > n64InputSize + DwBufSize) dwReadByte = DwBufSize;
-				else dwReadByte = (DWORD)(blockdata[block_no].datasize - n64InputSize);
+				if(BlEndless && !BlCutFile) read_size = DwBufSize;
+				else if(blockdata[block_no].size > total_read_size + DwBufSize) read_size = DwBufSize;
+				else read_size = (DWORD)(blockdata[block_no].size - total_read_size);
 				
-				// align the boundary if bit of input file is 24
-				if(InputWaveFmt.bits() == 24) 
-					dwReadByte =  dwReadByte / (InputWaveFmt.channels() * (InputWaveFmt.bits()/8)) * InputWaveFmt.block();
+				// align the boundary when bits is 24
+				if( read_size && InputWaveFmt.bits() == 24) 
+					read_size =  read_size / (InputWaveFmt.channels() * (InputWaveFmt.bits()/8)) * InputWaveFmt.block();
 
 				// when current block is over, 
-				if(dwReadByte == 0 && dwRemainByte == 0){
+				if(read_size == 0 && remain_size == 0){
 
 					// shiftting.  (at the last block, shiftting should be done.)
-					if(block_no == block_size -1 && dwAddTailOutPoints){
+					if(block_no == blockdata.size() -1 && dwAddTailOutPoints){
 
 						// shiftting. add space to the tail of buffer
 						if(InputWaveFmt.bits() == 8) memset(lpBuffer,0x80,DwBufSize);
@@ -2810,11 +2779,11 @@ BOOL FilterBody()
 							dwFoo =  DwBufSize / (InputWaveFmt.channels() * (InputWaveFmt.bits()/8)) * InputWaveFmt.block();
 						
 						if(dwAddTailOutPoints > dwFoo){
-							dwSetSize = dwFoo;
+							read_size = dwFoo;
 							dwAddTailOutPoints -= dwFoo/InputWaveFmt.block();
 						}
 						else{
-							dwSetSize = dwAddTailOutPoints*InputWaveFmt.block();
+							read_size = dwAddTailOutPoints*InputWaveFmt.block();
 							dwAddTailOutPoints = 0;
 						}
 					}
@@ -2827,32 +2796,31 @@ BOOL FilterBody()
 					// from input file
 					if(!BlNoSignal){
 
-						if(dwRemainByte){
-													
-							if(dwReadByte + dwRemainByte > DwBufSize) dwReadByte = DwBufSize-dwRemainByte;
+						if(remain_size){												
+							if(read_size + remain_size > DwBufSize) read_size = DwBufSize-remain_size;
+							fprintf(stderr, "remain_size = %d, read_size = %d\n", remain_size, read_size );
 						}
 
-						dwSetSize = ReadData(hdReadFile,lpBuffer+dwRemainByte, dwReadByte);
-						n64PointerStdin += dwSetSize;
-						n64InputSize += dwSetSize;
-						dwSetSize += dwRemainByte;
-						dwRemainByte = 0;
+						read_size = ReadData(hdReadFile,lpBuffer+remain_size, read_size);
+						n64PointerStdin += read_size;
+						total_read_size += read_size;
+						read_size += remain_size;
+						remain_size = 0;
 					}
 					else // if input file's name is 'nosignal'
 					{
-						if(InputWaveFmt.bits() == 8) memset(lpBuffer,0x80,dwReadByte);
-						else memset(lpBuffer,0,dwReadByte);
-						dwSetSize = dwReadByte;
-						n64InputSize += dwSetSize;
+						if(InputWaveFmt.bits() == 8) memset(lpBuffer,0x80,read_size);
+						else memset(lpBuffer,0,read_size);
+						total_read_size += read_size;
 					}
 
 					// if EOF, then exit loop
-					if(dwSetSize == 0) goto L_EXITBLOCK;
+					if(read_size == 0) goto L_EXITBLOCK;
 					
 				}
 
 				// set data to buffer(double type)
-				CopyBufferBtoD(lpBuffer,dwSetSize,lpFilterBuf,&points,InputWaveFmt);
+				CopyBufferBtoD(lpBuffer,read_size,lpFilterBuf,&points,InputWaveFmt);
 
 				//-----------------------------------------------
 				// filtering
@@ -2870,7 +2838,8 @@ BOOL FilterBody()
 					dNormalGain,
 					DwCurSplitNo,
 					
-					n64TotalOutSize+n64OutSize,N64TotalDataSize,
+					n64TotalOutSize+n64OutSize,
+					N64TotalDataSize,
 					InputWaveFmt,
 					WriteWaveFmt);
 
@@ -2893,7 +2862,7 @@ BOOL FilterBody()
 							{
 								points -= dwCutHeadOutPoints;
 								points_before_resampling = (unsigned int)((double)dwCutHeadOutPoints/WriteWaveFmt.rate()*InputWaveFmt.rate());
-								for(i=0;i<WriteWaveFmt.channels();i++)
+								for(unsigned int i=0;i<WriteWaveFmt.channels();i++)
 									memmove(lpFilterBuf[i],lpFilterBuf[i]+dwCutHeadOutPoints,sizeof(double)*points);
 								dwCutHeadOutPoints = 0; // not do shiftting anymore
 							}
@@ -2948,13 +2917,13 @@ BOOL FilterBody()
 						if(BlVerbose){
 							double dPeak[2];
 							GET_PEAK(dPeak);
-							dFoo = max(dPeak[0],dPeak[1]);
-							dFoo = 20*log10(fabs(dFoo));
+							double peak_tmp = max(dPeak[0],dPeak[1]);
+							peak_tmp = 20*log10(fabs(peak_tmp));
 							
 							ShowStatus(WriteWaveFmt,SzRealWriteFile,
 								n64RealTotalOutSize+n64RealOutSize,
 								N64RealTotalDataSize,
-								dFoo,
+								peak_tmp,
 								false,
 								(BlEndless && !BlCutFile)
 								);
@@ -2967,10 +2936,10 @@ BOOL FilterBody()
 							n64RealTotalOutSize += n64RealOutSize;
 							n64TotalOutSize += n64OutSize;
 							const unsigned int remain_offset = points_before_resampling * InputWaveFmt.block();
-							dwRemainByte = dwSetSize - remain_offset;
+							remain_size = read_size - remain_offset;
 							
 							// move remained data to head
-							memmove(lpBuffer, lpBuffer+remain_offset, dwRemainByte);
+							memmove(lpBuffer, lpBuffer+remain_offset, remain_size);
 
 							// add space to tail
 							AddSpace(hdWriteFile,DwAddSp[1]);
@@ -3063,8 +3032,7 @@ BOOL FilterBody()
 									// write wave header if output is stdout
 									if(BlStdout)
 									{ 
-										n64Foo = N64RealTotalDataSize+DwAddSp[0]+DwAddSp[1];
-										WriteWaveFmt.write(hdWriteFile,n64Foo);
+										WriteWaveFmt.write(hdWriteFile, N64RealTotalDataSize+DwAddSp[0]+DwAddSp[1]);
 									}
 									else if(hdWriteFile != NULL)
 									{
@@ -3189,13 +3157,15 @@ L_EXITBLOCK:
 	if(BlWaveHdrOut && !BlStdout) WriteWaveFmt.write(hdWriteFile,n64RealTotalOutSize+DwAddSp[0]+DwAddSp[1]);
 
 	// close file handle of output
+	/*
 #ifdef USEWIN32API
 	if(hdWriteFile != NULL) CloseHandle(hdWriteFile);
 	hdWriteFile = NULL;
 #else
+	*/
 	if(hdWriteFile != NULL) fclose(hdWriteFile);
 	hdWriteFile = NULL;
-#endif
+//#endif
 	
 	/* obsolete
 #ifdef USEWIN32API
@@ -3230,10 +3200,8 @@ L_EXITBLOCK:
 		dMaxLevel = InputWaveFmt.GetMaxWaveLevel();
 		
 		fprintf(stderr,"\nauto DC offset: ");
-		dFoo = dOffset[0];
-		fprintf(stderr,"L =  %6.3lf dB (%.2lf), ",-20*log10(fabs(dFoo)),-dFoo*dMaxLevel);
-		dFoo = dOffset[1];
-		fprintf(stderr,"R =  %6.3lf dB (%.2lf)\n",-20*log10(fabs(dFoo)),-dFoo*dMaxLevel);
+		fprintf(stderr,"L =  %6.3lf dB (%.2lf), ",-20*log10(fabs(dOffset[0])),-dOffset[0]*dMaxLevel);
+		fprintf(stderr,"R =  %6.3lf dB (%.2lf)\n",-20*log10(fabs(dOffset[1])),-dOffset[1]*dMaxLevel);
 	}
 
 	double peak_tmp[2];
@@ -3267,7 +3235,7 @@ L_ERR:
 	// free mem
 	if(lpBuffer) free(lpBuffer);
 	if(lpWriteBuffer) free(lpWriteBuffer);
-	for(i=0;i<2;i++) if(lpFilterBuf[i]) free(lpFilterBuf[i]);
+	for(unsigned int i=0;i<2;i++) if(lpFilterBuf[i]) free(lpFilterBuf[i]);
 
 	return bReturn;
 }
