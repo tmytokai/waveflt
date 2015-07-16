@@ -58,8 +58,16 @@ DWORD DwCopyBlock = 1; // number of blocks
 unsigned long long N64OffsetBlk[MAXCOPYBLOCK]; // byte, offset of each block
 unsigned long long N64DataSizeBlk[MAXCOPYBLOCK]; //  byte, copy size of each block
 
+enum
+{
+	TYPE_STORAGE = 0,
+	TYPE_STDIN,
+	TYPE_NULL
+};
+
 struct BlockData
 {
+	int input_type; // type of input
 	unsigned long long offset; // offset to block (byte)
 	unsigned long long size; //  data size of block (byte)
 };
@@ -1786,6 +1794,7 @@ BOOL SetParam(){
 	// empty file
 	if(strcmp(SzReadFile,"nosignal")==0)
 	{
+		strcpy(SzReadFile,"null");
 		BlNoSignal = true;
 	}
 
@@ -2431,6 +2440,11 @@ BOOL SetParam(){
 	// setup blocks
 	blockdata.resize(DwCopyBlock);
 	for( unsigned int i = 0; i < DwCopyBlock; ++i ){
+
+		if( BlStdin ) blockdata[i].input_type = TYPE_STDIN;
+		else if( BlNoSignal ) blockdata[i].input_type = TYPE_NULL;
+		else blockdata[i].input_type = TYPE_STORAGE;
+
 		blockdata[i].offset = N64OffsetBlk[i];
 		blockdata[i].size = N64DataSizeBlk[i];
 	}
@@ -2443,10 +2457,7 @@ BOOL SetParam(){
 	}
 	
 	fprintf(stderr,"\nstream of data:\n");
-
-	if(BlStdin)	fprintf(stderr,"stdin\n");
-	else if(BlNoSignal) fprintf(stderr,"nosignal\n");
-	else fprintf(stderr,"%s\n",SzReadFile);
+	fprintf(stderr,"INPUT\n",SzReadFile);
 
 	std::vector<Filter*>::iterator it = filters.begin();
 	for( ; it != filters.end(); ++it ){
@@ -2454,13 +2465,7 @@ BOOL SetParam(){
 		(*it)->show_config();
 	}
 
-	fprintf(stderr,"=> ");
-	if(BlStdout) // stdout or waveout
-	{			
-		if(BlWaveOut)	fprintf(stderr,"waveout\n");
-		else fprintf(stderr,"stdout\n");
-	}
-	else fprintf(stderr,"%s\n",SzWriteFile);
+	fprintf(stderr,"=> OUTPUT\n");
 
 	return true;
 }
@@ -2711,7 +2716,20 @@ BOOL FilterBody()
 				else fprintf(stderr," (endless mode)");
 				fprintf(stderr,"]\n");
 
-				fprintf(stderr,"output: ");
+				fprintf(stderr,"INPUT: ");
+				switch( blockdata[block_no].input_type ){
+					case TYPE_STORAGE:
+						fprintf(stderr,"%s\n",SzReadFile);
+						break;
+				case TYPE_STDIN:
+						fprintf(stderr,"stdin\n");
+						break;
+				case TYPE_NULL:
+						fprintf(stderr,"null\n");
+						break;
+				}
+
+				fprintf(stderr,"OUTPUT: ");
 				if(BlStdout){
 						if(BlWaveOut) fprintf(stderr,"[waveout]\n");
 					else fprintf(stderr,"[stdout]\n");
@@ -2728,14 +2746,14 @@ BOOL FilterBody()
 			// seek to head of block
 			if( block_no == 0 || blockdata[block_no].offset != blockdata[block_no-1].offset + blockdata[block_no-1].size ){
 
-				if(!BlStdin)  // storage
+				if( blockdata[block_no].input_type == TYPE_STORAGE )
 				{
 					__int64 pos64 = blockdata[block_no].offset;
 					_fseeki64( hdReadFile , pos64, SEEK_SET);
 
 					fprintf(stderr, "seek to  = %d\n", pos64 );
 				}
-				else // stdin
+				else if( blockdata[block_no].input_type == TYPE_STDIN )
 				{
 					n64PointerStdin += SeekStdin(lpBuffer,DwBufSize,
 						blockdata[block_no].offset,
@@ -2790,11 +2808,9 @@ BOOL FilterBody()
 					else goto L_EXITBLOCK; // exit loop
 
 				}
-				else // read the sound data from input stream
+				else
 				{
-				
-					// from input file
-					if(!BlNoSignal){
+					if( blockdata[block_no].input_type == TYPE_STORAGE || blockdata[block_no].input_type == TYPE_STDIN ){
 
 						if(remain_size){												
 							if(read_size + remain_size > DwBufSize) read_size = DwBufSize-remain_size;
@@ -2807,17 +2823,15 @@ BOOL FilterBody()
 						read_size += remain_size;
 						remain_size = 0;
 					}
-					else // if input file's name is 'nosignal'
-					{
+					else if( blockdata[block_no].input_type == TYPE_NULL ){
+
 						if(InputWaveFmt.bits() == 8) memset(lpBuffer,0x80,read_size);
 						else memset(lpBuffer,0,read_size);
 						total_read_size += read_size;
 					}
-
-					// if EOF, then exit loop
-					if(read_size == 0) goto L_EXITBLOCK;
-					
 				}
+
+				if(read_size == 0) goto L_EXITBLOCK;
 
 				// set data to buffer(double type)
 				CopyBufferBtoD(lpBuffer,read_size,lpFilterBuf,&points,InputWaveFmt);
@@ -3064,8 +3078,8 @@ BOOL FilterBody()
 #endif	
 							*/
 							
-							fprintf(stderr,"\n\n----------------\nchange output\n");
-							fprintf(stderr,"output: ");
+							fprintf(stderr,"\n\n----------------\nchange OUTPUT\n");
+							fprintf(stderr,"new OUTPUT: ");
 							if(BlStdout){
 									fprintf(stderr,"[stdout]\n");
 							}
