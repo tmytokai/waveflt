@@ -734,8 +734,7 @@ void ShowStatus(WaveFormat waveFmt,
 				LONGLONG u64DataSize,  // output size 
 				LONGLONG u64TotalSize, // total size of output file
 				double dPeak,	   // peak
-				BOOL bNormalGain, // now, normalizer is searching peak
-				BOOL bStdin // stdin mode
+				BOOL bNormalGain // now, normalizer is searching peak
 				);
 
 

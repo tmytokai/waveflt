@@ -69,8 +69,7 @@ void ShowStatus(WaveFormat waveFmt,
 				LONGLONG u64DataSize,  // output size 
 				LONGLONG u64TotalSize, // total size of output file
 				double dPeak,	   // peak
-				BOOL bNormalGain, // now, normalizer is searching peak
-				BOOL bStdin // stdin mode
+				BOOL bNormalGain // now, normalizer is searching peak
 				){
 	
 	double dTime;
@@ -91,7 +90,7 @@ void ShowStatus(WaveFormat waveFmt,
 
 		fprintf(stderr,"[%.1lf s]",dTime);
 
-		if(!bStdin){
+		if(u64TotalSize > 0){
 			dFoo = (double)u64DataSize/u64TotalSize*100.;
 			fprintf(stderr,"[%d %%]",(DWORD)dFoo);
 		}
