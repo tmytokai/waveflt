@@ -124,35 +124,6 @@ sec = 180, freq = 44100, chn = 2, bit = 16, tag = 1
 SSE2 を使用しないで演算します。
 <br><br>
 
-<br><br>
-<hr><a name="no-pre-normalization">
--no-pre-normalization
-<br><br>
-概要 : 
-<br>
-フィルタリング前にデータを正規化しない
-<br><br>
-引数 : 
-<br>
-無し
-<br><br>
-デフォルト動作 : 
-<br>
-正規化する
-<br><br>
-詳細 : 
-<br>
-フィルタリング前にデータを -1 〜 1 の範囲に正規化しません。
-<br>
-cut 系や split 系のオプションだけを指定している場合は動作が速くなります。
-<br>
-それら以外のオプションを指定している場合の挙動は保証しません。
-また peak 値も正しく取得できません。
-<br><br>
-実行例 :
-<br>
--no-pre-normalization
-<br><br>
 
 <hr><a name="vol">
 [-vol n ] : ボリューム調整
@@ -928,6 +899,36 @@ null を指定すると実際には出力せずにフィルタ処理だけを行
 
 <br><br>
 また stdout を指定すると標準出力にデータを出力します。
+<br><br>
+
+<br><br>
+<hr><a name="no-pre-normalization">
+-no-pre-normalization
+<br><br>
+概要 : 
+<br>
+フィルタリング前にデータを正規化しない
+<br><br>
+引数 : 
+<br>
+無し
+<br><br>
+デフォルト動作 : 
+<br>
+正規化する
+<br><br>
+詳細 : 
+<br>
+フィルタリング前にデータを -1 〜 1 の範囲に正規化しません。
+<br>
+cut 系や split 系のオプションだけを指定している場合は動作が速くなります。
+<br>
+それら以外のオプションを指定している場合の挙動は保証しません。
+また peak 値も正しく取得できません。
+<br><br>
+実行例 :
+<br>
+-no-pre-normalization
 <br><br>
 
 

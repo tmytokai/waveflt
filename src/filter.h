@@ -4,35 +4,40 @@
 #define _FILTER_H
 
 #include <assert.h>
-#include "buffer.h"
+#include <vector>
+#include "track.h"
 
 class Filter
 {
-private:
-	WaveFormat input_format;
+  private:
+    WaveFormat input_format;
 
-protected:
+  protected:
     WaveFormat output_format;
+    bool dbg;
 
-public:
-	Filter( const WaveFormat& _input_format ) 
-		: input_format( _input_format ), output_format( _input_format ){}
-	virtual ~Filter(){}
-	const WaveFormat& get_output_format() const { return output_format; }
+  public:
+    Filter( const WaveFormat& _input_format )
+        : input_format( _input_format ), output_format( _input_format ), dbg( false ){}
+    virtual ~Filter(){}
+    const WaveFormat& get_input_format() const { return input_format; }
+    const WaveFormat& get_output_format() const { return output_format; }
 
-	virtual void show_config() const = 0;
+    virtual void show_config() const = 0;
     virtual void clear_buffer() = 0;
-	virtual void inputfile_seeked() = 0;
-    virtual void process( Buffer& buffer ) = 0;
-	virtual void outputfile_changed() = 0;
-	virtual void show_result() const = 0;
+    virtual void inputfile_seeked() = 0;
+    virtual void process( std::vector<Track>& tracks ) = 0;
+    virtual void outputfile_changed() = 0;
+    virtual void show_result() const = 0;
 
-protected:
-	void check_input_format( const WaveFormat& _input_format ) const{
-		assert( _input_format.channels() == input_format.channels() );
-		assert( _input_format.rate() == input_format.rate() );
-		assert( _input_format.bits() == input_format.bits() );
-	}
+  protected:
+    void check_rate_of_tracks( const std::vector<Track>& tracks ) const{
+
+        std::vector<Track>::const_iterator it = tracks.begin();
+        for(; it != tracks.end(); ++it ){
+            assert( (*it).get_format().rate() == input_format.rate() );
+        }
+    }
 };
 
 #endif

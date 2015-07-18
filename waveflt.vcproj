@@ -203,10 +203,6 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath=".\src\buffer.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\config.cpp"
 				>
 			</File>
@@ -417,6 +413,10 @@
 			<Filter
 				Name="Filter"
 				>
+				<File
+					RelativePath=".\src\autooffset.cpp"
+					>
+				</File>
 				<File
 					RelativePath="src\compr.cpp"
 					>
@@ -664,10 +664,6 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath=".\src\buffer.h"
-				>
-			</File>
-			<File
 				RelativePath=".\src\config.h"
 				>
 			</File>
@@ -677,6 +673,10 @@
 			</File>
 			<File
 				RelativePath=".\src\io.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\track.h"
 				>
 			</File>
 			<File

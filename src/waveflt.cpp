@@ -10,7 +10,7 @@
 #include "io.h"
 
 #include "filter.h"
-#include "buffer.h"
+#include "track.h"
 #include "dcoffset.h"
 
 std::vector<Filter*> filters;
@@ -622,13 +622,15 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	BOOL bChangeFile = false;
 	static double dNoiseShape[MAX_CHN]; // buffer of noise shaper
 
-	Buffer buffer(informat);
-	for(i=0;i<informat.channels();i++) buffer.buffer[i] = lpFilterBuf[i];
-	buffer.points = *lpdwPointsInBuf;
+	Track track(informat);
+	for(i=0;i<informat.channels();i++) track.raw[i] = lpFilterBuf[i];
+	track.points = *lpdwPointsInBuf;
+	std::vector< Track > tracks;
+	tracks.push_back( track );
 
 	std::vector<Filter*>::iterator it = filters.begin();
 	for( ; it != filters.end(); ++it ){
-		(*it)->process(buffer);
+		(*it)->process(tracks);
 	}
 
 	// pre-normalize data between -1 to 1 before filtering
@@ -2421,9 +2423,11 @@ BOOL SetParam(){
 
 	// DC offset
 	if( CONFIG::get().use_dcoffset ){
-		Filter* filter = new DcOffset( wavfmt, CONFIG::get().dcoffset);
-		filters.push_back( filter );
-		wavfmt = filter->get_output_format();
+		DcOffset* dcoffset = new DcOffset( wavfmt );
+		dcoffset->set_offset( 0, CONFIG::get().dcoffset );
+		wavfmt = dcoffset->get_output_format();
+				
+		filters.push_back( dcoffset );
 	}
 
 	// setup blocks

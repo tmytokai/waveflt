@@ -1,172 +1,84 @@
 // DC offset
 
+#include <stdio.h>
+
 #include "dcoffset.h"
 
 DcOffset::DcOffset( const WaveFormat& _input_format )
     : Filter( _input_format )
 {
-    offset.resize( output_format.channels() );
-    for( int i=0; i < output_format.channels(); ++i) offset[i] = 0;
-}
+    dbg = true;
+    if( dbg ) fprintf( stderr, "\n[debug] DcOffset::DcOffset\n");
 
-DcOffset::DcOffset( const WaveFormat& _input_format, const std::vector<double>& _offset )
-    : Filter( _input_format ), offset( _offset )
-{}
+    clear_buffer();
+}
 
 DcOffset::~DcOffset()
 {
-	printf("\nDcOffset::~DcOffset\n");
+    if( dbg ) fprintf( stderr, "\n[debug] DcOffset::~DcOffset\n");
 }
 
-void DcOffset::set_offset( const int channel, const double value )
+void DcOffset::set_offset( const unsigned int track_no, const std::vector<double>& offset )
 {
-    assert( channel < output_format.channels() );
-
-    offset[ channel ] = value;
-}
-
-const double DcOffset::get_offset( const int channel ) const
-{
-    assert( channel < output_format.channels() );
-
-    return offset[ channel ];
+    if( track_no+1 > offsets.size() ) offsets.resize( track_no+1 );
+    offsets[track_no] = offset;
 }
 
 void DcOffset::show_config() const
 {
-	fprintf(stderr,"DC offset: " );
-	for( int i=0; i < output_format.channels(); ++i){
-		fprintf(stderr,"ch%d = %lf ", i, offset[i] );
-		if( i < output_format.channels()-1 ) fprintf(stderr,", " );
-	}
-	fprintf(stderr,"\n" );
+    fprintf(stderr,"DC offset: " );
+    for( unsigned int no=0; no < offsets.size(); ++no){
+
+        const std::vector<double>& offset = offsets[no];
+        if( offset.size() == 0 ) continue;
+
+        fprintf(stderr,"[Tr_%d: ", no );
+        for( unsigned int i=0; i < offset.size(); ++i){
+            fprintf(stderr,"Ch_%d=%.2lf", i, offset[i] );
+            if( i < offset.size()-1 ) fprintf(stderr,", " );
+        }
+        fprintf(stderr,"]");
+    }
+    fprintf(stderr,"\n" );
 }
 
 void DcOffset::clear_buffer()
 {
-	printf("\nDcOffset::clear_buffer\n");
+    if( dbg ) fprintf( stderr, "\n[debug] DcOffset::clear_buffer\n");
 }
 
 void DcOffset::inputfile_seeked()
 {
-	printf("\nDcOffset::inputfile_seeked\n");
+    if( dbg ) fprintf( stderr, "\n[debug] DcOffset::inputfile_seeked\n");
 }
 
-void DcOffset::process( Buffer& buffer )
+void DcOffset::process( std::vector<Track>& tracks )
 {
-	check_input_format( buffer.format );
+    check_rate_of_tracks( tracks );
 
-    if( ! buffer.points ) return;
-    for( int i=0; i < output_format.channels(); ++i){
-		for( unsigned int i2=0; i2 < buffer.points; ++i2 ) buffer.buffer[i][i2] += offset[i];
+    for( unsigned int track_no=0; track_no < tracks.size(); ++track_no){
+
+        if( offsets.size() <= track_no ) return;
+
+        const std::vector<double>& offset = offsets[track_no];
+        if( offset.size() == 0 ) continue;
+
+        Track& track = tracks[track_no];
+        if( ! track.get_points() ) continue;
+
+        assert( track.get_format().channels() == offset.size() );
+        for( unsigned int i=0; i < track.get_format().channels(); ++i){
+            for( unsigned int i2=0; i2 < track.get_points(); ++i2 ) track.raw[i][i2] += offset[i];
+        }
     }
-
-	buffer.format = output_format;
 }
 
 void DcOffset::outputfile_changed()
 {
-	printf("\nDcOffset::outputfile_changed\n");
+    if( dbg ) fprintf( stderr, "\n[debug] DcOffset::outputfile_changed\n");
 }
 
 void DcOffset::show_result() const
 {
-	printf("\nDcOffset::show_result\n");
+    if( dbg ) fprintf( stderr, "\n[debug] DcOffset::show_result\n");
 }
-
-
-//------------------------------------------------------
-// obsolete
-
-// adjustment of DC offset
-
-#ifdef WIN32
-#include <windows.h>
-#endif
-
-BOOL BlDCoffFirstBuffer = true; // whether this is first buffer or not
-double DbDCoffTotal = 0;
-double DbAutoOffset[2] = {0,0}; // current adjustment value of auto DC offset.
-
-
-
-//---------------------------------
-// get auto offset value
-void GetAutoOffset(double dOffset[2]){
-	dOffset[0] = DbAutoOffset[0]/DbDCoffTotal;
-	dOffset[1] = DbAutoOffset[1]/DbDCoffTotal;
-}
-
-
-
-//------------------------------------------
-// DC adjustment 
-VOID DCOFFSET(double* lpFilterBuf, // buffer
-			  DWORD dwPointsInBuf, // points
-			  double dOffset // offset
-			  ){
-	DWORD i;
-
-	for(i=0;i<dwPointsInBuf;i++) lpFilterBuf[i] += dOffset;
-}
-
-
-	
-//------------------------------------------
-// AUTO DC adjustment 
-VOID AUTODCOFFSET(double* lpFilterBuf[2], // buffer (L-R)
-			  DWORD dwPointsInBuf, // points
-			  WaveFormat waveFmt,  // format
-			  DWORD dwTrainSec // sec, training time
-			  ){
-
-	DWORD i,i2;
-	double dFoo;
-
-	if(dwPointsInBuf 
-		&& DbDCoffTotal < (double)waveFmt.rate() * 60 * dwTrainSec){ 
-		
-		// initialize
-		if(BlDCoffFirstBuffer){
-			
-			for(i2=0;i2<waveFmt.channels();i2++){
-				DbAutoOffset[i2] = 0;
-				for(i=0;i<dwPointsInBuf;i++) DbAutoOffset[i2] += lpFilterBuf[i2][i];
-				DbAutoOffset[i2] /= dwPointsInBuf;
-			}
-
-			BlDCoffFirstBuffer = false;
-		}
-		else // training
-		{ 
-			for(i2=0;i2<waveFmt.channels();i2++){
-				for(i=0;i<dwPointsInBuf;i++) DbAutoOffset[i2] += lpFilterBuf[i2][i];
-			}
-		}
-
-		DbDCoffTotal += (double)dwPointsInBuf;
-
-	}
-	
-	// adjust offset
-	if(DbDCoffTotal > 0){
-		for(i2=0;i2<waveFmt.channels();i2++){
-			dFoo = DbAutoOffset[i2]/DbDCoffTotal;
-			for(i=0;i<dwPointsInBuf;i++) lpFilterBuf[i2][i] -= dFoo;
-		}
-	}
-}
-
-
-//---------------------------------
-// clear
-void ClearAutoDCOffset(){
-	BlDCoffFirstBuffer = true; 
-	DbDCoffTotal = 0;
-	DbAutoOffset[0] = DbAutoOffset[1] = 0;
-}
-
-
-
-
-// EOF

@@ -8,8 +8,6 @@
 
 #include <malloc.h>
 
-#include "filter.h"
-
 double* CONV_A = NULL;
 double* CONV_B = NULL;
 double* CONV_C = NULL;

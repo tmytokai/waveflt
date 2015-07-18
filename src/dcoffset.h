@@ -8,23 +8,21 @@
 
 class DcOffset : public Filter
 {
-private:
-    std::vector<double> offset;
+  private:
+    std::vector< std::vector<double> > offsets;
 
-public:
+  public:
     DcOffset( const WaveFormat& _input_format );
-    DcOffset( const WaveFormat& _input_format, const std::vector<double>& _offset );
-	virtual ~DcOffset();
+    virtual ~DcOffset();
+    void set_offset( const unsigned int track_no, const std::vector<double>& offset );
 
-    void set_offset( const int channel, const double value );
-    const double get_offset( const int channel ) const;
-
-	virtual void show_config() const;
+    // Override
+    virtual void show_config() const;
     virtual void clear_buffer();
-	virtual void inputfile_seeked();
-    virtual void process( Buffer& buffer );
-	virtual void outputfile_changed();
-	virtual void show_result() const;
+    virtual void inputfile_seeked();
+    virtual void process( std::vector<Track>& tracks );
+    virtual void outputfile_changed();
+    virtual void show_result() const;
 };
 
 
