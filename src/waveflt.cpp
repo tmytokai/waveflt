@@ -40,7 +40,7 @@ LONGLONG N64OutOffset; // byte, offset of input file
 
 BOOL BlStdin = false;  // read from stdin
 BOOL BlStdout = false;  // write to stdout
-BOOL BlVerbose = true; // verbose
+bool BlVerbose = true; // verbose
 BOOL BlEndless = false; // endless mode
 char SzUserDef[3][CHR_BUF]; // user defined strings
 SYSTEMTIME SystemTime; // system time
@@ -129,7 +129,7 @@ FILETIME FtCreationTime,FtLastAccessTime,FtLastWriteTime;
 
 FILTER_DATA FDAT;
 
-
+/*
 //--------------------------------------------------------
 // copy byte data to double data
 void CopyBufferBtoD(BYTE* lpBuffer,  // input, buffer (BYTE*)
@@ -255,6 +255,7 @@ void CopyBufferBtoD(BYTE* lpBuffer,  // input, buffer (BYTE*)
 
 	*lpdwPointsInBuf = dwByte/format.block();
 }
+*/
 
 
 //----------------------------
@@ -590,7 +591,6 @@ void ExitCtrlC(int nRet){
 // body of filter
 void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 
-				 std::vector< Track >& tracks, 
 				 double* lpFilterBuf[2],  // (input / output) buffer of wave data
 				 unsigned int* lpdwPointsInBuf, // (input / output) data points in buffer
 				 unsigned int& points_before_resampling, 
@@ -609,11 +609,6 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	DWORD dwPointsInBufBeforeSplit; // for RewindBufFIR()
 	BOOL bChangeFile = false;
 	static double dNoiseShape[MAX_CHN]; // buffer of noise shaper
-
-	std::vector<Filter*>::iterator it = filters.begin();
-	for( ; it != filters.end(); ++it ){
-		(*it)->process(tracks);
-	}
 
 	// pre-normalize data between -1 to 1 before filtering
 	if( CONFIG::get().pre_normalization ){
@@ -2579,6 +2574,7 @@ BOOL FilterBody()
 	track.buffer = lpBuffer;
 	track.buffer_size = DwBufSize;
 	for(unsigned int i=0; i < InputWaveFmt.channels(); i++) track.data[i] = lpFilterBuf[i];
+	track.set_verbose(BlVerbose);
 	track.set_filters( filters );
 	track.set_blockdata( blockdata );
 	track.set_filename( SzReadFile );
@@ -2668,9 +2664,7 @@ BOOL FilterBody()
 	
 		srand(dwSeed);
 
-		tracks[0].reset();
-
-		// clear filters
+		// obsolete
 		ClearCOMP();
 		ClearAutoDCOffset();
 		ClearFirBuf();
@@ -2682,56 +2676,58 @@ BOOL FilterBody()
 		AddSinCurve(NULL,0,0,0,0,NULL,NULL,NULL);
 		ClearNGATE();
 		ClearNSFBuf();
-
-		std::vector<Filter*>::iterator it = filters.begin();
-		for( ; it != filters.end(); ++it ){
-			(*it)->clear_all_buffer();
-		}
-
 		dwFoo = (DWORD)(DbShiftTime * WriteWaveFmt.rate() / 1000);
 		DWORD dwCutHeadOutPoints = dwFoo; // points for shiftting(-shift ). unless dwCutHeadOutPoints >0 , cut the head of output
 
-		tracks[0].begin_block();
 
-//		for( unsigned int block_no = 0; block_no < blockdata.size() ; block_no++){
 
-			while(1){
-				
-				//-----------------------------
-				// INPUT
-				//-----------------------------
+		std::vector<Filter*>::iterator it_filter = filters.begin();
+		for( ; it_filter != filters.end(); ++it_filter ) (*it_filter)->clear_buffer();
 
-				const unsigned int read_size = tracks[0].read();
-				if( tracks[0].end_of_track() ) break;
+		std::vector<Track>::iterator it_track = tracks.begin();
+		for( ; it_track != tracks.end(); ++it_track ) (*it_track).start();
 
-				unsigned int points = 0;  // points of data in buffer
-				CopyBufferBtoD(lpBuffer,read_size,lpFilterBuf,&points,InputWaveFmt);
-				tracks[0].points = points;
+		while(1){
 
-				//------------------------------
-				// filtering
-				//-----------------------------
+			//-----------------------------
+			// INPUT
+			//-----------------------------
+			bool eot = true;
+			it_track = tracks.begin();
+			for( ; it_track != tracks.end(); ++it_track ){
+				(*it_track).read();
+				if( ! (*it_track).end_of_track() ) eot = false;
+			}
+			if( eot ) break;
 
-				unsigned int points_before_resampling = 0;
-				BOOL bChangeFile = false; // if true, change output file
+			//------------------------------
+			// filtering
+			//-----------------------------
+			it_filter = filters.begin();
+			for( ; it_filter != filters.end(); ++it_filter ) (*it_filter)->process(tracks);
 
-				WFLT_FILTER(
-					&FDAT,  
-					
-					tracks,
-					lpFilterBuf,  // buffer
-					&points, // points
-					points_before_resampling,
-					
-					&bChangeFile,
-					dwCurrentNormalMode,
-					dNormalGain,
-					DwCurSplitNo,
-					
-					total_out_size,
-					N64TotalDataSize,
-					InputWaveFmt,
-					WriteWaveFmt);
+
+			// obsolete
+			unsigned int points = tracks[0].points;
+			unsigned int points_before_resampling = 0;
+			BOOL bChangeFile = false; // if true, change output file
+
+			WFLT_FILTER(
+				&FDAT,  
+
+				lpFilterBuf,  // buffer
+				&points, // points
+				points_before_resampling,
+
+				&bChangeFile,
+				dwCurrentNormalMode,
+				dNormalGain,
+				DwCurSplitNo,
+
+				total_out_size,
+				N64TotalDataSize,
+				InputWaveFmt,
+				WriteWaveFmt);
 
 
 				//-----------------------------
@@ -2830,7 +2826,8 @@ BOOL FilterBody()
 
 						if( !normalizer_searching && bChangeFile)
 						{
-							tracks[0].cut( points_before_resampling * InputWaveFmt.block() );
+							it_track = tracks.begin();
+							for( ; it_track != tracks.end(); ++it_track ) (*it_track).cut( points_before_resampling );
 
 							// add space to tail
 							AddSpace(hdWriteFile,DwAddSp[1]);

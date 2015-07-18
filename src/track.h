@@ -26,6 +26,7 @@ class Track
 {
   private:
     bool dbg;
+    bool verbose;
 
     unsigned int track_no;
     WaveFormat format;
@@ -54,6 +55,7 @@ class Track
 
     const bool end_of_track() const { return ( block_no == blockdata.size() ); }
 
+    void set_verbose( const bool _verbose ){ verbose = _verbose; }
     void set_filters( std::vector<Filter*> _filters ){ filters = _filters; }
     void set_blockdata( const std::vector<BlockData>& _blockdata ){ blockdata = _blockdata; }
     void set_filename( const std::string& _filename ){ filename = _filename; }
@@ -61,9 +63,13 @@ class Track
     const unsigned int get_points() const { return points; }
     const WaveFormat& get_format() const { return format; }
 
-    void begin_block();
+    void start(){ reset();  begin_block(); }
     unsigned int read();
-    void cut( const unsigned int offset );
+    void cut( const unsigned int offset_point );
+
+  private:
+    void begin_block();
+    void convert_buffer();
 };
 
 #endif

@@ -18,7 +18,7 @@ class DcOffset : public Filter
 
     // Override
     virtual void show_config() const;
-    virtual void clear_all_buffer();
+    virtual void clear_buffer();
     virtual void track_seeked( const int track_no );
     virtual void process( std::vector<Track>& tracks );
     virtual void output_changed();

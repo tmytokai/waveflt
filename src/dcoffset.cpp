@@ -10,7 +10,7 @@ DcOffset::DcOffset( const WaveFormat& _input_format )
     dbg = true;
     if( dbg ) fprintf( stderr, "\n[debug] DcOffset::DcOffset\n");
 
-    clear_all_buffer();
+    clear_buffer();
 }
 
 DcOffset::~DcOffset()
@@ -42,9 +42,9 @@ void DcOffset::show_config() const
     fprintf(stderr,"\n" );
 }
 
-void DcOffset::clear_all_buffer()
+void DcOffset::clear_buffer()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] DcOffset::clear_all_buffer\n");
+    if( dbg ) fprintf( stderr, "\n[debug] DcOffset::clear_buffer\n");
 }
 
 void DcOffset::track_seeked( const int track_no )
@@ -64,7 +64,7 @@ void DcOffset::process( std::vector<Track>& tracks )
         if( offset.size() == 0 ) continue;
 
         Track& track = tracks[track_no];
-        if( ! track.get_points() ) continue;
+        if( track.end_of_track() ) continue;
 
         assert( track.get_format().channels() == offset.size() );
         for( unsigned int i=0; i < track.get_format().channels(); ++i){
