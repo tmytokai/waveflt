@@ -367,6 +367,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\src\track.cpp"
+				>
+			</File>
+			<File
 				RelativePath="src\wave.cpp"
 				>
 				<FileConfiguration

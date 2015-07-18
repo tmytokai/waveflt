@@ -43,9 +43,9 @@ class WaveFormat
     const unsigned short bits() const{ return raw.bits; }
     const unsigned int get_datasize() const{ return datasize; }
     const unsigned int get_offset() const{ return offset;}
-	const WAVEFORMAT_RAW& get_raw() const{ return raw;  }
+    const WAVEFORMAT_RAW& get_raw() const{ return raw;  }
 
-	void clear();
+    void clear();
 
     void set( const unsigned short _tag,	
               const unsigned short _channels, 
@@ -54,7 +54,7 @@ class WaveFormat
 
     void read( FILE *fp );
     void read( const std::string& filename );
-	void write( FILE* fp, const unsigned long long datasize );
+    void write( FILE* fp, const unsigned long long datasize );
 
     const double GetMaxWaveLevel();
     void is_valid();

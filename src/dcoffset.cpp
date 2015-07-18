@@ -10,7 +10,7 @@ DcOffset::DcOffset( const WaveFormat& _input_format )
     dbg = true;
     if( dbg ) fprintf( stderr, "\n[debug] DcOffset::DcOffset\n");
 
-    clear_buffer();
+    clear_all_buffer();
 }
 
 DcOffset::~DcOffset()
@@ -42,14 +42,14 @@ void DcOffset::show_config() const
     fprintf(stderr,"\n" );
 }
 
-void DcOffset::clear_buffer()
+void DcOffset::clear_all_buffer()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] DcOffset::clear_buffer\n");
+    if( dbg ) fprintf( stderr, "\n[debug] DcOffset::clear_all_buffer\n");
 }
 
-void DcOffset::inputfile_seeked()
+void DcOffset::track_seeked( const int track_no )
 {
-    if( dbg ) fprintf( stderr, "\n[debug] DcOffset::inputfile_seeked\n");
+    if( dbg ) fprintf( stderr, "\n[debug] DcOffset::track_seeked track=%d\n", track_no);
 }
 
 void DcOffset::process( std::vector<Track>& tracks )
@@ -68,14 +68,14 @@ void DcOffset::process( std::vector<Track>& tracks )
 
         assert( track.get_format().channels() == offset.size() );
         for( unsigned int i=0; i < track.get_format().channels(); ++i){
-            for( unsigned int i2=0; i2 < track.get_points(); ++i2 ) track.raw[i][i2] += offset[i];
+            for( unsigned int i2=0; i2 < track.get_points(); ++i2 ) track.data[i][i2] += offset[i];
         }
     }
 }
 
-void DcOffset::outputfile_changed()
+void DcOffset::output_changed()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] DcOffset::outputfile_changed\n");
+    if( dbg ) fprintf( stderr, "\n[debug] DcOffset::output_changed\n");
 }
 
 void DcOffset::show_result() const

@@ -24,10 +24,10 @@ class Filter
     const WaveFormat& get_output_format() const { return output_format; }
 
     virtual void show_config() const = 0;
-    virtual void clear_buffer() = 0;
-    virtual void inputfile_seeked() = 0;
+    virtual void clear_all_buffer() = 0;
+    virtual void track_seeked( const int track_no ) = 0;
     virtual void process( std::vector<Track>& tracks ) = 0;
-    virtual void outputfile_changed() = 0;
+    virtual void output_changed() = 0;
     virtual void show_result() const = 0;
 
   protected:

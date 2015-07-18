@@ -58,19 +58,6 @@ DWORD DwCopyBlock = 1; // number of blocks
 unsigned long long N64OffsetBlk[MAXCOPYBLOCK]; // byte, offset of each block
 unsigned long long N64DataSizeBlk[MAXCOPYBLOCK]; //  byte, copy size of each block
 
-enum
-{
-	TYPE_STORAGE = 0,
-	TYPE_STDIN,
-	TYPE_NULL
-};
-
-struct BlockData
-{
-	int input_type; // type of input
-	unsigned long long offset; // offset to block (byte)
-	unsigned long long size; //  data size of block (byte)
-};
 
 std::vector<BlockData> blockdata;
 
@@ -603,6 +590,7 @@ void ExitCtrlC(int nRet){
 // body of filter
 void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 
+				 std::vector< Track >& tracks, 
 				 double* lpFilterBuf[2],  // (input / output) buffer of wave data
 				 unsigned int* lpdwPointsInBuf, // (input / output) data points in buffer
 				 unsigned int& points_before_resampling, 
@@ -621,12 +609,6 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 	DWORD dwPointsInBufBeforeSplit; // for RewindBufFIR()
 	BOOL bChangeFile = false;
 	static double dNoiseShape[MAX_CHN]; // buffer of noise shaper
-
-	Track track(informat);
-	for(i=0;i<informat.channels();i++) track.raw[i] = lpFilterBuf[i];
-	track.points = *lpdwPointsInBuf;
-	std::vector< Track > tracks;
-	tracks.push_back( track );
 
 	std::vector<Filter*>::iterator it = filters.begin();
 	for( ; it != filters.end(); ++it ){
@@ -2464,6 +2446,12 @@ BOOL SetParam(){
 
 	fprintf(stderr,"=> OUTPUT");
 
+    fprintf(stderr,"\n\nOUTPUT: ");
+    if(BlStdout){
+        if(BlWaveOut) fprintf(stderr,"[waveout]\n");
+        else fprintf(stderr,"[stdout]\n");
+    }
+    else fprintf(stderr,"%s\n",SzWriteFile);
 	return true;
 }
 
@@ -2496,7 +2484,8 @@ BOOL FilterBody()
 	DWORD dwSeed; // for seed of rand
 	char szErr[CHR_BUF];
 
-
+	std::vector< Track > tracks;
+	Track track(0, InputWaveFmt);
 
 	//--------------------------
 	// initializing
@@ -2587,10 +2576,19 @@ BOOL FilterBody()
 	if(FDAT.bRsmp) dwFoo *= 2; // size *= 2 when re-sampling
 	for(unsigned int i=0;i<InputWaveFmt.channels();i++) lpFilterBuf[i] = (double*)malloc(sizeof(double)*dwFoo+1024); 
 
+	track.buffer = lpBuffer;
+	track.buffer_size = DwBufSize;
+	for(unsigned int i=0; i < InputWaveFmt.channels(); i++) track.data[i] = lpFilterBuf[i];
+	track.set_filters( filters );
+	track.set_blockdata( blockdata );
+	track.set_filename( SzReadFile );
+	tracks.push_back( track );
+
 	// open input file
 	if(!OpenReadFile(&hdReadFile,SzReadFile)){
 		goto L_ERR;
 	}
+	tracks[0].fp = hdReadFile;
 	
 	// open output file
 	if(!OpenWriteFile(&hdWriteFile,SzWriteFile)){
@@ -2670,6 +2668,8 @@ BOOL FilterBody()
 	
 		srand(dwSeed);
 
+		tracks[0].reset();
+
 		// clear filters
 		ClearCOMP();
 		ClearAutoDCOffset();
@@ -2685,91 +2685,15 @@ BOOL FilterBody()
 
 		std::vector<Filter*>::iterator it = filters.begin();
 		for( ; it != filters.end(); ++it ){
-			(*it)->clear_buffer();
+			(*it)->clear_all_buffer();
 		}
 
 		dwFoo = (DWORD)(DbShiftTime * WriteWaveFmt.rate() / 1000);
 		DWORD dwCutHeadOutPoints = dwFoo; // points for shiftting(-shift ). unless dwCutHeadOutPoints >0 , cut the head of output
 
-		//-----------------------------
-		// process each block
-		//-----------------------------
+		tracks[0].begin_block();
 
-		for( unsigned int block_no = 0; block_no < blockdata.size() ; block_no++){
-
-			//-----------------------------
-			// initialization of current block
-			//-----------------------------
-
-			unsigned long long block_total_read_size = 0;  // total read size of current block (byte)
-			unsigned int remain_size = 0; // size of unused data in buffer (byte)
-			
-			if( !normalizer_searching ){
-
-				fprintf(stderr,"\n\n----------------\n");
-
-				fprintf(stderr,"[block %d : ",block_no);
-				if( blockdata[block_no].offset > 0 ){
-					if( blockdata[block_no].offset < 1024*1024 )
-						fprintf(stderr,"offset = %.2lf K", (double)blockdata[block_no].offset/1024);
-					else
-						fprintf(stderr,"offset = %.2lf M", (double)blockdata[block_no].offset/1024/1024);												
-					fprintf(stderr,"(%.2lf sec), ", (double)blockdata[block_no].offset/InputWaveFmt.avgbyte());
-				}			
-				if(blockdata[block_no].size > 0){ 
-					if( blockdata[block_no].size < 1024*1024 )
-						fprintf(stderr,"size = %.2lf K", (double)blockdata[block_no].size/1024);
-					else
-						fprintf(stderr,"size = %.2lf M", (double)blockdata[block_no].size/1024/1024);
-					fprintf(stderr,"(%.2lf sec)", (double)blockdata[block_no].size/InputWaveFmt.avgbyte());
-				}
-				else fprintf(stderr," size = endless");
-				fprintf(stderr,"]\n");
-
-				fprintf(stderr,"INPUT: ");
-				switch( blockdata[block_no].input_type ){
-					case TYPE_STORAGE:
-						fprintf(stderr,"%s\n",SzReadFile);
-						break;
-					case TYPE_STDIN:
-						fprintf(stderr,"stdin\n");
-						break;
-					case TYPE_NULL:
-						fprintf(stderr,"null\n");
-						break;
-				}
-
-				fprintf(stderr,"OUTPUT: ");
-				if(BlStdout){
-						if(BlWaveOut) fprintf(stderr,"[waveout]\n");
-					else fprintf(stderr,"[stdout]\n");
-				}
-				else fprintf(stderr,"%s\n",SzWriteFile);
-			}
-			
-			// move to head of current block
-			if( block_no == 0 || blockdata[block_no].offset != blockdata[block_no-1].offset + blockdata[block_no-1].size ){
-
-				fprintf(stderr, "[debug] seek: offset = %d\n", blockdata[block_no].offset );
-
-				if( blockdata[block_no].input_type == TYPE_STORAGE ){
-
-					__int64 pos64 = blockdata[block_no].offset;
-					_fseeki64( hdReadFile , pos64, SEEK_SET);
-				}
-				else if( blockdata[block_no].input_type == TYPE_STDIN ){
-
-					n64PointerStdin += SeekStdin(lpBuffer,DwBufSize,
-						blockdata[block_no].offset,
-						n64PointerStdin
-						);
-				}
-
-				std::vector<Filter*>::iterator it = filters.begin();
-				for( ; it != filters.end(); ++it ){
-					(*it)->inputfile_seeked();
-				}
-			}
+//		for( unsigned int block_no = 0; block_no < blockdata.size() ; block_no++){
 
 			while(1){
 				
@@ -2777,41 +2701,12 @@ BOOL FilterBody()
 				// INPUT
 				//-----------------------------
 
-				unsigned int read_size = 0; // size of read data in buffer (byte)
-
-				if(blockdata[block_no].size == 0 ) read_size = DwBufSize; // endless mode
-				else if(blockdata[block_no].size > block_total_read_size + DwBufSize) read_size = DwBufSize;
-				else read_size = (unsigned int)(blockdata[block_no].size - block_total_read_size);
-
-				if(remain_size){
-					if(read_size + remain_size > DwBufSize) read_size = DwBufSize-remain_size;
-					fprintf(stderr, "[debug] remain_size = %d,read_size = %d,buffersize = %d\n", remain_size, read_size, DwBufSize );
-				}
-
-				// align the boundary
-				read_size = read_size / (InputWaveFmt.channels() * (InputWaveFmt.bits()/8)) // to avoid optimization
-					* InputWaveFmt.block();
-
-				if( blockdata[block_no].input_type == TYPE_STORAGE || blockdata[block_no].input_type == TYPE_STDIN ){
-
-					read_size = ReadData(hdReadFile, lpBuffer+remain_size, read_size);
-					n64PointerStdin += read_size;
-				}
-				else if( blockdata[block_no].input_type == TYPE_NULL ){
-
-					if(InputWaveFmt.bits() == 8) memset(lpBuffer+remain_size,0x80,read_size);
-					else memset(lpBuffer+remain_size,0,read_size);
-				}
-
-				block_total_read_size += read_size;
-				read_size += remain_size;
-				remain_size = 0;			
-
-				if(read_size == 0) break;
+				const unsigned int read_size = tracks[0].read();
+				if( tracks[0].end_of_track() ) break;
 
 				unsigned int points = 0;  // points of data in buffer
 				CopyBufferBtoD(lpBuffer,read_size,lpFilterBuf,&points,InputWaveFmt);
-
+				tracks[0].points = points;
 
 				//------------------------------
 				// filtering
@@ -2823,6 +2718,7 @@ BOOL FilterBody()
 				WFLT_FILTER(
 					&FDAT,  
 					
+					tracks,
 					lpFilterBuf,  // buffer
 					&points, // points
 					points_before_resampling,
@@ -2934,11 +2830,7 @@ BOOL FilterBody()
 
 						if( !normalizer_searching && bChangeFile)
 						{
-							const unsigned int block_remain_offset = points_before_resampling * InputWaveFmt.block();
-							remain_size =read_size - block_remain_offset;
-							
-							// move remained data to head
-							memmove(lpBuffer, lpBuffer+block_remain_offset, remain_size);
+							tracks[0].cut( points_before_resampling * InputWaveFmt.block() );
 
 							// add space to tail
 							AddSpace(hdWriteFile,DwAddSp[1]);
@@ -3000,7 +2892,7 @@ BOOL FilterBody()
 
 							std::vector<Filter*>::iterator it = filters.begin();
 							for( ; it != filters.end(); ++it ){
-								(*it)->outputfile_changed();
+								(*it)->output_changed();
 							}
 
 							// get current system time
@@ -3099,8 +2991,7 @@ BOOL FilterBody()
 		}
 		// while(1)  
 		
-	}
-	//for( unsigned int block_no = 0; block_no < blockdata.size() ;block_no++)
+//	}
 	
 	// get gain for normalizer
 	if( normalizer_searching )
