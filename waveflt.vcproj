@@ -371,6 +371,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\trackmanager.cpp"
+				>
+			</File>
+			<File
 				RelativePath="src\wave.cpp"
 				>
 				<FileConfiguration
@@ -681,6 +685,10 @@
 			</File>
 			<File
 				RelativePath=".\src\track.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\TrackManager.h"
 				>
 			</File>
 			<File

@@ -52,16 +52,16 @@ void DcOffset::track_seeked( const int track_no )
     if( dbg ) fprintf( stderr, "\n[debug] DcOffset::track_seeked track=%d\n", track_no);
 }
 
-void DcOffset::process( std::vector<Track>& tracks )
+void DcOffset::process( TrackManager& trackmanager )
 {
-    for( unsigned int track_no=0; track_no < tracks.size(); ++track_no){
+    for( unsigned int track_no=0; track_no < trackmanager.size(); ++track_no){
 
         if( offsets.size() <= track_no ) return;
 
         const std::vector<double>& offset = offsets[track_no];
         if( offset.size() == 0 ) continue;
 
-        Track& track = tracks[track_no];
+        Track& track = trackmanager.get_track(track_no);
         if( track.end_of_track() ) continue;
 
         assert( track.get_input_format().channels() <= offset.size() );

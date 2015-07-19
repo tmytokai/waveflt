@@ -1,4 +1,4 @@
-OBJS=dcoffset.o track.o waveformat.o
+OBJS=dcoffset.o track.o waveformat.o trackmanager.o
 CFLAGS=-g -Wall -O2 -MMD -D_DEBUG
 
 waveflt : $(OBJS)

@@ -10,7 +10,7 @@
 #include "io.h"
 
 #include "filter.h"
-#include "track.h"
+#include "trackmanager.h"
 #include "dcoffset.h"
 
 std::vector<Filter*> filters;
@@ -2479,7 +2479,7 @@ BOOL FilterBody()
 	DWORD dwSeed; // for seed of rand
 	char szErr[CHR_BUF];
 
-	std::vector< Track > tracks;
+	TrackManager trackmanager;
 	Track track(0, InputWaveFmt);
 
 	//--------------------------
@@ -2571,6 +2571,12 @@ BOOL FilterBody()
 	if(FDAT.bRsmp) dwFoo *= 2; // size *= 2 when re-sampling
 	for(unsigned int i=0;i<InputWaveFmt.channels();i++) lpFilterBuf[i] = (double*)malloc(sizeof(double)*dwFoo+1024); 
 
+	// open input file
+	if(!OpenReadFile(&hdReadFile,SzReadFile)){
+		goto L_ERR;
+	}
+
+	track.fp = hdReadFile;
 	track.raw = lpBuffer;
 	track.raw_max_points = DwBufSize / InputWaveFmt.block();
 	for(unsigned int i=0; i < InputWaveFmt.channels(); i++) track.data[i] = lpFilterBuf[i];
@@ -2579,13 +2585,8 @@ BOOL FilterBody()
 	track.set_filters( filters );
 	track.set_blockdata( blockdata );
 	track.set_filename( SzReadFile );
-	tracks.push_back( track );
+	trackmanager.tracks.push_back( track );
 
-	// open input file
-	if(!OpenReadFile(&hdReadFile,SzReadFile)){
-		goto L_ERR;
-	}
-	tracks[0].fp = hdReadFile;
 	
 	// open output file
 	if(!OpenWriteFile(&hdWriteFile,SzWriteFile)){
@@ -2685,31 +2686,25 @@ BOOL FilterBody()
 		std::vector<Filter*>::iterator it_filter = filters.begin();
 		for( ; it_filter != filters.end(); ++it_filter ) (*it_filter)->clear_buffer();
 
-		std::vector<Track>::iterator it_track = tracks.begin();
-		for( ; it_track != tracks.end(); ++it_track ) (*it_track).start();
+		trackmanager.start();
 
 		while(1){
 
 			//-----------------------------
 			// INPUT
 			//-----------------------------
-			bool eot = true;
-			it_track = tracks.begin();
-			for( ; it_track != tracks.end(); ++it_track ){
-				(*it_track).read();
-				if( ! (*it_track).end_of_track() ) eot = false;
-			}
-			if( eot ) break;
+			trackmanager.read();
+			if( trackmanager.end_of_tracks() ) break;
 
 			//------------------------------
 			// filtering
 			//-----------------------------
 			it_filter = filters.begin();
-			for( ; it_filter != filters.end(); ++it_filter ) (*it_filter)->process(tracks);
+			for( ; it_filter != filters.end(); ++it_filter ) (*it_filter)->process(trackmanager);
 
 
 			// obsolete
-			unsigned int points = tracks[0].raw_points;
+			unsigned int points = trackmanager.get_track(0).raw_points;
 			BOOL bChangeFile = false; // if true, change output file
 
 			if(FDAT.bSplit){
@@ -2724,11 +2719,7 @@ BOOL FilterBody()
 					FDAT.dSplitTime,
 					FDAT.n64SplitByteMalti);
 
-				if( bChangeFile ){
-
-					it_track = tracks.begin();
-					for( ; it_track != tracks.end(); ++it_track ) (*it_track).exec_split( points );
-				}
+				if( bChangeFile ) trackmanager.exec_split( points );
 			}
 
 			unsigned int points_before_resampling = points;

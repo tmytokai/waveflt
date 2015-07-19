@@ -37,6 +37,10 @@ class Track
 
     unsigned int block_no;
 
+    bool split;
+    unsigned int split_pos;
+    unsigned int split_points;
+
   public:
     FILE* fp;
     unsigned char* raw;   // buffer for raw data
@@ -47,10 +51,6 @@ class Track
     std::vector<double*> data;
     unsigned int data_points;  // current points of data
     unsigned int data_max_points;  // max_points of data
-
-    bool split;
-    unsigned int split_pos;
-    unsigned int split_points;
 
     Track( const int _track_no, const WaveFormat& _input_format );
     ~Track();
@@ -65,12 +65,12 @@ class Track
 
     const bool end_of_track() const { return ( block_no == blockdata.size() ); }
 
-    void reset();
     void start();
     void read();
     void exec_split( const unsigned int pos );
 
   private:
+    void reset();
     void begin_new_block();
     void convert_raw_to_data();
 };

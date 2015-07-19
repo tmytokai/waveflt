@@ -82,6 +82,7 @@ void Track::read()
 // splitting occured at pos
 void Track::exec_split( const unsigned int pos )
 {
+    if( split ) return;
     if( end_of_track() ) return;
     if( pos >= raw_points ) return;
 

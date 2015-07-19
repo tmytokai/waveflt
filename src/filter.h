@@ -5,7 +5,7 @@
 
 #include <assert.h>
 #include <vector>
-#include "track.h"
+#include "trackmanager.h"
 
 class Filter
 {
@@ -27,7 +27,7 @@ class Filter
     virtual void show_config() const = 0;
     virtual void clear_buffer() = 0;
     virtual void track_seeked( const int track_no ) = 0;
-    virtual void process( std::vector<Track>& tracks ) = 0;
+    virtual void process( TrackManager& trackmanager ) = 0;
     virtual void output_changed() = 0;
     virtual void show_result() const = 0;
 };
