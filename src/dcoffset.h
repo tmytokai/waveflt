@@ -14,6 +14,7 @@ class DcOffset : public Filter
   public:
     DcOffset( const WaveFormat& _input_format );
     virtual ~DcOffset();
+
     void set_offset( const unsigned int track_no, const std::vector<double>& offset );
 
     // Override

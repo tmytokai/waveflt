@@ -20,6 +20,7 @@ class Filter
     Filter( const WaveFormat& _input_format )
         : input_format( _input_format ), output_format( _input_format ), dbg( false ){}
     virtual ~Filter(){}
+
     const WaveFormat& get_input_format() const { return input_format; }
     const WaveFormat& get_output_format() const { return output_format; }
 
@@ -29,15 +30,6 @@ class Filter
     virtual void process( std::vector<Track>& tracks ) = 0;
     virtual void output_changed() = 0;
     virtual void show_result() const = 0;
-
-  protected:
-    void check_rate_of_tracks( const std::vector<Track>& tracks ) const{
-
-        std::vector<Track>::const_iterator it = tracks.begin();
-        for(; it != tracks.end(); ++it ){
-            assert( (*it).get_format().rate() == input_format.rate() );
-        }
-    }
 };
 
 #endif

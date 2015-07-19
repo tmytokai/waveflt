@@ -5,33 +5,105 @@
 
 #include "track.h"
 #include "filter.h"
-
-// io.h
-const unsigned int ReadData( FILE* fp, unsigned char* buffer, const unsigned int size );
+#include "io.h"
 
 
-Track::Track(  const int _track_no, const WaveFormat& _format )
-    : dbg(false), verbose( true ), track_no(_track_no), format(_format)
+Track::Track(  const int _track_no, const WaveFormat& _input_format )
+    : dbg(false), verbose( true ), track_no(_track_no), input_format(_input_format)
 {
     dbg = true;
-    data.resize( format.channels() );
+    data.resize( input_format.channels() );
     reset();
 }
 
 Track::~Track()
 {}
 
+
 void Track::reset()
 {
     block_no = 0;
 }
 
-void Track::begin_block()
+
+void Track::start()
+{
+    reset();
+    begin_new_block();
+}
+
+
+void Track::read()
 {
     if( end_of_track() ) return;
 
-    block_total_read_size = 0;
-    remain_size = 0;
+    raw_points = 0;
+    data_points = 0;
+
+    unsigned int raw_read_points = 0;
+    if( blockdata[block_no].points == 0 ) raw_read_points = raw_max_points; // endless mode
+    else if( blockdata[block_no].points > block_total_raw_points + raw_max_points ) raw_read_points = raw_max_points;
+    else raw_read_points = (unsigned int)( blockdata[block_no].points - block_total_raw_points );
+
+    if( split ){ // splitting has occured at split_pos
+        
+        split = false;
+        memmove( raw, raw + split_pos*input_format.block(), split_points*input_format.block() );
+        raw_points = split_points;
+        raw_read_points -= raw_points;
+        if( dbg ) fprintf(stderr, "[debug] Track::read: raw_read_points = %d, raw_points = %d, raw_max_points = %d\n", raw_read_points, raw_points, raw_max_points );
+    }
+
+    if( blockdata[block_no].input_type == TYPE_STORAGE || blockdata[block_no].input_type == TYPE_STDIN ){
+
+        raw_read_points = ReadData( fp, raw + raw_points * input_format.block(), raw_read_points * input_format.block() );
+        raw_read_points /= input_format.block();
+
+        // think later
+//        n64PointerStdin += read_size;  
+    }
+    else if( blockdata[block_no].input_type == TYPE_NULL ){
+
+        if( input_format.bits() == 8) memset( raw + raw_points * input_format.block(), 0x80, raw_read_points * input_format.block() );
+        else memset( raw + raw_points * input_format.block(), 0, raw_read_points * input_format.block() );
+    }
+
+    raw_points += raw_read_points;
+    block_total_raw_points += raw_points;
+    
+    if( raw_points == 0 ){
+        block_no++;
+        begin_new_block();
+    }
+    else convert_raw_to_data();
+}
+
+
+// splitting occured at pos
+void Track::exec_split( const unsigned int pos )
+{
+    if( end_of_track() ) return;
+    if( pos >= raw_points ) return;
+
+    split = true;
+    split_pos = pos;
+    split_points = raw_points - split_pos;
+
+    raw_points = split_pos;
+    block_total_raw_points -= split_points;
+
+    data_points = split_pos;
+}
+
+
+void Track::begin_new_block()
+{
+    if( end_of_track() ) return;
+
+    raw_points = 0;
+    data_points = 0;
+    block_total_raw_points = 0;
+    split = false;
 
     if( verbose ){
 
@@ -39,19 +111,20 @@ void Track::begin_block()
 
         fprintf(stderr,"[Tr_%d: Block_%d : ", track_no, block_no);
         if( blockdata[block_no].offset > 0 ){
-            double tmp_offset = (double)(blockdata[block_no].offset - format.get_offset());
+            double tmp_offset = (double)(blockdata[block_no].offset - input_format.get_offset());
             if( blockdata[block_no].offset < 1024*1024 )
                 fprintf(stderr,"offset = %.2lf K", tmp_offset/1024);
             else
                 fprintf(stderr,"offset = %.2lf M", tmp_offset/1024/1024);												
-            fprintf(stderr,"(%.2lf sec), ", tmp_offset/format.avgbyte());
+            fprintf(stderr,"(%.2lf sec), ", tmp_offset/input_format.avgbyte());
         }
-        if(blockdata[block_no].size > 0){ 
-            if( blockdata[block_no].size < 1024*1024 )
-                fprintf(stderr,"size = %.2lf K", (double)blockdata[block_no].size/1024);
+        if(blockdata[block_no].points > 0){
+            unsigned long long size = blockdata[block_no].points*input_format.block();
+            if( size < 1024*1024 )
+                fprintf(stderr,"size = %.2lf K", (double)size/1024);
             else
-                fprintf(stderr,"size = %.2lf M", (double)blockdata[block_no].size/1024/1024);
-            fprintf(stderr,"(%.2lf sec)", (double)blockdata[block_no].size/format.avgbyte());
+                fprintf(stderr,"size = %.2lf M", (double)size/1024/1024);
+            fprintf(stderr,"(%.2lf sec)", (double)size/input_format.avgbyte());
         }
         else fprintf(stderr," size = endless");
         fprintf(stderr,"]\n");
@@ -71,7 +144,7 @@ void Track::begin_block()
     }
 
     // move to head of current block
-    if( block_no == 0 || blockdata[block_no].offset != blockdata[block_no-1].offset + blockdata[block_no-1].size ){
+    if( block_no == 0 || blockdata[block_no].offset != blockdata[block_no-1].offset + blockdata[block_no-1].points*input_format.block() ){
 
         if( dbg ) fprintf(stderr, "[debug] Track::begin_block: seek: offset = %d\n", (int)blockdata[block_no].offset );
 
@@ -101,118 +174,57 @@ void Track::begin_block()
 }
 
 
-unsigned int Track::read()
-{
-    if( end_of_track() ) return 0;
-
-    read_size = 0;
-    points = 0;
-
-    if( blockdata[block_no].size == 0 ) read_size = buffer_size; // endless mode
-    else if( blockdata[block_no].size > block_total_read_size + buffer_size ) read_size = buffer_size;
-    else read_size = (unsigned int)( blockdata[block_no].size - block_total_read_size );
-
-    if( remain_size ){
-        if( read_size + remain_size > buffer_size ) read_size = buffer_size - remain_size;
-        if( dbg )  fprintf(stderr, "[debug] Track::read: remain_size = %d, read_size = %d, buffer_size = %d\n", remain_size, read_size, buffer_size );
-    }
-
-    // align the read
-    read_size = read_size / ( format.channels() * (format.bits()/8) ) // to avoid optimization
-        * format.block();
-
-    if( blockdata[block_no].input_type == TYPE_STORAGE || blockdata[block_no].input_type == TYPE_STDIN ){
-
-        read_size = ReadData( fp, buffer+remain_size, read_size );
-
-        // think later
-//        n64PointerStdin += read_size;  
-    }
-    else if( blockdata[block_no].input_type == TYPE_NULL ){
-
-        if( format.bits() == 8) memset( buffer+remain_size, 0x80, read_size );
-        else memset( buffer+remain_size, 0, read_size);
-    }
-
-    block_total_read_size += read_size;
-    read_size += remain_size;
-    remain_size = 0;
-    
-    if(read_size == 0){
-        block_no++;
-        begin_block();
-    }
-    else convert_buffer();
-
-    return read_size;
-}
-
-
-// move all data after offset to head
-void Track::cut( const unsigned int offset_point )
-{
-    remain_size = 0;
-    if( end_of_track() ) return;
-    if( offset_point >= points ) return;
-
-    const int offset = offset_point * format.block();
-    remain_size = read_size - offset;
-    memmove( buffer, buffer + offset, remain_size );
-}
-
-
-// convert buffer(unsigned char*) to data(double*)
-void Track::convert_buffer()
+void Track::convert_raw_to_data()
 {
     if( end_of_track() ) return;
-    if( read_size == 0 ) return;
+    if( raw_points == 0 ) return;
 
-    points = read_size / format.block();
-    for( unsigned int i = 0 ; i < format.channels()  ; i++) memset( data[i], 0, sizeof(double)*points );
+    for( unsigned int i = 0 ; i < data.size()  ; i++ ) memset( data[i], 0, sizeof(double)*data_max_points );
+    data_points = raw_points;
 	
-    if(format.bits() == 8){
+    if( input_format.bits() == 8 ){
 		
-        for( unsigned int i = 0 ; i < format.channels()  ; i++){
+        for( unsigned int i = 0 ; i < input_format.channels()  ; i++){
 
             unsigned int pos = 0;
-            for( unsigned int i2 = 0; i2 < read_size; i2 += format.block() ){
+            for( unsigned int i2 = 0; i2 < raw_points; ++i2 ){
 
-                data[i][pos] = (double)((int)buffer[i2+i]-0x80);
+                data[i][pos] = (double)((int)raw[ i2*input_format.block() +i ]-0x80);
                 pos++;
             }
         }
     }
 
-    else if( format.bits() == 16){  
+    else if( input_format.bits() == 16 ){  
 		
-        for( unsigned int i = 0 ; i < format.channels()  ; i++){
+        for( unsigned int i = 0 ; i < input_format.channels()  ; i++){
 
             unsigned int pos = 0;
-            unsigned char* buffer2 = buffer + sizeof(short)*i;
-            for( unsigned int i2=0; i2 < read_size; i2 += format.block() ){
+            unsigned char* buffer = raw + sizeof(short)*i;
+            for( unsigned int i2=0; i2 < raw_points; ++i2 ){
 
-                data[i][pos] = (double)(*((short*)buffer2));
+                data[i][pos] = (double)(*((short*)buffer));
                 pos++;
-                buffer2 += format.block();
+                buffer += input_format.block();
             }
         }
     }
 
-    else if(format.bits() == 24){
+    else if( input_format.bits() == 24 ){
 		
-        for( unsigned int i = 0 ; i < format.channels()  ; i++){
+        for( unsigned int i = 0 ; i < input_format.channels()  ; i++){
 
             unsigned int pos = 0;
-            unsigned char* buffer2 = buffer + 3*i;
-            for( unsigned int i2=0; i2 < read_size; i2 += format.block() ){
+            unsigned char* buffer = raw + 3*i;
+            for( unsigned int i2=0; i2 < raw_points; ++i2 ){
 
                 int val = 0;
-                memcpy( (unsigned char*)(&val)+1, buffer2, 3);
+                memcpy( (unsigned char*)(&val)+1, buffer, 3);
                 val /= 256;
 
                 data[i][pos] = (double)val;
                 pos ++;
-                buffer2 += format.block();
+                buffer += input_format.block();
             }
         }
     }

@@ -54,8 +54,6 @@ void DcOffset::track_seeked( const int track_no )
 
 void DcOffset::process( std::vector<Track>& tracks )
 {
-    check_rate_of_tracks( tracks );
-
     for( unsigned int track_no=0; track_no < tracks.size(); ++track_no){
 
         if( offsets.size() <= track_no ) return;
@@ -66,9 +64,9 @@ void DcOffset::process( std::vector<Track>& tracks )
         Track& track = tracks[track_no];
         if( track.end_of_track() ) continue;
 
-        assert( track.get_format().channels() == offset.size() );
-        for( unsigned int i=0; i < track.get_format().channels(); ++i){
-            for( unsigned int i2=0; i2 < track.get_points(); ++i2 ) track.data[i][i2] += offset[i];
+        assert( track.get_input_format().channels() <= offset.size() );
+        for( unsigned int i=0; i < track.get_input_format().channels(); ++i){
+            for( unsigned int i2=0; i2 < track.get_data_points(); ++i2 ) track.data[i][i2] += offset[i];
         }
     }
 }

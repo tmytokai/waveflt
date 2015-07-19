@@ -653,7 +653,7 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 			dwFoo = dwPointsInBufBeforeSplit - *lpdwPointsInBuf;//  size of rewind
 			for(i=0;i<informat.channels();i++) RewindBufFIR(dwFoo,ID_FIR_NOSND,i);
 	}
-	
+/*	
 	// split at specified time or size of output data
 	// if splitting has been occured in NOSOUND, don't split again.
 	if(lpFDat->bSplit && bChangeFile == false)  
@@ -665,7 +665,7 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 		lpFDat->n64SplitByteMalti);
 
 	if(lpbChangeFile) *lpbChangeFile = bChangeFile;
-	
+*/	
 	// balance
 	if(lpFDat->bBalance){
 		for(i=0;i<informat.channels();i++){
@@ -2416,7 +2416,7 @@ BOOL SetParam(){
 		else blockdata[i].input_type = TYPE_STORAGE;
 
 		blockdata[i].offset = N64OffsetBlk[i];
-		blockdata[i].size = N64DataSizeBlk[i];
+		blockdata[i].points = N64DataSizeBlk[i]/InputWaveFmt.block();
 	}
 
 	// shift
@@ -2426,7 +2426,7 @@ BOOL SetParam(){
 		BlockData tail;
 		tail.input_type = TYPE_NULL;
 		tail.offset = 0;
-		tail.size = (unsigned int)(DbShiftTime * WriteWaveFmt.avgbyte() / 1000.0);
+		tail.points = (unsigned int)(DbShiftTime * WriteWaveFmt.avgbyte() / 1000.0)/WriteWaveFmt.block();
 		blockdata.push_back( tail );
 	}
 	
@@ -2571,9 +2571,10 @@ BOOL FilterBody()
 	if(FDAT.bRsmp) dwFoo *= 2; // size *= 2 when re-sampling
 	for(unsigned int i=0;i<InputWaveFmt.channels();i++) lpFilterBuf[i] = (double*)malloc(sizeof(double)*dwFoo+1024); 
 
-	track.buffer = lpBuffer;
-	track.buffer_size = DwBufSize;
+	track.raw = lpBuffer;
+	track.raw_max_points = DwBufSize / InputWaveFmt.block();
 	for(unsigned int i=0; i < InputWaveFmt.channels(); i++) track.data[i] = lpFilterBuf[i];
+	track.data_max_points = dwFoo / WriteWaveFmt.block();
 	track.set_verbose(BlVerbose);
 	track.set_filters( filters );
 	track.set_blockdata( blockdata );
@@ -2708,10 +2709,31 @@ BOOL FilterBody()
 
 
 			// obsolete
-			unsigned int points = tracks[0].points;
-			unsigned int points_before_resampling = 0;
+			unsigned int points = tracks[0].raw_points;
 			BOOL bChangeFile = false; // if true, change output file
 
+			if(FDAT.bSplit){
+
+				SPLIT(InputWaveFmt, 
+					&points,
+					total_out_size,
+					DwCurSplitNo,
+					&bChangeFile,
+					&FDAT.n64SplitByte,
+
+					FDAT.dSplitTime,
+					FDAT.n64SplitByteMalti);
+
+				if( bChangeFile ){
+
+					it_track = tracks.begin();
+					for( ; it_track != tracks.end(); ++it_track ) (*it_track).exec_split( points );
+				}
+			}
+
+			unsigned int points_before_resampling = points;
+
+/*
 			WFLT_FILTER(
 				&FDAT,  
 
@@ -2728,7 +2750,7 @@ BOOL FilterBody()
 				N64TotalDataSize,
 				InputWaveFmt,
 				WriteWaveFmt);
-
+*/
 
 				//-----------------------------
 				// OUTPUT
@@ -2826,9 +2848,10 @@ BOOL FilterBody()
 
 						if( !normalizer_searching && bChangeFile)
 						{
+/*
 							it_track = tracks.begin();
-							for( ; it_track != tracks.end(); ++it_track ) (*it_track).cut( points_before_resampling );
-
+							for( ; it_track != tracks.end(); ++it_track ) (*it_track).exec_split( points_before_resampling );
+*/
 							// add space to tail
 							AddSpace(hdWriteFile,DwAddSp[1]);
 							
