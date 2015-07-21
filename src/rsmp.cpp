@@ -24,12 +24,12 @@ void CalcFirCoefficient(DWORD dwFilter,  // type of filter
 //----------------------------
 // conv.c
 double CONV();
-void InitCONV(DWORD dwLength);
+void InitCONV(unsigned int dwLength);
 void UnprepareCONV();
-void SetConvSize(DWORD n);
+void SetConvSize(unsigned int n);
 double* GetConvBufA();
 double* GetConvBufB();
-BOOL  CheckSSE2(); // you need to call this function to use SSE2
+bool  CheckSSE2(); // you need to call this function to use SSE2
 
 // type of filter
 #define NO_FILTER	0

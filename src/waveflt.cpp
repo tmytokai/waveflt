@@ -2724,7 +2724,6 @@ BOOL FilterBody()
 
 			unsigned int points_before_resampling = points;
 
-/*
 			WFLT_FILTER(
 				&FDAT,  
 
@@ -2741,7 +2740,7 @@ BOOL FilterBody()
 				N64TotalDataSize,
 				InputWaveFmt,
 				WriteWaveFmt);
-*/
+
 
 				//-----------------------------
 				// OUTPUT
