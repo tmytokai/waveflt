@@ -13,7 +13,7 @@
 #include "trackmanager.h"
 #include "dcoffset.h"
 
-std::vector<Filter*> filters;
+// std::vector<Filter*> filters;
 
 
 //----------------------------------------------------
@@ -366,11 +366,12 @@ void UnprepareAllFilters()
 	unprepareRsmp();
 	unprepareNGATE();
 	unprepareFft();
-
+/*
 	std::vector<Filter*>::iterator it = filters.begin();
 	for( ; it != filters.end(); ++it ){
 		delete (*it);
 	}
+	*/
 }
 
 
@@ -2395,7 +2396,7 @@ BOOL SetParam(){
 #endif
 
 	/////////////////////
-
+/*
 	WaveFormat wavfmt = InputWaveFmt;
 
 	// DC offset
@@ -2406,7 +2407,7 @@ BOOL SetParam(){
 				
 		filters.push_back( dcoffset );
 	}
-
+*/
 	// setup blocks
 	blockdata.resize(DwCopyBlock);
 	for( unsigned int i = 0; i < DwCopyBlock; ++i ){
@@ -2431,7 +2432,8 @@ BOOL SetParam(){
 		blockdata[i].data_points = blockdata[i].raw_points;
 		blockdata.push_back( tail );
 	}
-	
+
+/*
 	fprintf(stderr,"\nstream of data:\n");
 	fprintf(stderr,"INPUT\n",SzReadFile);
 
@@ -2442,6 +2444,7 @@ BOOL SetParam(){
 	}
 
 	fprintf(stderr,"=> OUTPUT");
+*/
 
     fprintf(stderr,"\n\nOUTPUT: ");
     if(BlStdout){
@@ -2468,7 +2471,7 @@ BOOL FilterBody()
 	DWORD dwOutBufSize; // buffer size of lpWriteBuffer
 
 	// hadle of files
-	FILE* hdReadFile = NULL;
+//	FILE* hdReadFile = NULL;
 	FILE* hdWriteFile = NULL;
 
 	double dNormalGain[2] = {0,0}; // gain for normalizer
@@ -2482,7 +2485,7 @@ BOOL FilterBody()
 	char szErr[CHR_BUF];
 
 	TrackManager trackmanager;
-	Track track(0, InputWaveFmt, InputWaveFmt);
+//	Track track(0, InputWaveFmt, InputWaveFmt);
 
 	//--------------------------
 	// initializing
@@ -2571,8 +2574,8 @@ BOOL FilterBody()
 	// create buffer for filter
 	dwFoo = dwFilterBufSize2;
 	if(FDAT.bRsmp) dwFoo *= 2; // size *= 2 when re-sampling
-	for(unsigned int i=0;i<InputWaveFmt.channels();i++) lpFilterBuf[i] = (double*)malloc(sizeof(double)*dwFoo+1024); 
-
+//	for(unsigned int i=0;i<InputWaveFmt.channels();i++) lpFilterBuf[i] = (double*)malloc(sizeof(double)*dwFoo+1024); 
+/*
 	// open input file
 	if(!OpenReadFile(&hdReadFile,SzReadFile)){
 		goto L_ERR;
@@ -2583,11 +2586,17 @@ BOOL FilterBody()
 	track.raw_max_points = DwBufSize / InputWaveFmt.block();
 	for(unsigned int i=0; i < InputWaveFmt.channels(); i++) track.data[i] = lpFilterBuf[i];
 	track.data_max_points = dwFoo / WriteWaveFmt.block();
-	track.set_verbose(BlVerbose);
-	track.set_filters( filters );
-	track.set_blockdata( blockdata );
-	track.set_filename( SzReadFile );
+	*/
+	Track *track = new Track(0, SzReadFile, InputWaveFmt, WriteWaveFmt);
+	track->set_verbose(BlVerbose);
+//	track.set_filters( filters );
+	track->set_blockdata( blockdata );
+//	track.set_filename( SzReadFile );
 	trackmanager.tracks.push_back( track );
+	trackmanager.init();
+	trackmanager.show_config();
+
+	for(unsigned int i=0; i < InputWaveFmt.channels(); i++) lpFilterBuf[i] = track->get_data(i);
 
 	
 	// open output file
@@ -2684,10 +2693,10 @@ BOOL FilterBody()
 		DWORD dwCutHeadOutPoints = dwFoo; // points for shiftting(-shift ). unless dwCutHeadOutPoints >0 , cut the head of output
 
 
-
+/*
 		std::vector<Filter*>::iterator it_filter = filters.begin();
 		for( ; it_filter != filters.end(); ++it_filter ) (*it_filter)->clear_buffer();
-
+*/
 		trackmanager.start();
 
 		while(1){
@@ -2695,18 +2704,18 @@ BOOL FilterBody()
 			//-----------------------------
 			// INPUT
 			//-----------------------------
-			trackmanager.read();
+			trackmanager.process();
 			if( trackmanager.end_of_tracks() ) break;
-
+/*
 			//------------------------------
 			// filtering
 			//-----------------------------
 			it_filter = filters.begin();
 			for( ; it_filter != filters.end(); ++it_filter ) (*it_filter)->process(trackmanager);
-
+*/
 
 			// obsolete
-			unsigned int points = trackmanager.get_track(0).raw_points;
+			unsigned int points = trackmanager.get_track(0)->get_data_points();
 			BOOL bChangeFile = false; // if true, change output file
 			unsigned int points_before_resampling = points;
 
@@ -2885,12 +2894,12 @@ BOOL FilterBody()
 							total_realout_size = 0;
 							bChangeFile = false;
 							ClearNOSOUND(); 
-
+/*
 							std::vector<Filter*>::iterator it = filters.begin();
 							for( ; it != filters.end(); ++it ){
 								(*it)->output_changed();
 							}
-
+*/
 							// get current system time
 							GetLocalTime(&SystemTime);
 							
@@ -3055,13 +3064,15 @@ BOOL FilterBody()
 	}
 #endif	
 	*/
-	
+/*	
 	if(BlVerbose){
 		std::vector<Filter*>::iterator it = filters.begin();
 		for( ; it != filters.end(); ++it ){
 			(*it)->show_result();
 		}
 	}
+*/
+	trackmanager.show_result();
 
 	if(FDAT.bAutoOffset && BlVerbose){
 		
@@ -3088,6 +3099,8 @@ BOOL FilterBody()
 	// if error occured, jump here 
 L_ERR: 
 
+	trackmanager.free();
+
 	UnprepareAllFilters();
 	unprepareOutputFileName();
 
@@ -3100,13 +3113,13 @@ L_ERR:
 //	if(hdWriteFile) CloseHandle(hdWriteFile);
 	CloseWaveDevice(!bReturn);
 #endif
-	if(hdReadFile) fclose(hdReadFile);
+//	if(hdReadFile) fclose(hdReadFile);
 	if(hdWriteFile) fclose(hdWriteFile);
 	
 	// free mem
 	if(lpBuffer) free(lpBuffer);
 	if(lpWriteBuffer) free(lpWriteBuffer);
-	for(unsigned int i=0;i<2;i++) if(lpFilterBuf[i]) free(lpFilterBuf[i]);
+//	for(unsigned int i=0;i<2;i++) if(lpFilterBuf[i]) free(lpFilterBuf[i]);
 
 	return bReturn;
 }

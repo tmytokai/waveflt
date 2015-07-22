@@ -1,33 +1,113 @@
 // track class
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "track.h"
 #include "filter.h"
 #include "io.h"
 
+#include "dcoffset.h"
 
-Track::Track(  const int _track_no, const WaveFormat& _raw_format, const WaveFormat& _data_format )
-    : dbg(false), verbose( true ), track_no(_track_no), raw_format(_raw_format), data_format(_data_format)
+Track::Track(  const int _track_no, const std::string& _filename, const WaveFormat& _raw_format, const WaveFormat& _data_format )
+    : track_no(_track_no), filename(_filename), raw_format(_raw_format), data_format(_data_format)
 {
-    dbg = true;
-    data.resize( data_format.channels() );
+    reset();
 }
 
 
 Track::~Track()
-{}
+{
+    if( dbg ) fprintf(stderr, "\n[debug] Track(%d)::~Track\n", track_no );
+
+    if( raw ) free( raw );
+    while( data.size() ){
+        free( data.back() );
+        data.pop_back();
+    }
+
+    while( filters.size() ){
+        delete filters.back();
+        filters.pop_back();
+    }
+
+    if( fp ) fclose(fp);
+}
+
+
+void Track::reset()
+{
+    dbg = true;
+    verbose = true;
+    raw = NULL;
+    block_no = 0;
+    fp = NULL;
+}
+
+
+void Track::init()
+{
+    if( dbg ) fprintf(stderr, "\n[debug] Track(%d)::init\n", track_no );
+
+    data_max_points = (unsigned int)( 0.25 * data_format.rate() );
+
+    // 32 byte alignment for SSE2
+    data_max_points = (data_max_points/4)*4;
+
+    raw_max_points = data_max_points;
+
+    raw = (unsigned char*) malloc( raw_format.block() * raw_max_points );
+    data.resize( data_format.channels() );
+    for( unsigned int i = 0; i < data_format.channels(); ++i ) data[i] = (double*) malloc( sizeof(double) * data_max_points );
+
+    // test
+    std::vector<double> offset;
+    offset.push_back(12);
+    offset.push_back(34);
+    filters.push_back( new DcOffset( data_format, data, offset ) );
+    filters.back()->debugmode();
+
+    fp = fopen( filename.c_str(), "rb" );
+}
+
+
+void Track::show_config()
+{
+    fprintf(stderr,"\n----------------\n");
+    fprintf(stderr,"[configuration of Track_%d]\n", track_no );
+    fprintf(stderr,"INPUT: file = ");
+    switch( blockdata[block_no].input_type ){
+        case TYPE_STORAGE:
+            fprintf(stderr,"%s",filename.c_str());
+            break;
+        case TYPE_STDIN:
+            fprintf(stderr,"stdin");
+            break;
+        case TYPE_NULL:
+            fprintf(stderr,"null");
+            break;
+    }
+    fprintf(stderr,", %d (Hz), %d (Ch), %d (Bits)\n", raw_format.rate(), raw_format.channels(), raw_format.bits() );
+    std::vector<Filter*>::iterator it = filters.begin();
+    for( ; it != filters.end(); ++it ){
+        fprintf(stderr,"=> ");
+        (*it)->show_config();
+    }
+    fprintf(stderr,"=> OUTPUT");
+}
 
 
 void Track::start()
 {
+    if( dbg ) fprintf(stderr, "\n[debug] Track(%d)::start\n", track_no );
+
     block_no = 0;
     begin_new_block();
 }
 
 
-void Track::read()
+void Track::process()
 {
     if( end_of_track() ) return;
 
@@ -54,65 +134,43 @@ void Track::read()
         block_no++;
         begin_new_block();
     }
-    else convert_raw_to_data();
+    else{
+        convert_raw_to_data();
+
+        std::vector<Filter*>::iterator it = filters.begin();
+        for( ; it != filters.end(); ++it ) (*it)->process( data_points );
+    }
 }
+
+
+void Track::show_result()
+{
+    if( dbg ) fprintf(stderr, "\n[debug] Track(%d)::show_result\n", track_no );
+
+    std::vector<Filter*>::iterator it = filters.begin();
+    for( ; it != filters.end(); ++it ) (*it)->show_result();
+}
+
 
 
 void Track::begin_new_block()
 {
     if( end_of_track() ) return;
+    if( dbg ) fprintf(stderr, "\n[debug] Track(%d)::begin_new_block\n", track_no );
 
     raw_points = 0;
     data_points = 0;
     block_total_data_points = 0;
 
-    if( verbose ){
-
-        fprintf(stderr,"\n\n----------------\n");
-
-        fprintf(stderr,"[Tr_%d: Blk_%d : ", track_no, block_no);
-        if( blockdata[block_no].input_type == TYPE_STORAGE || blockdata[block_no].input_type == TYPE_STDIN ){
-
-            const unsigned long long raw_offset = blockdata[block_no].raw_offset*raw_format.block();
-            if( raw_offset < 1024*1024 )
-                fprintf(stderr,"offset = %.2lf K", (double)raw_offset/1024);
-            else
-                fprintf(stderr,"offset = %.2lf M", (double)raw_offset/1024/1024);												
-            fprintf(stderr,"(%.2lf sec), ", (double)raw_offset/raw_format.avgbyte());
-        }
-
-        if(blockdata[block_no].raw_points > 0){
-
-            const unsigned long long raw_size = blockdata[block_no].raw_points*raw_format.block();
-            if( raw_size < 1024*1024 )
-                fprintf(stderr,"size = %.2lf K", (double)raw_size/1024);
-            else
-                fprintf(stderr,"size = %.2lf M", (double)raw_size/1024/1024);
-            fprintf(stderr,"(%.2lf sec)", (double)raw_size/raw_format.avgbyte());
-        }
-        else fprintf(stderr," size = endless");
-        fprintf(stderr,"]\n");
-
-        fprintf(stderr,"INPUT: ");
-        switch( blockdata[block_no].input_type ){
-            case TYPE_STORAGE:
-                fprintf(stderr,"%s\n",filename.c_str());
-                break;
-            case TYPE_STDIN:
-                fprintf(stderr,"stdin\n");
-                break;
-            case TYPE_NULL:
-                fprintf(stderr,"null\n");
-                break;
-        }
-    }
+    std::vector<Filter*>::iterator it = filters.begin();
+    for( ; it != filters.end(); ++it ) (*it)->clear();
 
     // move to head of current block
     if( blockdata[block_no].input_type == TYPE_STORAGE ){
 
         const unsigned long long seek_offset = raw_format.get_offset() + blockdata[block_no].raw_offset*raw_format.block();
 
-        if( dbg ) fprintf(stderr, "[debug] Track::begin_new_block: seek: offset = %d\n", (int)seek_offset );
+        if( dbg ) fprintf(stderr, "\n[debug] seek: offset = %d byte\n", (int)seek_offset );
 #ifndef WIN32
         fseeko(fp, (off_t)seek_offset, SEEK_SET);
 #else
@@ -128,8 +186,25 @@ void Track::begin_new_block()
    );
    }
 */
-    std::vector<Filter*>::iterator it = filters.begin();
-    for( ; it != filters.end(); ++it ) (*it)->track_seeked( track_no );
+
+    if( verbose ){
+
+        fprintf(stderr,"\n\n----------------\n");
+
+        fprintf(stderr,"[Track_%d: Block_%d : ", track_no, block_no);
+        if( blockdata[block_no].input_type == TYPE_STORAGE || blockdata[block_no].input_type == TYPE_STDIN ){
+
+            const unsigned long long raw_offset = blockdata[block_no].raw_offset*raw_format.block();
+            fprintf(stderr,"start = %.2lf sec, ", (double)raw_offset/raw_format.avgbyte());
+        }
+        if(blockdata[block_no].raw_points > 0){
+
+            const unsigned long long raw_size = blockdata[block_no].raw_points*raw_format.block();
+            fprintf(stderr,"length = %.2lf sec ", (double)raw_size/raw_format.avgbyte());
+        }
+        else fprintf(stderr,"length = endless");
+        fprintf(stderr,"]\n");
+    }
 }
 
 
@@ -187,9 +262,6 @@ void Track::convert_raw_to_data()
         }
     }
 
-    data_points = raw_points;
-    block_total_data_points += data_points;
-
     /* think later
     else if(format.bits() == 32 && format.tag() == WAVE_FORMAT_PCM)
     {  // 32 bit long
@@ -242,4 +314,7 @@ void Track::convert_raw_to_data()
         }
     }
     */
+
+    data_points = raw_points;
+    block_total_data_points += data_points;
 }

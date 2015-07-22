@@ -12,17 +12,21 @@ class TrackManager
     bool eot; // end_of_tracks
 
   public:
-    std::vector<Track> tracks;
+    std::vector<Track*> tracks;
 
     TrackManager();
 
-    Track& get_track( const int track_no ){ return tracks[track_no]; }
+    Track* get_track( const int track_no ){ return tracks[track_no]; }
 
     const unsigned int size() const { return tracks.size(); }
     const bool end_of_tracks() const { return eot; }
 
+    void init();
+    void show_config();
     void start();
-    void read();
+    void process();
+    void show_result();
+    void free();
 };
 
 #endif

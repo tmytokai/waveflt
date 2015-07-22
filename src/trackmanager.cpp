@@ -8,19 +8,55 @@ TrackManager::TrackManager()
 {}
 
 
-void TrackManager::start()
+void TrackManager::init()
 {
-    std::vector<Track>::iterator it_track = tracks.begin();
-    for( ; it_track != tracks.end(); ++it_track ) (*it_track).start();
+    std::vector<Track*>::iterator it = tracks.begin();
+    for( ; it != tracks.end(); ++it ){
+        (*it)->init();
+    }
 }
 
 
-void TrackManager::read()
+void TrackManager::show_config()
+{
+    std::vector<Track*>::iterator it = tracks.begin();
+    for( ; it != tracks.end(); ++it ){
+        (*it)->show_config();
+    }
+}
+
+
+void TrackManager::start()
+{
+    std::vector<Track*>::iterator it = tracks.begin();
+    for( ; it != tracks.end(); ++it ) (*it)->start();
+}
+
+
+void TrackManager::process()
 {
     eot = true;
-    std::vector<Track>::iterator it_track = tracks.begin();
-    for( ; it_track != tracks.end(); ++it_track ){
-        (*it_track).read();
-        if( ! (*it_track).end_of_track() ) eot = false;
+    std::vector<Track*>::iterator it = tracks.begin();
+    for( ; it != tracks.end(); ++it ){
+        (*it)->process();
+        if( ! (*it)->end_of_track() ) eot = false;
+    }
+}
+
+
+void TrackManager::show_result()
+{
+    std::vector<Track*>::iterator it = tracks.begin();
+    for( ; it != tracks.end(); ++it ){
+        (*it)->show_result();
+    }
+}
+
+
+void TrackManager::free()
+{
+    while( tracks.size() ){
+        delete tracks.back();
+        tracks.pop_back();
     }
 }

@@ -3,26 +3,21 @@
 #ifndef _DCOFFSET_H
 #define _DCOFFSET_H
 
-#include <vector>
 #include "filter.h"
 
 class DcOffset : public Filter
 {
   private:
-    std::vector< std::vector<double> > offsets;
+    std::vector<double> offset;
 
   public:
-    DcOffset( const WaveFormat& _input_format );
+    DcOffset( const WaveFormat& _data_format, std::vector<double*>& _data, const std::vector<double>& _offset );
     virtual ~DcOffset();
-
-    void set_offset( const unsigned int track_no, const std::vector<double>& offset );
 
     // Override
     virtual void show_config() const;
-    virtual void clear_buffer();
-    virtual void track_seeked( const int track_no );
-    virtual void process( TrackManager& trackmanager );
-    virtual void output_changed();
+    virtual void clear();
+    virtual void process( const unsigned int data_points );
     virtual void show_result() const;
 };
 
