@@ -24,10 +24,3 @@ void TrackManager::read()
         if( ! (*it_track).end_of_track() ) eot = false;
     }
 }
-
-
-void TrackManager::exec_split( const unsigned int pos )
-{
-    std::vector<Track>::iterator it_track = tracks.begin();
-    for( ; it_track != tracks.end(); ++it_track ) (*it_track).exec_split( pos );
-}

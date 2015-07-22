@@ -2,12 +2,13 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 #ifdef WIN32
 #include <io.h> // _setmode
-#endif
 #include <fcntl.h> // _O_BINARY
-#include <assert.h>
+#endif
 
+// chunk id
 enum
 {
     ID_err = 0,
@@ -55,16 +56,16 @@ void WaveFormat::read( FILE *fp )
     char chunk[5] = {0};
     unsigned int chunksize;
 
-    if( GetChunkID( fp, chunk, chunksize ) != ID_riff ) throw( std::string( "This is not wave file." ) );
+    if( get_chunk_id( fp, chunk, chunksize ) != ID_riff ) throw std::string( "This is not wave file" );
     offset += 8;
 
     while(1){
 
         unsigned int byte;
-        const int id = GetChunkID( fp, chunk, chunksize );
+        const int id = get_chunk_id( fp, chunk, chunksize );
 
-        if( id == ID_err ) throw( std::string( "Invalid wave header." ) );
-        else if( id == ID_unknown ) throw( std::string( "Unknown chunk '%s'." ) );
+        if( id == ID_err ) throw std::string( "Invalid wave header" );
+        else if( id == ID_unknown ) throw std::string( "Unknown chunk" );
         else if( id == ID_wave ){
             offset += 4;
             continue;
@@ -73,7 +74,7 @@ void WaveFormat::read( FILE *fp )
             assert( chunksize <= sizeof(WAVEFORMAT_RAW) );
             offset += 8;
             byte = fread(&raw,1,chunksize,fp);
-            if(byte != chunksize) throw( std::string( "Invalid fmt chunk." ) );
+            if(byte != chunksize) throw std::string( "Invalid fmt chunk size" );
             offset += byte;  
             is_valid();
         }
@@ -110,7 +111,7 @@ void WaveFormat::read( const std::string& filename )
     // file
     else{
         fp = fopen(filename.c_str(),"rb");
-        if(fp == NULL) throw( std::string( "Cannot open " + filename ) );
+        if(fp == NULL) throw std::string( "Cannot open " + filename );
     }
 
     read( fp );
@@ -152,7 +153,7 @@ void WaveFormat::write( FILE* fp, const unsigned long long datasize )
 }
 
 
-const double WaveFormat::GetMaxWaveLevel()
+const double WaveFormat::get_max_level()
 {
     double ret = 0;
 
@@ -182,14 +183,14 @@ const double WaveFormat::GetMaxWaveLevel()
 
 void WaveFormat::is_valid()
 {
-    if( raw.tag != WAVE_FORMAT_IEEE_FLOAT && raw.tag != WAVE_FORMAT_PCM ) throw( std::string( "Not PCM" ) );
-    if( raw.channels != 1 && raw.channels != 2) throw( std::string( raw.channels + "-channels is not supported." ) );
-    if( raw.bits != 8 && raw.bits != 16 && raw.bits != 24 && raw.bits != 32 && raw.bits != 64) throw( std::string( raw.bits + "-bits is not supported." ) );
-    if( raw.avgbyte != raw.channels*raw.rate*raw.bits/8) throw( std::string( "Invalid wave" ) );
+    if( raw.tag != WAVE_FORMAT_IEEE_FLOAT && raw.tag != WAVE_FORMAT_PCM ) throw std::string( "Invalid tag" );
+    if( raw.channels != 1 && raw.channels != 2) throw std::string( "Invalid channels" );
+    if( raw.bits != 8 && raw.bits != 16 && raw.bits != 24 && raw.bits != 32 && raw.bits != 64) throw std::string( "Invalid bits" );
+    if( raw.avgbyte != raw.channels*raw.rate*raw.bits/8) throw std::string( "Invalid avgbyte" );
 }
 
 
-const int WaveFormat::GetChunkID( FILE* fp,  char* chunk,  unsigned int& chunksize )
+const int WaveFormat::get_chunk_id( FILE* fp,  char* chunk,  unsigned int& chunksize )
 {
     assert( fp );
     assert( chunk );

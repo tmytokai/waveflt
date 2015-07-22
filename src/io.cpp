@@ -2,7 +2,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#ifdef WIN32
 #include <io.h> // _setmode
+#endif
 #include <fcntl.h> // _O_BINARY
 
 #include "waveformat.h"
@@ -27,6 +29,7 @@ const unsigned int ReadData( FILE* fp, unsigned char* buffer, const unsigned int
 }
 
 
+#ifdef WIN32
 const __int64 SeekStdin( unsigned char* buffer,
 			   unsigned int buffersize,
 			   const __int64 pos_seek,
@@ -50,7 +53,7 @@ const __int64 SeekStdin( unsigned char* buffer,
 
 	return readsize;
 }
-
+#endif
 
 const unsigned int WriteData( FILE* fp, const unsigned char* buffer, const unsigned int size )
 {
@@ -58,7 +61,7 @@ const unsigned int WriteData( FILE* fp, const unsigned char* buffer, const unsig
 	return fwrite( buffer, 1, size, fp);
 }
 
-
+#ifdef WIN32
 const bool WriteTextData( FILE* fp, double* buffer[2], const unsigned int size, const WaveFormat format)
 {
 	if( fp == NULL) return true;
@@ -130,3 +133,4 @@ const bool OpenWriteFile( FILE** fp, const char* filename )
 	return true;
 
 }
+#endif

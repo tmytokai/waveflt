@@ -56,12 +56,12 @@ class WaveFormat
     void read( const std::string& filename );
     void write( FILE* fp, const unsigned long long datasize );
 
-    const double GetMaxWaveLevel();
+    const double get_max_level();
     void is_valid();
 
   private:
 
-    const int GetChunkID( FILE* fp,  char* chunk,  unsigned int& chunksize );
+    const int get_chunk_id( FILE* fp,  char* chunk,  unsigned int& chunksize );
 
 };
 

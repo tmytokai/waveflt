@@ -64,8 +64,8 @@ void DcOffset::process( TrackManager& trackmanager )
         Track& track = trackmanager.get_track(track_no);
         if( track.end_of_track() ) continue;
 
-        assert( track.get_input_format().channels() <= offset.size() );
-        for( unsigned int i=0; i < track.get_input_format().channels(); ++i){
+        assert( track.get_data_format().channels() <= offset.size() );
+        for( unsigned int i=0; i < track.get_data_format().channels(); ++i){
             for( unsigned int i2=0; i2 < track.get_data_points(); ++i2 ) track.data[i][i2] += offset[i];
         }
     }

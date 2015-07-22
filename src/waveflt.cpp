@@ -314,7 +314,7 @@ void CopyBufferDtoB(BYTE* lpBuffer,  // output, buffer(BYTE*)
 	}
 	else  // 8,16,24,32-long
 	{
-		dMaxLevel = format.GetMaxWaveLevel();
+		dMaxLevel = format.get_max_level();
 		
 		for(dwChn = 0 ; dwChn < format.channels()  ; dwChn++)
 		{
@@ -612,7 +612,7 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 
 	// pre-normalize data between -1 to 1 before filtering
 	if( CONFIG::get().pre_normalization ){
-		const double maxlevel = informat.GetMaxWaveLevel();
+		const double maxlevel = informat.get_max_level();
 		for(i=0;i<informat.channels();i++){
 			for(i2=0;i2<*lpdwPointsInBuf;i2++) lpFilterBuf[i][i2] /= maxlevel;
 		}
@@ -814,7 +814,7 @@ void WFLT_FILTER(LPFILTER_DATA lpFDat,  // parameter
 
 		// restore wave level
 		if( CONFIG::get().pre_normalization ){
-			const double maxlevel = outformat.GetMaxWaveLevel();
+			const double maxlevel = outformat.get_max_level();
 			for(i=0;i<outformat.channels();i++){
 				for(i2=0;i2<*lpdwPointsInBuf;i2++) lpFilterBuf[i][i2] *= maxlevel;
 			}
@@ -1946,7 +1946,7 @@ BOOL SetParam(){
 		N64OffsetBlk[i] = N64OffsetBlk[i] / (InputWaveFmt.channels() * (InputWaveFmt.bits()/8)) * InputWaveFmt.block();
 		
 		// add header offset to block offset
-		N64OffsetBlk[i] += N64FileOffset; 
+//		N64OffsetBlk[i] += N64FileOffset; 
 		
 		N64DataSizeBlk[i] 
 			= N64DataSizeBlk[i] / (InputWaveFmt.channels() * (InputWaveFmt.bits()/8)) * InputWaveFmt.block();
@@ -2415,8 +2415,9 @@ BOOL SetParam(){
 		else if( BlNoSignal ) blockdata[i].input_type = TYPE_NULL;
 		else blockdata[i].input_type = TYPE_STORAGE;
 
-		blockdata[i].offset = N64OffsetBlk[i];
-		blockdata[i].points = N64DataSizeBlk[i]/InputWaveFmt.block();
+		blockdata[i].raw_offset = N64OffsetBlk[i]/InputWaveFmt.block();
+		blockdata[i].raw_points = N64DataSizeBlk[i]/InputWaveFmt.block();
+		blockdata[i].data_points = blockdata[i].raw_points;
 	}
 
 	// shift
@@ -2425,8 +2426,9 @@ BOOL SetParam(){
 		// tail
 		BlockData tail;
 		tail.input_type = TYPE_NULL;
-		tail.offset = 0;
-		tail.points = (unsigned int)(DbShiftTime * WriteWaveFmt.avgbyte() / 1000.0)/WriteWaveFmt.block();
+		tail.raw_offset = 0;
+		tail.raw_points = (unsigned int)(DbShiftTime * WriteWaveFmt.avgbyte() / 1000.0)/WriteWaveFmt.block();
+		blockdata[i].data_points = blockdata[i].raw_points;
 		blockdata.push_back( tail );
 	}
 	
@@ -2480,7 +2482,7 @@ BOOL FilterBody()
 	char szErr[CHR_BUF];
 
 	TrackManager trackmanager;
-	Track track(0, InputWaveFmt);
+	Track track(0, InputWaveFmt, InputWaveFmt);
 
 	//--------------------------
 	// initializing
@@ -2706,22 +2708,6 @@ BOOL FilterBody()
 			// obsolete
 			unsigned int points = trackmanager.get_track(0).raw_points;
 			BOOL bChangeFile = false; // if true, change output file
-
-			if(FDAT.bSplit){
-
-				SPLIT(InputWaveFmt, 
-					&points,
-					total_out_size,
-					DwCurSplitNo,
-					&bChangeFile,
-					&FDAT.n64SplitByte,
-
-					FDAT.dSplitTime,
-					FDAT.n64SplitByteMalti);
-
-				if( bChangeFile ) trackmanager.exec_split( points );
-			}
-
 			unsigned int points_before_resampling = points;
 
 			WFLT_FILTER(
@@ -3082,7 +3068,7 @@ BOOL FilterBody()
 		double dOffset[2],dMaxLevel;
 		GetAutoOffset(dOffset);		
 		
-		dMaxLevel = InputWaveFmt.GetMaxWaveLevel();
+		dMaxLevel = InputWaveFmt.get_max_level();
 		
 		fprintf(stderr,"\nauto DC offset: ");
 		fprintf(stderr,"L =  %6.3lf dB (%.2lf), ",-20*log10(fabs(dOffset[0])),-dOffset[0]*dMaxLevel);

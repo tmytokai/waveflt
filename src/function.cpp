@@ -926,7 +926,7 @@ void GetPeakFromFile(
 #endif
 
 	for(i=0;i<waveFmt.channels();i++){dPeak[i] = dAvg[i] = dRms[i] = 0;}
-	dMaxWaveLevel = waveFmt.GetMaxWaveLevel();
+	dMaxWaveLevel = waveFmt.get_max_level();
 	n64SearchedByte = 0;
 	while(n64SearchedByte < n64DataSize){
 		

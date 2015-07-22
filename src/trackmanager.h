@@ -23,7 +23,6 @@ class TrackManager
 
     void start();
     void read();
-    void exec_split( const unsigned int pos );
 };
 
 #endif

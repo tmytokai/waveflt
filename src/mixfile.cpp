@@ -118,7 +118,7 @@ void MixFile(WaveFormat waveOrgFmt,
 	ReadFile(HdMixFile,LpMixFileBuffer,dwReadSize,&dwByte,NULL);
 	if(dwByte == 0) return;
 	
-	dMaxLevel = WaveFmtMixFile.GetMaxWaveLevel();
+	dMaxLevel = WaveFmtMixFile.get_max_level();
 	lpBuffer2 = LpMixFileBuffer;
 	dwPos = dwOffset;
 	

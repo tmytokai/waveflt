@@ -1,8 +1,8 @@
-OBJS=dcoffset.o track.o waveformat.o trackmanager.o
+OBJS=dcoffset.o track.o waveformat.o trackmanager.o waveflt-test.o io.o
 CFLAGS=-g -Wall -O2 -MMD -D_DEBUG
 
 waveflt : $(OBJS)
-	ls -al $(OBJS)
+	g++ -o waveflt $(OBJS)
 
 .cpp.o:
 	g++ -c $(CFLAGS) $<
