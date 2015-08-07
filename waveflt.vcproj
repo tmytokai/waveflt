@@ -203,230 +203,42 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath=".\src\config.cpp"
+				RelativePath=".\src\doublebuffer.cpp"
 				>
 			</File>
 			<File
-				RelativePath="src\conv.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="src\fft.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="src\filterfunc.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="src\function.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="src\io.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="src\main.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="src\outfile.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="src\playwave.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\src\track.cpp"
+				RelativePath=".\src\output.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\trackmanager.cpp"
+				RelativePath=".\src\resampler.cpp"
 				>
 			</File>
 			<File
-				RelativePath="src\wave.cpp"
+				RelativePath=".\src\source.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="src\waveflt.cpp"
+				RelativePath=".\src\storageio.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\src\waveflt-test.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\src\waveformat.cpp"
 				>
 			</File>
 			<Filter
-				Name="Filter"
+				Name="old"
 				>
 				<File
-					RelativePath=".\src\autooffset.cpp"
+					RelativePath=".\src\config.cpp"
 					>
 				</File>
 				<File
-					RelativePath="src\compr.cpp"
+					RelativePath="src\conv.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -446,7 +258,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\dcoffset.cpp"
+					RelativePath="src\fft.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -466,7 +278,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\dither.cpp"
+					RelativePath="src\filterfunc.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -486,7 +298,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\fadeinout.cpp"
+					RelativePath="src\function.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -506,7 +318,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\fbank.cpp"
+					RelativePath="src\io.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -526,7 +338,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\fir.cpp"
+					RelativePath="src\main.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -546,7 +358,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\iir.cpp"
+					RelativePath="src\outfile.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -566,7 +378,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\mixfile.cpp"
+					RelativePath="src\playwave.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -586,7 +398,15 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\ngate.cpp"
+					RelativePath=".\src\track.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\trackmanager.cpp"
+					>
+				</File>
+				<File
+					RelativePath="src\wave.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -606,7 +426,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\normal.cpp"
+					RelativePath="src\waveflt.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -625,46 +445,254 @@
 						/>
 					</FileConfiguration>
 				</File>
-				<File
-					RelativePath="src\rsmp.cpp"
+				<Filter
+					Name="Filter"
 					>
-					<FileConfiguration
-						Name="Debug|Win32"
+					<File
+						RelativePath=".\src\autooffset.cpp"
 						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
+					</File>
+					<File
+						RelativePath="src\compr.cpp"
 						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\split.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="src\dcoffset.cpp"
 						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="src\dither.cpp"
 						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="src\fadeinout.cpp"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="src\fbank.cpp"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="src\fir.cpp"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="src\iir.cpp"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="src\mixfile.cpp"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="src\ngate.cpp"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="src\normal.cpp"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="src\rsmp.cpp"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="src\split.cpp"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 		<Filter
@@ -672,11 +700,7 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath=".\src\config.h"
-				>
-			</File>
-			<File
-				RelativePath="src\fbank.h"
+				RelativePath=".\src\doublebuffer.h"
 				>
 			</File>
 			<File
@@ -684,19 +708,27 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\track.h"
+				RelativePath=".\src\iomodule.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\TrackManager.h"
+				RelativePath=".\src\module.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\wave.h"
+				RelativePath=".\src\output.h"
 				>
 			</File>
 			<File
-				RelativePath="src\waveflt.h"
+				RelativePath=".\src\resampler.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\source.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\storageio.h"
 				>
 			</File>
 			<File
@@ -704,14 +736,38 @@
 				>
 			</File>
 			<Filter
-				Name="Filter"
+				Name="old"
 				>
+				<File
+					RelativePath=".\src\config.h"
+					>
+				</File>
 				<File
 					RelativePath=".\src\dcoffset.h"
 					>
 				</File>
 				<File
+					RelativePath="src\fbank.h"
+					>
+				</File>
+				<File
 					RelativePath=".\src\filter.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\track.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\TrackManager.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\wave.h"
+					>
+				</File>
+				<File
+					RelativePath="src\waveflt.h"
 					>
 				</File>
 			</Filter>

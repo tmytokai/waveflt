@@ -1,12 +1,11 @@
-#include "waveformat.h"
+// WAVE format class
 
-#include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#ifdef WIN32
-#include <io.h> // _setmode
-#include <fcntl.h> // _O_BINARY
-#endif
+
+#include "waveformat.h"
+#include "io.h"
+
 
 // chunk id
 enum
@@ -24,6 +23,7 @@ enum
     ID_junk,
     ID_unknown
 };
+
 
 void WaveFormat::clear()
 {
@@ -48,21 +48,25 @@ void WaveFormat::set( const unsigned short _tag,
 }
 
 
-void WaveFormat::read( FILE *fp )
+void WaveFormat::read( IO* io )
 {
-    datasize = 0;
+    assert( io );
+    assert( io->get_mode() == IOMODE_READ );
+
     offset = 0;
+    data_size = 0;
+    data_points = 0;
 
     char chunk[5] = {0};
     unsigned int chunksize;
 
-    if( get_chunk_id( fp, chunk, chunksize ) != ID_riff ) throw std::string( "This is not wave file" );
+    if( get_chunk_id( io, chunk, chunksize ) != ID_riff ) throw std::string( "This is not wave file" );
     offset += 8;
 
     while(1){
 
         unsigned int byte;
-        const int id = get_chunk_id( fp, chunk, chunksize );
+        const int id = get_chunk_id( io, chunk, chunksize );
 
         if( id == ID_err ) throw std::string( "Invalid wave header" );
         else if( id == ID_unknown ) throw std::string( "Unknown chunk" );
@@ -73,83 +77,57 @@ void WaveFormat::read( FILE *fp )
         else if( id == ID_fmt ){
             assert( chunksize <= sizeof(WAVEFORMAT_RAW) );
             offset += 8;
-            byte = fread(&raw,1,chunksize,fp);
+            byte = io->read( &raw, chunksize );
             if(byte != chunksize) throw std::string( "Invalid fmt chunk size" );
             offset += byte;  
             is_valid();
         }
         else if( id == ID_data ){
             offset += 8;
-            datasize = chunksize;
+            data_size = chunksize;
+            data_points = data_size / raw.block;
             break;
         }
         else{
             offset += (8 + chunksize);
-#ifndef WIN32
-            off_t pos64 = offset;
-            fseeko(fp, pos64, SEEK_SET);
-#else
-            __int64 pos64 = offset;
-            _fseeki64( fp , pos64, SEEK_SET);
-#endif
+            io->seek( offset );
         }
     }
 }
 
 
-void WaveFormat::read( const std::string& filename )
+void WaveFormat::write( IO* io, const unsigned long long points )
 {
-    FILE* fp = NULL;
-
-    // stdin
-    if( filename == "stdin" ){
-        fp = stdin;
-#ifdef WIN32
-        _setmode(_fileno(stdin),_O_BINARY); // set binary mode
-#endif
-    }
-    // file
-    else{
-        fp = fopen(filename.c_str(),"rb");
-        if(fp == NULL) throw std::string( "Cannot open " + filename );
-    }
-
-    read( fp );
-
-    if( fp && fp != stdin ) fclose(fp);
-}
-
-
-void WaveFormat::write( FILE* fp, const unsigned long long datasize )
-{
-    unsigned int tmp;
-
-    if( fp == NULL) return;
+    assert( io );
+    assert( io->get_mode() == IOMODE_WRITE );
 
     const unsigned int headsize = 44;
+    unsigned int tmp;
 
-    fseek( fp , 0, SEEK_SET);
+    io->seek( 0 );
 
     // RIFF (8)
-    fwrite( "RIFF", 1, 4, fp );
-    if( datasize >= 0xFFFFFFFF-headsize+8) tmp = 0xFFFFFFFF; // = 4G
-    else tmp = ((unsigned int)datasize + headsize) - 8;
-    fwrite( &tmp, 1, sizeof(unsigned int), fp);
+    io->write( "RIFF", 4 );
+    if( data_size >= 0xFFFFFFFF-headsize+8) tmp = 0xFFFFFFFF; // = 4G
+    else tmp = ((unsigned int)data_size + headsize) - 8;
+    io->write( &tmp, sizeof(unsigned int) );
 
     // WAVE (4)
-    fwrite( "WAVE", 1, 4, fp );
+    io->write( "WAVE", 4 );
 
     // format chunk (24)
-    fwrite( "fmt ",1 , 4, fp );
+    io->write( "fmt ", 4 );
     tmp = 16;
-    fwrite( &tmp, 1, sizeof(unsigned int), fp);
-    fwrite( &raw, 1, 16, fp );
+    io->write( &tmp, sizeof(unsigned int) );
+    io->write( &raw, 16 );
 
     // data chunk (8  + datasize)
-    fwrite( "data", 1, 4, fp );
+    io->write( "data", 4 );
+
+    const unsigned long long datasize = points * block();
     if( headsize + datasize >= 0xFFFFFFFF) tmp = 0xFFFFFFFF-headsize; // = 4G
     else tmp = (unsigned int)datasize;
-    fwrite( &tmp, 1, sizeof(unsigned int), fp);
+    io->write( &tmp, sizeof(unsigned int) );
 }
 
 
@@ -190,20 +168,20 @@ void WaveFormat::is_valid()
 }
 
 
-const int WaveFormat::get_chunk_id( FILE* fp,  char* chunk,  unsigned int& chunksize )
+const int WaveFormat::get_chunk_id( IO* io,  char* chunk,  unsigned int& chunksize )
 {
-    assert( fp );
+    assert( io );
     assert( chunk );
 
     unsigned int byte;
     chunksize = 0;
 
-    byte = fread( chunk, 1, 4, fp);
+    byte = io->read( chunk, 4 );
     if(byte != 4) return ID_err;
 
     if( strncmp(chunk,"WAVE",4) ==0 ) return ID_wave;
 
-    byte = fread(&chunksize,1,sizeof(unsigned int),fp);
+    byte = io->read( &chunksize, sizeof(unsigned int) );
     if(byte != sizeof(unsigned int)) return ID_err;
 
     if( strncmp(chunk,"RIFF",4) ==0 ) return ID_riff;

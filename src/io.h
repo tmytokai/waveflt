@@ -1,17 +1,40 @@
+// abstract class of IO source
+
 #ifndef _IO_H
 #define _IO_H
 
-const unsigned int ReadData( FILE* fp, unsigned char* buffer, const unsigned int size );
-#ifdef WIN32
-const __int64 SeekStdin( unsigned char* buffer,
-			   unsigned int buffersize,
-			   const __int64 pos_seek,
-			   const __int64 pos_current  // pos_seek > pos_current
-			   );
-#endif
-const unsigned int WriteData( FILE* fp, const unsigned char* buffer, const unsigned int size );
-const bool WriteTextData( FILE* fp,  double* buffer[2], const unsigned int size, const WaveFormat format);
-const bool OpenReadFile( FILE** fp, const char* filename );
-const bool OpenWriteFile( FILE** fp, const char* filename );
+#include <string>
+
+enum
+{
+    IOMODE_READ = 0,
+    IOMODE_WRITE,
+    IOMODE_INIT
+};
+
+
+class IO
+{
+  protected:
+
+    bool dbg;
+    std::string name;
+    unsigned int mode;
+
+  public:
+
+    IO( const std::string& _name): dbg(false), name(_name), mode(IOMODE_INIT){}
+    virtual ~IO(){}
+
+    void debugmode(){ dbg = true; }
+    const std::string& get_name() const { return name; }
+    const unsigned int get_mode() const { return mode; }
+
+    virtual void open( const unsigned int mode ) = 0;
+    virtual void close() = 0;
+    virtual void seek( const unsigned long long offset_byte ) = 0;
+    virtual const unsigned int read( void* data, const unsigned int byte ) = 0;
+    virtual const unsigned int write( const void* data, const unsigned int byte ) = 0;
+};
 
 #endif

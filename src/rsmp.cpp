@@ -1,3 +1,5 @@
+#if 0
+
 // re-sampling
 
 #ifdef WIN32
@@ -238,3 +240,4 @@ void RSAMP( double* lpFilterBuf, // filter buffer
 
 
 
+#endif

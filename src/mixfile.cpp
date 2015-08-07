@@ -1,3 +1,5 @@
+#if 0
+
 // file mixing
 
 #ifdef WIN32
@@ -154,3 +156,5 @@ void MixFile(WaveFormat waveOrgFmt,
 
 
 // EOS
+
+#endif

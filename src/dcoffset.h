@@ -3,22 +3,37 @@
 #ifndef _DCOFFSET_H
 #define _DCOFFSET_H
 
+#include <vector>
+
 #include "filter.h"
 
 class DcOffset : public Filter
 {
   private:
-    std::vector<double> offset;
+
+    const std::vector<double> offsets;
 
   public:
-    DcOffset( const WaveFormat& _data_format, std::vector<double*>& _data, const std::vector<double>& _offset );
+
+    DcOffset( DoubleBuffer& _data, const std::vector<double>& _offsets );
     virtual ~DcOffset();
 
     // Override
+    virtual void connect( Filter* _next );
+    virtual void init();
+    virtual const unsigned int demanded_max_points();
+    virtual const unsigned int demanded_points();
     virtual void show_config() const;
-    virtual void clear();
-    virtual void process( const unsigned int data_points );
+    virtual void start_track();
+    virtual void begin_block();
+    virtual const unsigned int process( const unsigned int points );
+    virtual const bool is_over() const;
     virtual void show_result() const;
+
+  private:
+
+    // Override
+    virtual void reset();
 };
 
 

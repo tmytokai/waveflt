@@ -1,3 +1,5 @@
+#if 0
+
 // common functions for filter
 
 
@@ -208,3 +210,5 @@ void AddSinCurve(double* lpFilterBuf,
 	}
 	dwTime[dwChn] = dwTime[dwChn]+dwPointsInBuf;
 }
+
+#endif

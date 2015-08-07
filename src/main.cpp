@@ -1,3 +1,5 @@
+#if 0
+
 // main 
 
 #ifdef WIN32
@@ -54,3 +56,5 @@ int main(int argc,char *argv[])
 	
 	return 0;
 }
+
+#endif

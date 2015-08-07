@@ -1,3 +1,5 @@
+#if 0
+
 // common functions
 
 #include "waveflt.h"
@@ -1313,3 +1315,5 @@ void OutputRsmpChr(char* lpszSaveDir,WaveFormat waveFmt)
 
 
 //EOF
+
+#endif

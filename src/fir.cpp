@@ -1,3 +1,5 @@
+#if 0
+
 // FIR filter 
 
 #ifdef WIN32
@@ -327,3 +329,5 @@ void CalcEQCoefficient(DWORD dwFIRleng,
 
 
 // EOF
+
+#endif

@@ -1,3 +1,5 @@
+#if 0
+
 // body of filter
 
 #include <vector>
@@ -3141,3 +3143,5 @@ void DeleteInputFile()
 		}
 	}
 }
+
+#endif

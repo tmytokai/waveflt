@@ -1,16 +1,27 @@
+#if 0
+
 // track manager
 
 #include "trackmanager.h"
-
+#include "track.h"
 
 TrackManager::TrackManager()
     :eot(false)
 {}
 
 
+Filter* TrackManager::create_track( const int track_no, const std::string& filename, DoubleBuffer& data )
+{
+    Filter* track = new Track( track_no, filename, data );
+    track->debugmode();
+    tracks.push_back( track );
+    return track;
+}
+
+
 void TrackManager::init()
 {
-    std::vector<Track*>::iterator it = tracks.begin();
+    std::vector<Filter*>::iterator it = tracks.begin();
     for( ; it != tracks.end(); ++it ){
         (*it)->init();
     }
@@ -19,7 +30,7 @@ void TrackManager::init()
 
 void TrackManager::show_config()
 {
-    std::vector<Track*>::iterator it = tracks.begin();
+    std::vector<Filter*>::iterator it = tracks.begin();
     for( ; it != tracks.end(); ++it ){
         (*it)->show_config();
     }
@@ -28,25 +39,28 @@ void TrackManager::show_config()
 
 void TrackManager::start()
 {
-    std::vector<Track*>::iterator it = tracks.begin();
-    for( ; it != tracks.end(); ++it ) (*it)->start();
+    std::vector<Filter*>::iterator it = tracks.begin();
+    for( ; it != tracks.end(); ++it ){
+        (*it)->start_track();
+        (*it)->begin_block();
+    }
 }
 
 
 void TrackManager::process()
 {
     eot = true;
-    std::vector<Track*>::iterator it = tracks.begin();
+    std::vector<Filter*>::iterator it = tracks.begin();
     for( ; it != tracks.end(); ++it ){
-        (*it)->process();
-        if( ! (*it)->end_of_track() ) eot = false;
+        (*it)->process( 0 );
+        if( ! (*it)->is_over() ) eot = false;
     }
 }
 
 
 void TrackManager::show_result()
 {
-    std::vector<Track*>::iterator it = tracks.begin();
+    std::vector<Filter*>::iterator it = tracks.begin();
     for( ; it != tracks.end(); ++it ){
         (*it)->show_result();
     }
@@ -60,3 +74,5 @@ void TrackManager::free()
         tracks.pop_back();
     }
 }
+
+#endif

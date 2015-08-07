@@ -1,4 +1,4 @@
-OBJS=dcoffset.o track.o waveformat.o trackmanager.o waveflt-test.o io.o
+OBJS=waveformat.o doublebuffer.o storageio.o source.o output.o resampler.o waveflt-test.cpp
 CFLAGS=-g -Wall -O2 -MMD -D_DEBUG
 
 waveflt : $(OBJS)
@@ -8,6 +8,6 @@ waveflt : $(OBJS)
 	g++ -c $(CFLAGS) $<
 
 clean:
-	rm -rf *.o *.d
+	rm -rf *.o *.d waveflt
 
 -include *.d
