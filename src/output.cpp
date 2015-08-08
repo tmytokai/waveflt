@@ -6,6 +6,9 @@
 #include "output.h"
 #include "storageio.h"
 
+#ifdef WIN32
+#define snprintf _snprintf
+#endif
 
 Output::Output( const std::string& _filename )
     : IOModule( "Output", _filename)
@@ -83,11 +86,19 @@ void Output::init()
 
 
 // Override
-void Output::show_config() const
+const std::string Output::get_config() const
 {
-    fprintf(stderr,"%s(ID_%d): %s", get_name().c_str(), get_id(), filename.c_str() );
-    fprintf(stderr,", %d (Hz), %d (Ch), %d (Bits)", output_format.rate(), output_format.channels(), output_format.bits() );
-    if( raw_mode ) fprintf(stderr,", raw mode" );
+    std::string cfg;
+    const size_t n = 1024;
+    char tmpstr[n];
+
+    snprintf( tmpstr, n, "%s(ID_%d): %s, %d (Hz), %d (Ch), %d (Bits)"
+              , get_name().c_str(), get_id(), filename.c_str()
+              , output_format.rate(), output_format.channels(), output_format.bits() );
+    cfg += tmpstr;
+    if( raw_mode ) cfg += ", raw mode";
+
+    return cfg;
 }
 
 
@@ -153,7 +164,5 @@ void Output::received( Module* sender, DoubleBuffer& _data, const bool fin )
 // Override
 void Output::show_result() const
 {
-    if( dbg ){
-        fprintf(stderr,"[debug] Output::show_result : %s, processed points= %d\n", filename.c_str(), (unsigned int)total_processed_points );
-    }
+    fprintf(stderr,"\n\nRESULT: output %.2lf sec\n", (double)total_processed_points/output_format.rate());
 }

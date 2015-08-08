@@ -11,6 +11,9 @@
 
 #include "resampler.h"
 
+#ifdef WIN32
+#define snprintf _snprintf
+#endif
 
 double get_kaiser_alpha( double db ){
 
@@ -184,14 +187,20 @@ void Resampler::init()
 
 
 // Override
-void Resampler::show_config() const
+const std::string Resampler::get_config() const
 {
-    fprintf(stderr,"%s(ID_%d): %d (Hz) -> %d (Hz)\n", get_name().c_str(), get_id(), input_format.rate(), output_format.rate() );
+    std::string cfg;
+    const size_t n = 1024;
+    char tmpstr[n];
+
+    snprintf( tmpstr, n, "%s(ID_%d): %d (Hz) -> %d (Hz)\n"
+              , get_name().c_str(), get_id(), input_format.rate(), output_format.rate() );
 
     if( next ){
-        fprintf(stderr,"=> " );
-        next->show_config();
+        cfg += "=> " + next->get_config();
     }
+
+    return cfg;
 }
 
 

@@ -1,24 +1,22 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
 #include <assert.h>
 
 #include "source.h"
 #include "output.h"
 #include "resampler.h"
 
-int main( int argc, char* argv[])
+int main( int argc, char* argv[] )
 {
     assert( argc == 3 );
     std::string in_file( argv[1] );
     std::string out_file( argv[2] );
-    printf("input = %s, output = %s\n\n", in_file.c_str(), out_file.c_str() );
 
     try{
 
         Source* src = new Source( in_file );
 //        src->debugmode();
 
-        Resampler* rsmp = new Resampler( 48000 );
+//        Resampler* rsmp = new Resampler( 48000 );
 //        rsmp->debugmode();
 //        src->connect( rsmp );
 
@@ -44,7 +42,7 @@ int main( int argc, char* argv[])
         event.push_back( eventdata );
 
         eventdata.message = "read";
-        eventdata.points = 0;
+        eventdata.points = -1;
         event.push_back( eventdata );
 
         eventdata.message = "end";
@@ -52,19 +50,19 @@ int main( int argc, char* argv[])
 
         src->set_event(event);
 
-        src->show_config();
+        std::cerr << src->get_config() << std::endl;
 
         src->start();
-        do{ output->process(); }while( !(output->is_over()) );
+        do{ output->process(); } while( !(output->is_over()) );
 
         src->show_result();
 
         delete src;
 
-    }catch( const std::string& err ){
+    }
+    catch( const std::string& err ){
 
-        printf("%s\n", err.c_str() );
-        exit(1);
+        std::cerr << err << std::endl;
     }
 
     return 0;

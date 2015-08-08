@@ -30,6 +30,7 @@ class Module
 
     unsigned int event_no;
     unsigned long long event_start_point; // point at which the current event started
+    unsigned long long event_end_point;   // point at which the current event ends
     std::vector<EventData> event;
 
     unsigned long long total_processed_points; // total processed points
@@ -39,7 +40,7 @@ class Module
   public:
 
     Module( const std::string& _name )
-        : id(0), name(_name), prev(NULL), next(NULL), over(false), event_no(0), event_start_point(0), total_processed_points(0), dbg(false){}
+        : id(0), name(_name), prev(NULL), next(NULL), over(false), event_no(0), event_start_point(0), event_end_point(0), total_processed_points(0), dbg(false){}
     virtual ~Module(){}
 
     const unsigned int get_id() const { return id; }
@@ -60,7 +61,7 @@ class Module
     virtual void reset_all() = 0;
     virtual void clear_all_buffer() = 0;
     virtual void init() = 0;
-    virtual void show_config() const = 0;
+    virtual const std::string get_config() const = 0;
     virtual void start() = 0;
     virtual void exec_event() = 0;
     virtual void requested( const unsigned int points_required ) = 0;

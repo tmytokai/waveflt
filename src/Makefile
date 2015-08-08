@@ -1,4 +1,4 @@
-OBJS=waveformat.o doublebuffer.o storageio.o source.o output.o resampler.o waveflt-test.cpp
+OBJS=waveformat.o doublebuffer.o storageio.o source.o output.o resampler.o waveflt-test.o
 CFLAGS=-g -Wall -O2 -MMD -D_DEBUG
 
 waveflt : $(OBJS)

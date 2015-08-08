@@ -44,6 +44,7 @@ void Source::reset_all()
     over = false;
     event_no = 0;
     event_start_point = 0;
+    event_end_point = 0;
     event.clear();
     total_processed_points = 0;
 
@@ -105,21 +106,21 @@ void Source::init()
 
 
 // Override
-void Source::show_config() const
+const std::string Source::get_config() const
 {
     assert( io );
 
-    std::string cfgstr;
-    char tmpstr[1024];
-    size_t n = 1024;
+    std::string cfg;
+    const size_t n = 1024;
+    char tmpstr[n];
 
     snprintf( tmpstr, n, "%s(ID_%d): %s, %d Hz, %d Ch, %d bits, %.2lf sec"
               , get_name().c_str(), get_id(), io->get_name().c_str()
               , input_format.rate(), input_format.channels(), input_format.bits()
               , (double)input_format.get_data_points()/input_format.rate() );
-    cfgstr += tmpstr;
-    if( raw_mode ) cfgstr += ", raw mode";
-    cfgstr += "\n";
+    cfg += tmpstr;
+    if( raw_mode ) cfg += ", raw mode";
+    cfg += "\n";
 
     if( event.size() ){
 
@@ -131,32 +132,28 @@ void Source::show_config() const
             if( event[i].message == "end" ) break;
 
             snprintf( tmpstr, n, "        %.2lf - ", (double)points_tmp/input_format.rate());
-            cfgstr += tmpstr;
-            if(event[i].points > 0){
+            cfg += tmpstr;
+            if(event[i].points != (unsigned long long)(-1) ){
                 points_tmp += event[i].points;
                 if( event[i].message == "read" ) total_points += event[i].points;
                 snprintf( tmpstr, n, "%.2lf (%.2lf sec)"
                           , (double)points_tmp/input_format.rate(), (double)event[i].points/input_format.rate() );
-                cfgstr += tmpstr;
+                cfg += tmpstr;
             }
-            else{
-                endless = true;
-                cfgstr += " (endless)";
-            }
-            cfgstr += " : " + event[i].message + " \n";
+            else endless = true;
+            cfg += " : " + event[i].message + " \n";
         }
         if( !endless ){
             snprintf( tmpstr, n,"        total %.2lf sec\n", (double)total_points/input_format.rate());
-            cfgstr += tmpstr;
+            cfg += tmpstr;
         }
     }
 
     if( next ){
-        cfgstr += "=> ";
-        next->show_config();
+        cfg += "=> " + next->get_config();
     }
 
-    fprintf( stderr, "\n%s", cfgstr.c_str() );
+    return cfg;
 }
 
 
@@ -186,6 +183,7 @@ void Source::exec_event()
     if( dbg ) fprintf( stderr, "\n[debug] Source::exec_event : %s, event_no = %d, event = %s\n", filename.c_str(), event_no, event[event_no].message.c_str() );
 
     event_start_point = total_processed_points;
+    event_end_point = event_start_point + event[event_no].points;
 
     if( event[event_no].message == "read" ){}
 
@@ -196,12 +194,16 @@ void Source::exec_event()
             if( event[i].message == "read" || event[i].message == "delete" ) seek_offset += event[i].points*input_format.block();
         }
         assert( io ); io->seek( seek_offset );
+        total_processed_points += event[event_no].points;
+    }
+
+    else if( event[event_no].message == "end" ) over = true;
+
+    if( total_processed_points == event_end_point ){
 
         ++event_no;
         exec_event();
     }
-
-    else if( event[event_no].message == "end" ) over = true;
 }
 
 
@@ -217,16 +219,12 @@ void Source::requested( const unsigned int points_required )
         return;
     }
 
-    const unsigned long long event_points = event[event_no].points;
-    const unsigned long long processed_points = total_processed_points - event_start_point;
-
     unsigned int points_read = 0;
-    if( event_points == 0 ) points_read = data.max_points; // read data endlessly
-    else if( event_points > processed_points + data.max_points ) points_read = data.max_points;
-    else points_read = (unsigned int)( event_points - processed_points );
+    if( event_end_point > total_processed_points + data.max_points ) points_read = data.max_points;
+    else points_read = (unsigned int)( event_end_point - total_processed_points );
     if( points_read > points_required ) points_read = points_required;
 
-    if( dbg ) fprintf( stderr, "\n[debug] Source::requested : read = %d / %d points, event_points = %d\n", points_read, data.max_points, (unsigned int )event_points );
+    if( dbg ) fprintf( stderr, "\n[debug] Source::requested : read = %d / %d points\n", points_read, data.max_points );
 
     points_read = data.read_raw( io, points_read );
     total_processed_points += points_read;
@@ -235,7 +233,7 @@ void Source::requested( const unsigned int points_required )
 
     if( next ) next->received( this, data, is_over() );
 
-    if( total_processed_points == event_start_point + event_points ){
+    if( total_processed_points == event_end_point ){
 
         ++event_no;
         exec_event();
@@ -245,18 +243,12 @@ void Source::requested( const unsigned int points_required )
 
 
 // Override
-void Source::received(  Module* sender, DoubleBuffer& data, const bool fin )
+void Source::received( Module* sender, DoubleBuffer& data, const bool fin )
 {}
 
 
 // Override
 void Source::show_result() const
 {
-    fprintf(stderr,"\n\nRESULT: output %.2lf sec\n", (double)total_processed_points/output_format.rate());
-
-    if( dbg ){
-        fprintf(stderr,"[debug] processed points = %d\n", (unsigned int)total_processed_points );
-    }
-
     if( next ) next->show_result();
 }

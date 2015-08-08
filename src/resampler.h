@@ -41,7 +41,7 @@ class Resampler : public Module
     virtual void reset_all();
     virtual void clear_all_buffer();
     virtual void init();
-    virtual void show_config() const;
+    virtual const std::string get_config() const;
     virtual void start();
     virtual void exec_event();
     virtual void requested( const unsigned int points_required );
