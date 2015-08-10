@@ -11,9 +11,6 @@
 
 #include "resampler.h"
 
-#ifdef WIN32
-#define snprintf _snprintf
-#endif
 
 double get_kaiser_alpha( double db ){
 
@@ -76,8 +73,6 @@ Resampler::~Resampler()
 {
     if( dbg ) fprintf( stderr, "\n[debug] Resampler::~Resampler\n");
 
-    if( next ) delete next;
-    next = NULL;
     reset_all();
 }
 
@@ -87,7 +82,7 @@ void Resampler::reset_all()
 {
     if( dbg ) fprintf( stderr, "\n[debug] Resampler::reset_all\n");
 
-    over = false;
+	Module::reset_all();
 
     data.reset_all();
 
@@ -118,8 +113,7 @@ void Resampler::clear_all_buffer()
 {
     if( dbg ) fprintf( stderr, "\n[debug] Resampler::clear_all_buffer\n" );
 
-    // defined in Module class
-    over = false;
+	Module::clear_all_buffer();
 
     data.clear_all_buffer();
     pastdata.clear_all_buffer();

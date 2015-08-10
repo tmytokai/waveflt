@@ -6,9 +6,6 @@
 #include "output.h"
 #include "storageio.h"
 
-#ifdef WIN32
-#define snprintf _snprintf
-#endif
 
 Output::Output( const std::string& _filename )
     : IOModule( "Output", _filename)
@@ -37,18 +34,7 @@ void Output::reset_all()
 {
     if( dbg ) fprintf( stderr, "\n[debug] Output::reset_all : %s\n", filename.c_str() );
 
-    // defined in Module class    
-    over = false;
-    event_no = 0;
-    event_start_point = 0;
-    event.clear();
-    total_processed_points = 0;
-
-    // defined in IOModule class
-    if( io ) delete io;
-    io = NULL;
-    data.reset_all();
-    raw_mode = false;
+	IOModule::reset_all();
 }
 
 
@@ -57,7 +43,7 @@ void Output::clear_all_buffer()
 {
     if( dbg ) fprintf( stderr, "\n[debug] Output::clear_all_buffer : %s\n", filename.c_str() );
 
-    data.clear_all_buffer();
+	IOModule::clear_all_buffer();
 }
 
 
@@ -70,13 +56,14 @@ void Output::init()
     input_format = prev->get_output_format();
     output_format = input_format;
 
-    if( prev && prev->get_name() == "Source" ) raw_mode = true;
-
     const unsigned int max_points = (unsigned int)( 0.25 * output_format.rate() );
     if( dbg ) fprintf(stderr, "\n[debug] Output::init : max_points = %d\n", max_points );
 
+	bool use_data = true; // if Source and Output are connected directly, send only raw data
+    if( prev && prev->get_name() == "Source" ) use_data = false;
+
     if( dbg ) data.debugmode();
-    data.init( output_format, max_points, !raw_mode, true );
+    data.init( output_format, max_points, use_data, true );
 
     clear_all_buffer();
 
@@ -96,7 +83,6 @@ const std::string Output::get_config() const
               , get_name().c_str(), get_id(), filename.c_str()
               , output_format.rate(), output_format.channels(), output_format.bits() );
     cfg += tmpstr;
-    if( raw_mode ) cfg += ", raw mode";
 
     return cfg;
 }

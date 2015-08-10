@@ -9,6 +9,10 @@
 #include "waveformat.h"
 #include "eventdata.h"
 
+#ifdef WIN32
+#define snprintf _snprintf
+#endif
+
 class DoubleBuffer;
 
 class Module
@@ -41,7 +45,10 @@ class Module
 
     Module( const std::string& _name )
         : id(0), name(_name), prev(NULL), next(NULL), over(false), event_no(0), event_start_point(0), event_end_point(0), total_processed_points(0), dbg(false){}
-    virtual ~Module(){}
+	virtual ~Module(){
+		if( next ) delete next;
+		next = NULL;
+	}
 
     const unsigned int get_id() const { return id; }
     const std::string& get_name() const { return name; }
@@ -58,8 +65,15 @@ class Module
     virtual void connect( Module* _next ){ next = _next; next->connected( this ); }
     virtual void connected( Module* _prev ){ prev = _prev; }
 
-    virtual void reset_all() = 0;
-    virtual void clear_all_buffer() = 0;
+	virtual void reset_all(){
+		over = false;
+		event_no = 0;
+		event_start_point = 0;
+		event_end_point = 0;
+		event.clear();
+		total_processed_points = 0;
+	}
+	virtual void clear_all_buffer(){}
     virtual void init() = 0;
     virtual const std::string get_config() const = 0;
     virtual void start() = 0;

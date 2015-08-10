@@ -21,7 +21,7 @@ int main( int argc, char* argv[] )
 //        src->connect( rsmp );
 
         Output* output = new Output( out_file );
-//        output->debugmode();
+        output->debugmode();
         src->connect( output );
 
         src->init();

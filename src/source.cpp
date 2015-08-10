@@ -1,15 +1,11 @@
 // source class
 
 #include <stdio.h>
-#include <string.h>
 #include <assert.h>
 
 #include "source.h"
 #include "storageio.h"
 
-#ifdef WIN32
-#define snprintf _snprintf
-#endif
 
 Source::Source( const std::string& _filename )
     : IOModule( "Source", _filename )
@@ -22,8 +18,6 @@ Source::~Source()
 {
     if( dbg ) fprintf( stderr, "\n[debug] Source::~Source : %s\n", filename.c_str() );
 
-    if( next ) delete next;
-    next = NULL;
     reset_all();
 }
 
@@ -40,19 +34,7 @@ void Source::reset_all()
 {
     if( dbg ) fprintf( stderr, "\n[debug] Source::reset_all : %s\n", filename.c_str() );
 
-    // defined in Module class
-    over = false;
-    event_no = 0;
-    event_start_point = 0;
-    event_end_point = 0;
-    event.clear();
-    total_processed_points = 0;
-
-    // defined in IOModule class
-    if( io ) delete io;
-    io = NULL;
-    data.reset_all();
-    raw_mode = false;
+	IOModule::reset_all();
 }
 
 
@@ -61,7 +43,7 @@ void Source::clear_all_buffer()
 {
     if( dbg ) fprintf( stderr, "\n[debug] Source::clear_all_buffer : %s\n", filename.c_str() );
 
-    data.clear_all_buffer();
+	IOModule::clear_all_buffer();
 }
 
 
@@ -78,20 +60,22 @@ void Source::init()
     output_format = input_format;
 
     unsigned int max_points = 0;
-    if( next ){
+	bool use_data = true; // if Source and Output are connected directly, send only raw data
+	if( next ){
         next->init();
         max_points = (unsigned int)( 0.5 * input_format.rate() );
-        if( next->get_name() == "Output" ) raw_mode = true;
+        if( next->get_name() == "Output" ) use_data = false;
     }
     else max_points = input_format.get_data_points();
 
     if( dbg ) fprintf(stderr, "\n[debug] Source::init : max_points = %d\n", max_points );
 
     if( dbg ) data.debugmode();
-    data.init( input_format, max_points, !raw_mode, true);
+    data.init( input_format, max_points, use_data, true);
 
     clear_all_buffer();
 
+	// setup default events
     if( !event.size() ){
 
         EventData eventdata;
@@ -119,7 +103,6 @@ const std::string Source::get_config() const
               , input_format.rate(), input_format.channels(), input_format.bits()
               , (double)input_format.get_data_points()/input_format.rate() );
     cfg += tmpstr;
-    if( raw_mode ) cfg += ", raw mode";
     cfg += "\n";
 
     if( event.size() ){

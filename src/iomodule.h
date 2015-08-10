@@ -5,8 +5,7 @@
 
 #include "module.h"
 #include "doublebuffer.h"
-
-class IO;
+#include "io.h"
 
 class IOModule : public Module
 {
@@ -15,16 +14,32 @@ class IOModule : public Module
     const std::string filename;
     IO* io;
     DoubleBuffer data;
-    bool raw_mode; // if Source and Output are connected directly, use only raw data instead of double data
 
   public:
 
-    IOModule( const std::string& _name, const std::string& _filename ) : Module(_name), filename(_filename), io(NULL), raw_mode(false){}
+    IOModule( const std::string& _name, const std::string& _filename ) : Module(_name), filename(_filename), io(NULL){}
     virtual ~IOModule(){}
 
     const unsigned int get_max_points() const { return data.max_points; }
     const unsigned int get_points() const { return data.points; }
     const double* get_data( const unsigned int ch ) { return data[ch]; }
+
+	// Override
+	virtual void reset_all(){
+
+		Module::reset_all();
+
+		if( io ) delete io;
+		io = NULL;
+		data.reset_all();
+	}
+
+	virtual void clear_all_buffer(){
+
+		Module::clear_all_buffer();
+
+		data.clear_all_buffer();
+	}
 };
 
 #endif
