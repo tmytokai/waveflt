@@ -21,7 +21,7 @@ int main( int argc, char* argv[] )
 //        src->connect( rsmp );
 
         Output* output = new Output( out_file );
-        output->debugmode();
+//        output->debugmode();
         src->connect( output );
 
         src->init();
@@ -48,7 +48,7 @@ int main( int argc, char* argv[] )
         eventdata.message = "end";
         event.push_back( eventdata );
 
-        src->set_event(event);
+ //       src->set_event(event);
 
         std::cerr << src->get_config() << std::endl;
 

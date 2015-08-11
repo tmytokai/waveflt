@@ -47,6 +47,8 @@ const DoubleBuffer& DoubleBuffer::operator << ( const DoubleBuffer& buffer )
     points += buffer.points;
     assert( points <= max_points );
 
+	over = buffer.over;
+
     return buffer;
 }
 
@@ -57,6 +59,7 @@ void DoubleBuffer::reset_all()
 
     max_points = 0;
     points = 0;
+	over = false;
 
     if( data.size() ){
         for( unsigned int i = 0; i < data.size(); ++i ){
@@ -75,6 +78,7 @@ void DoubleBuffer::clear_all_buffer()
     if( dbg ) fprintf( stderr, "\n[debug] DoubleBuffer::clear_all_buffer: max_points = %d\n", max_points);
 
     points = 0;
+	over = false;
 
     if( data.size() > 0 ){
 

@@ -24,7 +24,7 @@ class Source : public IOModule
     virtual void start();
     virtual void exec_event();
     virtual void requested( const unsigned int points_required );
-    virtual void received( Module* sender, DoubleBuffer& data, const bool fin );
+    virtual void received( Module* sender, DoubleBuffer& data );
     virtual void show_result() const;
 };
 

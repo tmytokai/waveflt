@@ -198,7 +198,8 @@ void Source::requested( const unsigned int points_required )
     data.clear_all_buffer();
 
     if( is_over() || !points_required ){
-        if( next ) return next->received( this, data, is_over() );
+		data.over = is_over();
+        if( next ) return next->received( this, data );
         return;
     }
 
@@ -214,7 +215,7 @@ void Source::requested( const unsigned int points_required )
 
     if( dbg ) fprintf( stderr, "\n[debug] Source::requested : read(actual) %d points\n", points_read );
 
-    if( next ) next->received( this, data, is_over() );
+    if( next ) next->received( this, data );
 
     if( total_processed_points == event_end_point ){
 
@@ -226,7 +227,7 @@ void Source::requested( const unsigned int points_required )
 
 
 // Override
-void Source::received( Module* sender, DoubleBuffer& data, const bool fin )
+void Source::received( Module* sender, DoubleBuffer& data )
 {}
 
 

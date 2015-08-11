@@ -79,7 +79,7 @@ class Module
     virtual void start() = 0;
     virtual void exec_event() = 0;
     virtual void requested( const unsigned int points_required ) = 0;
-    virtual void received( Module* sender, DoubleBuffer& data, const bool fin ) = 0;
+    virtual void received( Module* sender, DoubleBuffer& data ) = 0;
     virtual void show_result() const = 0;
 };
 

@@ -223,22 +223,23 @@ void Resampler::requested( const unsigned int _points_required )
 
     if( dbg ) fprintf( stderr, "\n[debug] Resampler::requested : required = %d\n", points_required );
 
-    data.clear_all_buffer();
+	data.clear_all_buffer();
 
-    const unsigned int new_points_required = calc_points_required( points_required );
+	if( is_over() ){
+		data.over = true;
+		if( next ) return next->received( this, data );
+		return;
+	}
+
+	const unsigned int new_points_required = calc_points_required( points_required );
     if( dbg ) fprintf( stderr, "\n[debug] Resampler::requested : new required = %d\n", new_points_required );
     assert( prev ); prev->requested( new_points_required );
 }
 
 
 // Override
-void Resampler::received( Module* sender, DoubleBuffer& _data, const bool fin )
+void Resampler::received( Module* sender, DoubleBuffer& _data )
 {
-    if( is_over() ){
-        if( next ) return next->received( this, data, is_over() );
-        return;
-    }
-
     unsigned int input_points = _data.points;
 
     if( dbg ){
@@ -249,11 +250,12 @@ void Resampler::received( Module* sender, DoubleBuffer& _data, const bool fin )
     assert( prev == sender );
 
     bool exec_shift_after = false;
-    if( !input_points && fin ){
+	if( !input_points && _data.over ){
 
         if( shift_after == 0 ){
             over = true;
-            if( next ) return next->received( this, data, is_over() );
+			data.over = true;
+            if( next ) return next->received( this, data );
             return;
         }
 
@@ -316,7 +318,7 @@ void Resampler::received( Module* sender, DoubleBuffer& _data, const bool fin )
         fprintf( stderr, "data.points = %d, data_max_points = %d\n\n", data.points, data.max_points );
     }
 
-    if( next ) return next->received( this, data, false );
+    if( next ) return next->received( this, data );
 }
 
 

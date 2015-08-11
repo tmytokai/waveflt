@@ -122,9 +122,9 @@ void Output::requested( const unsigned int points_required )
 
 
 // Override
-void Output::received( Module* sender, DoubleBuffer& _data, const bool fin )
+void Output::received( Module* sender, DoubleBuffer& _data )
 {
-    if( dbg ) fprintf( stderr, "\n[debug] Output::received : %s, points = %d, fin = %d\n", filename.c_str(), _data.points, fin );
+	if( dbg ) fprintf( stderr, "\n[debug] Output::received : %s, points = %d, over = %d\n", filename.c_str(), _data.points, _data.over );
 
     assert( prev == sender );
 
@@ -132,7 +132,7 @@ void Output::received( Module* sender, DoubleBuffer& _data, const bool fin )
 
     data << _data;
 
-    if( fin ){
+	if( data.over ){
 
         total_processed_points += data.write_raw( io );
         output_format.write( io, total_processed_points );

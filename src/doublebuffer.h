@@ -23,6 +23,7 @@ class DoubleBuffer
 
     unsigned int max_points;  // max points of buffer
     unsigned int points; // current points in buffer
+	bool over;
 
     DoubleBuffer();
     ~DoubleBuffer();
