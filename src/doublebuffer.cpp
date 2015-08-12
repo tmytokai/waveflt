@@ -36,18 +36,22 @@ const DoubleBuffer& DoubleBuffer::operator << ( const DoubleBuffer& buffer )
 {
     if( dbg ) fprintf( stderr, "\n[debug] DoubleBuffer::operator << : points = %d, buffer.points = %d\n", points, buffer.points );
 
-    if( data.size() && buffer.data.size() ){
+	if( !buffer.mute ){
 
-        for( unsigned int i = 0; i < format.channels(); ++i )
-            memcpy( data[i] + points, buffer.data[i], sizeof(double) * buffer.points );
-    }
+		if( data.size() && buffer.data.size() ){
 
-    if( raw && buffer.raw ) memcpy( raw + points*format.block(), buffer.raw, buffer.points*format.block() );
+			for( unsigned int i = 0; i < format.channels(); ++i )
+				memcpy( data[i] + points, buffer.data[i], sizeof(double) * buffer.points );
+		}
+
+		if( raw && buffer.raw ) memcpy( raw + points*format.block(), buffer.raw, buffer.points*format.block() );
+	}
 
     points += buffer.points;
     assert( points <= max_points );
 
 	over = buffer.over;
+	mute = buffer.mute;
 
     return buffer;
 }
@@ -60,6 +64,7 @@ void DoubleBuffer::reset_all()
     max_points = 0;
     points = 0;
 	over = false;
+	mute = false;
 
     if( data.size() ){
         for( unsigned int i = 0; i < data.size(); ++i ){
@@ -79,6 +84,7 @@ void DoubleBuffer::clear_all_buffer()
 
     points = 0;
 	over = false;
+	mute = false;
 
     if( data.size() > 0 ){
 

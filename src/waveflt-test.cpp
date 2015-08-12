@@ -16,13 +16,13 @@ int main( int argc, char* argv[] )
         Source* src = new Source( in_file );
 //        src->debugmode();
 
-//        Resampler* rsmp = new Resampler( 48000 );
+        Resampler* rsmp = new Resampler( 48000 );
 //        rsmp->debugmode();
-//        src->connect( rsmp );
+        src->connect( rsmp );
 
         Output* output = new Output( out_file );
 //        output->debugmode();
-        src->connect( output );
+        rsmp->connect( output );
 
         src->init();
 
@@ -37,7 +37,7 @@ int main( int argc, char* argv[] )
         eventdata.points = (unsigned int)(src->get_input_format().rate()*1);
         event.push_back( eventdata );
 
-        eventdata.message = "delete";
+        eventdata.message = "mute";
         eventdata.points = (unsigned int)(src->get_input_format().rate()*1);
         event.push_back( eventdata );
 
@@ -48,7 +48,7 @@ int main( int argc, char* argv[] )
         eventdata.message = "end";
         event.push_back( eventdata );
 
- //       src->set_event(event);
+        src->set_event(event);
 
         std::cerr << src->get_config() << std::endl;
 

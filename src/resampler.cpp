@@ -189,6 +189,7 @@ const std::string Resampler::get_config() const
 
     snprintf( tmpstr, n, "%s(ID_%d): %d (Hz) -> %d (Hz)\n"
               , get_name().c_str(), get_id(), input_format.rate(), output_format.rate() );
+	cfg += tmpstr;
 
     if( next ){
         cfg += "=> " + next->get_config();
@@ -248,6 +249,15 @@ void Resampler::received( Module* sender, DoubleBuffer& _data )
     }
 
     assert( prev == sender );
+
+	if( _data.mute ){
+
+		if( !is_mute() ) clear_all_buffer();
+		mute = true;
+		if( next ) return next->received( this, data );
+		return;
+	}
+	mute = false;
 
     bool exec_shift_after = false;
 	if( !input_points && _data.over ){

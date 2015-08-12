@@ -31,6 +31,7 @@ class Module
     WaveFormat output_format;
 
     bool over;
+	bool mute;
 
     unsigned int event_no;
     unsigned long long event_start_point; // point at which the current event started
@@ -44,7 +45,7 @@ class Module
   public:
 
     Module( const std::string& _name )
-        : id(0), name(_name), prev(NULL), next(NULL), over(false), event_no(0), event_start_point(0), event_end_point(0), total_processed_points(0), dbg(false){}
+        : id(0), name(_name), prev(NULL), next(NULL), over(false), mute(false),event_no(0), event_start_point(0), event_end_point(0), total_processed_points(0), dbg(false){}
 	virtual ~Module(){
 		if( next ) delete next;
 		next = NULL;
@@ -57,6 +58,7 @@ class Module
     const WaveFormat& get_output_format() const { return output_format; }
 
     const bool is_over() const { return over; }
+	const bool is_mute() const { return mute; }
 
     void set_event( const std::vector<EventData>& _event ){ event = _event; }
 
@@ -67,13 +69,17 @@ class Module
 
 	virtual void reset_all(){
 		over = false;
+		mute = false;
 		event_no = 0;
 		event_start_point = 0;
 		event_end_point = 0;
 		event.clear();
 		total_processed_points = 0;
 	}
-	virtual void clear_all_buffer(){}
+	virtual void clear_all_buffer(){
+		over = false;
+		mute = false;
+	}
     virtual void init() = 0;
     virtual const std::string get_config() const = 0;
     virtual void start() = 0;

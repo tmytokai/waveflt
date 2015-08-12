@@ -147,9 +147,8 @@ void Source::start()
 
     if( next ) next->start();
 
-    over = false;
-    total_processed_points = 0;
     clear_all_buffer();
+    total_processed_points = 0;
 
     event_no = 0;
     exec_event();
@@ -168,7 +167,7 @@ void Source::exec_event()
     event_start_point = total_processed_points;
     event_end_point = event_start_point + event[event_no].points;
 
-    if( event[event_no].message == "read" ){}
+    if( event[event_no].message == "read" ) mute = false;
 
     else if( event[event_no].message == "delete" ){
     
@@ -181,6 +180,8 @@ void Source::exec_event()
     }
 
     else if( event[event_no].message == "end" ) over = true;
+	    
+	else if( event[event_no].message == "mute" ) mute = true;
 
     if( total_processed_points == event_end_point ){
 
@@ -210,7 +211,8 @@ void Source::requested( const unsigned int points_required )
 
     if( dbg ) fprintf( stderr, "\n[debug] Source::requested : read = %d / %d points\n", points_read, data.max_points );
 
-    points_read = data.read_raw( io, points_read );
+	if( !mute ) points_read = data.read_raw( io, points_read );
+	else data.points = points_read;
     total_processed_points += points_read;
 
     if( dbg ) fprintf( stderr, "\n[debug] Source::requested : read(actual) %d points\n", points_read );

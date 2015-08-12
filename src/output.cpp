@@ -130,7 +130,13 @@ void Output::received( Module* sender, DoubleBuffer& _data )
 
     if( is_over() ) return;
 
-    data << _data;
+	if( _data.mute ){
+
+		if( !is_mute() ) clear_all_buffer();
+		mute = true;
+	}
+	
+	data << _data;
 
 	if( data.over ){
 
@@ -142,7 +148,7 @@ void Output::received( Module* sender, DoubleBuffer& _data )
     else if( data.is_full() ){
 
         total_processed_points += data.write_raw( io );
-        data.clear_all_buffer();
+        clear_all_buffer();
     }
 }
 
