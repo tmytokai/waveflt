@@ -333,10 +333,12 @@ void Resampler::received( Module* sender, DoubleBuffer& _data )
 
 
 // Override
-void Resampler::show_result() const
+const std::string Resampler::get_result() const
 {
     if( dbg ) fprintf( stderr, "\n[debug] Resampler::show_result\n");
-    if( next ) next->show_result();
+    if( next ) return next->get_result();
+
+	return std::string();
 }
 
 

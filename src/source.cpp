@@ -234,7 +234,9 @@ void Source::received( Module* sender, DoubleBuffer& data )
 
 
 // Override
-void Source::show_result() const
+const std::string Source::get_result() const
 {
-    if( next ) next->show_result();
+    if( next ) return next->get_result();
+
+	return std::string();
 }

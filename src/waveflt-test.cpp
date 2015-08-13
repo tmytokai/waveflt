@@ -55,7 +55,7 @@ int main( int argc, char* argv[] )
         src->start();
         do{ output->process(); } while( !(output->is_over()) );
 
-        src->show_result();
+		std::cerr << "\nResult:\n" << src->get_result() << std::endl;
 
         delete src;
 
