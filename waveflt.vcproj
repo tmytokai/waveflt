@@ -700,6 +700,10 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
+				RelativePath=".\src\dbgmsgbase.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\doublebuffer.h"
 				>
 			</File>

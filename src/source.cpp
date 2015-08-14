@@ -16,7 +16,7 @@ Source::Source( const std::string& _filename )
 
 Source::~Source()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] Source::~Source : %s\n", filename.c_str() );
+	if( dbgmsg ) (*dbgmsg << "~Source" ).flush();
 
     reset_all();
 }
@@ -32,7 +32,7 @@ void Source::connected( Module* )
 // Override
 void Source::reset_all()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] Source::reset_all : %s\n", filename.c_str() );
+	if( dbgmsg ) (*dbgmsg << "reset_all" ).flush();
 
 	IOModule::reset_all();
 }
@@ -41,7 +41,7 @@ void Source::reset_all()
 // Override
 void Source::clear_all_buffer()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] Source::clear_all_buffer : %s\n", filename.c_str() );
+	if( dbgmsg ) (*dbgmsg << "clear_all_buffer" ).flush();
 
 	IOModule::clear_all_buffer();
 }
@@ -50,7 +50,7 @@ void Source::clear_all_buffer()
 // Override
 void Source::init()
 {
-    if( dbg ) fprintf(stderr, "\n[debug] Source::init : %s\n", filename.c_str() );
+	if( dbgmsg ) (*dbgmsg << "init" ).flush();
 
     assert( !io ); io = new StorageIO( filename );
     if( dbg ) io->debugmode();
@@ -68,7 +68,7 @@ void Source::init()
     }
     else max_points = input_format.get_data_points();
 
-    if( dbg ) fprintf(stderr, "\n[debug] Source::init : max_points = %d\n", max_points );
+	if( dbgmsg ) (*dbgmsg << "init: max_points = " << max_points ).flush();
 
     if( dbg ) data.debugmode();
     data.init( input_format, max_points, use_data, true);
@@ -143,7 +143,7 @@ const std::string Source::get_config() const
 // Override
 void Source::start()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] Source::start : %s\n", filename.c_str() );
+	if( dbgmsg ) (*dbgmsg << "start" ).flush();
 
     if( next ) next->start();
 
@@ -162,7 +162,7 @@ void Source::exec_event()
     if( !event.size() ) return;
     if( event_no == event.size() ) return;
 
-    if( dbg ) fprintf( stderr, "\n[debug] Source::exec_event : %s, event_no = %d, event = %s\n", filename.c_str(), event_no, event[event_no].message.c_str() );
+	if( dbgmsg ) (*dbgmsg << "exec_event : event_no = " << event_no << " event = " << event[event_no].message ).flush();
 
     event_start_point = total_processed_points;
     event_end_point = event_start_point + event[event_no].points;
@@ -194,7 +194,7 @@ void Source::exec_event()
 // Override
 void Source::requested( const unsigned int points_required )
 {
-    if( dbg ) fprintf( stderr, "\n[debug] Source::requested : %s, required = %d points\n", filename.c_str(), points_required );
+	if( dbgmsg ) (*dbgmsg << "requested : required = " << points_required << " points" ).flush();
 
     data.clear_all_buffer();
 
@@ -209,13 +209,13 @@ void Source::requested( const unsigned int points_required )
     else points_read = (unsigned int)( event_end_point - total_processed_points );
     if( points_read > points_required ) points_read = points_required;
 
-    if( dbg ) fprintf( stderr, "\n[debug] Source::requested : read = %d / %d points\n", points_read, data.max_points );
+	if( dbgmsg ) (*dbgmsg << "requested : read = " << points_read << " / " << data.max_points << " points").flush();
 
 	if( !mute ) points_read = data.read_raw( io, points_read );
 	else data.points = points_read;
     total_processed_points += points_read;
 
-    if( dbg ) fprintf( stderr, "\n[debug] Source::requested : read(actual) %d points\n", points_read );
+	if( dbgmsg ) (*dbgmsg << "requested : read(actual) " << points_read << " points" ).flush();
 
     if( next ) next->received( this, data );
 

@@ -14,7 +14,7 @@ int main( int argc, char* argv[] )
     try{
 
         Source* src = new Source( in_file );
-//        src->debugmode();
+        src->debugmode();
 
         Resampler* rsmp = new Resampler( 48000 );
 //        rsmp->debugmode();
