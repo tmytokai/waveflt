@@ -5,6 +5,8 @@
 
 #include <string>
 
+#include "dbgmsgbase.h"
+
 enum
 {
     IOMODE_READ = 0,
@@ -15,20 +17,33 @@ enum
 
 class IO
 {
+private:
+
+	const unsigned int id;
+	const std::string name;
+
   protected:
 
-    bool dbg;
-    std::string name;
+    std::string target;
     unsigned int mode;
+
+	DbgMsgBase* dbgmsg;
 
   public:
 
-    IO( const std::string& _name): dbg(false), name(_name), mode(IOMODE_INIT){}
-    virtual ~IO(){}
+    IO( const std::string& _name, const std::string& _target)
+		: id(0), name(_name), target(_target), mode(IOMODE_INIT), dbgmsg(NULL){}
+	virtual ~IO(){
+		if( dbgmsg ) delete dbgmsg;
+		dbgmsg = NULL;
+	}
 
-    void debugmode(){ dbg = true; }
-    const std::string& get_name() const { return name; }
+	const unsigned int get_id() const { return id; }
+	const std::string& get_name() const { return name; }
+    const std::string& get_target() const { return target; }
     const unsigned int get_mode() const { return mode; }
+
+	void debugmode(){ if( !dbgmsg ) dbgmsg = new DbgMsgStderr( name, id ); }
 
     virtual void open( const unsigned int mode ) = 0;
     virtual void close() = 0;

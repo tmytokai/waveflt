@@ -53,7 +53,7 @@ void Source::init()
 	if( dbgmsg ) (*dbgmsg << "init" ).flush();
 
     assert( !io ); io = new StorageIO( filename );
-    if( dbg ) io->debugmode();
+    if( dbgmsg ) io->debugmode();
     io->open( IOMODE_READ );
 
     input_format.read( io );
@@ -99,7 +99,7 @@ const std::string Source::get_config() const
     char tmpstr[n];
 
     snprintf( tmpstr, n, "%s(ID_%d): %s, %d Hz, %d Ch, %d bits, %.2lf sec"
-              , get_name().c_str(), get_id(), io->get_name().c_str()
+              , get_name().c_str(), get_id(), io->get_target().c_str()
               , input_format.rate(), input_format.channels(), input_format.bits()
               , (double)input_format.get_data_points()/input_format.rate() );
     cfg += tmpstr;

@@ -12,7 +12,7 @@ class StorageIO : public IO
 
   public:
 
-    StorageIO( const std::string& _name );
+    StorageIO( const std::string& _target );
     virtual ~StorageIO();
 
     // Override

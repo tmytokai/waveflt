@@ -6,14 +6,14 @@
 #include "storageio.h"
 
 
-StorageIO::StorageIO( const std::string& _name )
-    : IO( _name), fp(NULL)
+StorageIO::StorageIO( const std::string& _target )
+    : IO( "StorageIO", _target), fp(NULL)
 {}
 
 
 StorageIO::~StorageIO()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] StorageIO::~StorageIO : %s\n", name.c_str() );
+	if( dbgmsg ) (*dbgmsg << "~StorageIO").flush();
     close();
 }
 
@@ -22,12 +22,12 @@ StorageIO::~StorageIO()
 void StorageIO::open( const unsigned int _mode )
 {
     mode = _mode;
-    if( dbg ) fprintf( stderr, "\n[debug] StorageIO::open : %s mode = %d\n", name.c_str(), mode );
+	if( dbgmsg ) (*dbgmsg << "open : " << target << " mode = " << mode ).flush();
 
     if( !fp ){
-        if( mode == IOMODE_READ ) fp = fopen( name.c_str(), "rb" );
-        else fp = fopen( name.c_str(), "wb" );
-        if(fp == NULL) throw std::string( "Cannot open " + name );
+        if( mode == IOMODE_READ ) fp = fopen( target.c_str(), "rb" );
+        else fp = fopen( target.c_str(), "wb" );
+        if(fp == NULL) throw std::string( "Cannot open " + target );
     }
 }
 
@@ -35,7 +35,7 @@ void StorageIO::open( const unsigned int _mode )
 // Override
 void StorageIO::close()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] StorageIO::close : %s\n", name.c_str() );
+	if( dbgmsg ) (*dbgmsg << "close : " << target ).flush();
 
     if( fp ) fclose( fp );
     fp = NULL;
@@ -45,7 +45,7 @@ void StorageIO::close()
 // Override
 void StorageIO::seek( const unsigned long long offset_byte )
 {
-    if( dbg ) fprintf( stderr, "\n[debug] StorageIO::seek : %s, offset = %d byte\n", name.c_str(), (unsigned int)offset_byte );
+	if( dbgmsg ) (*dbgmsg << "seek : " << target << ", offset = " << (unsigned int)offset_byte << " byte" ).flush();
     assert(fp);
 
 #ifndef WIN32
@@ -59,7 +59,7 @@ void StorageIO::seek( const unsigned long long offset_byte )
 // Override
 const unsigned int StorageIO::read( void* data, const unsigned int byte )
 {
-    if( dbg ) fprintf( stderr, "\n[debug] StorageIO::read : %s, byte = %d byte\n", name.c_str(), byte );
+	if( dbgmsg ) (*dbgmsg << "read : " << target << ", byte = " << byte << " byte").flush();
     assert(fp);
 
     if( byte == 0 ) return 0;
@@ -70,7 +70,7 @@ const unsigned int StorageIO::read( void* data, const unsigned int byte )
 // Override
 const unsigned int StorageIO::write( const void* data, const unsigned int byte )
 {
-    if( dbg ) fprintf( stderr, "\n[debug] StorageIO::write : %s, byte = %d byte\n", name.c_str(), byte );
+    if( dbgmsg ) (*dbgmsg << "write : " << target << ", byte = " << byte << " byte").flush();
     assert(fp);
 
     if( byte == 0 ) return 0;
