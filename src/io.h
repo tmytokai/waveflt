@@ -27,7 +27,7 @@ private:
     std::string target;
     unsigned int mode;
 
-	DbgMsgBase* dbgmsg;
+	DbgMsg* dbgmsg;
 
   public:
 
@@ -43,7 +43,7 @@ private:
     const std::string& get_target() const { return target; }
     const unsigned int get_mode() const { return mode; }
 
-	void debugmode(){ if( !dbgmsg ) dbgmsg = new DbgMsgStderr( name, id ); }
+	void debugmode(){ if( !dbgmsg ) dbgmsg = new DbgMsg( name, id ); }
 
     virtual void open( const unsigned int mode ) = 0;
     virtual void close() = 0;

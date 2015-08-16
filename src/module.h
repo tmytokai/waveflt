@@ -42,7 +42,7 @@ class Module
     unsigned long long total_processed_points; // total processed points
 
     bool dbg;
-	DbgMsgBase* dbgmsg;
+	DbgMsg* dbgmsg;
 
   public:
 
@@ -66,7 +66,7 @@ class Module
 
     void set_event( const std::vector<EventData>& _event ){ event = _event; }
 
-    void debugmode(){ if( !dbgmsg ) dbgmsg = new DbgMsgStderr( name, id ); }
+    void debugmode(){ if( !dbgmsg ) dbgmsg = new DbgMsg( name, id ); }
 
     virtual void connect( Module* _next ){ next = _next; next->connected( this ); }
     virtual void connected( Module* _prev ){ prev = _prev; }

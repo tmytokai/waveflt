@@ -4,6 +4,7 @@
 #include "source.h"
 #include "output.h"
 #include "resampler.h"
+#include "dbgmsgbase.h"
 
 int main( int argc, char* argv[] )
 {
@@ -12,6 +13,8 @@ int main( int argc, char* argv[] )
     std::string out_file( argv[2] );
 
     try{
+
+		InitDbgMsg();
 
         Source* src = new Source( in_file );
         src->debugmode();
@@ -58,7 +61,7 @@ int main( int argc, char* argv[] )
 		std::cerr << "\nResult:\n" << src->get_result() << std::endl;
 
         delete src;
-
+		ClearDbgMsg();
     }
     catch( const std::string& err ){
 
