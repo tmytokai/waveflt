@@ -14,7 +14,8 @@ int main( int argc, char* argv[] )
 
     try{
 
-		InitDbgMsg();
+//		InitDbgMsg( new DbgOutStderr() );
+		InitDbgMsg( new DbgOutLog( "log.txt" ) );
 
         Source* src = new Source( in_file );
         src->debugmode();

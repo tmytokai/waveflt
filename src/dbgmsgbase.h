@@ -4,24 +4,40 @@
 #define _DBGMSG_H
 
 #include <string>
-#include <iostream>
 
-#ifdef WIN32
-#define snprintf _snprintf
-#endif
-
+class IO;
 
 class DbgOutBase
 {
 public:
 	DbgOutBase(){}
 	virtual ~DbgOutBase(){}
-	virtual void write( const std::string msg ){ std::cerr << msg << std::endl; }
+	virtual void write( const std::string msg ) = 0;
+};
+
+
+class DbgOutStderr : public DbgOutBase
+{
+public:
+	DbgOutStderr();
+	virtual ~DbgOutStderr();
+	virtual void write( const std::string msg );
+};
+
+
+class DbgOutLog : public DbgOutBase
+{
+	IO* io;
+
+public:
+	DbgOutLog( const std::string& logfile );
+	virtual ~DbgOutLog();
+	virtual void write( const std::string msg );
 };
 
 
 DbgOutBase* getDbgOut();
-void InitDbgMsg();
+void InitDbgMsg( DbgOutBase* _dbgout );
 void ClearDbgMsg();
 
 

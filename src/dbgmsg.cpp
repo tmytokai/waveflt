@@ -1,20 +1,74 @@
+#include <iostream>
+
 #include "dbgmsgbase.h"
+#include "storageio.h"
+
+
+#ifdef WIN32
+#define snprintf _snprintf
+#endif
+
 
 DbgOutBase* dbgout = NULL;
+
 
 DbgOutBase* getDbgOut()
 { 
 	return dbgout; 
 }
 
-void InitDbgMsg()
+
+void InitDbgMsg( DbgOutBase* _dbgout )
 {
-	dbgout = new DbgOutBase();
+	if( dbgout ) delete dbgout;
+	dbgout = _dbgout;
 }
+
 
 void ClearDbgMsg()
 {
 	if( dbgout ) delete dbgout;
+	dbgout = NULL;
+}
+
+
+DbgOutStderr::DbgOutStderr()
+: DbgOutBase()
+{}
+
+
+DbgOutStderr::~DbgOutStderr()
+{}
+
+
+void DbgOutStderr::write( const std::string msg )
+{
+	std::cerr << msg << std::endl; 
+}
+
+
+DbgOutLog::DbgOutLog( const std::string& logfile )
+: DbgOutBase()
+{
+	io = new StorageIO( logfile );
+	io->open( IOMODE_WRITE );
+}
+
+
+DbgOutLog::~DbgOutLog()
+{
+	if( io ) delete io;
+}
+
+
+void DbgOutLog::write( const std::string msg )
+{
+	io->write( msg.c_str(), msg.size() );
+#ifdef WIN32
+	io->write( "\r\n", 2 );
+#else
+	io->write( "\n", 1 );
+#endif
 }
 
 
@@ -27,7 +81,8 @@ DbgMsg::DbgMsg( const std::string _name, const int id )
 }
 
 
-DbgMsg::~DbgMsg(){}
+DbgMsg::~DbgMsg()
+{}
 
 
 DbgMsg& DbgMsg::operator << ( const std::string _msg )
