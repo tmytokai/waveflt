@@ -14,17 +14,17 @@ int main( int argc, char* argv[] )
 
     try{
 
-//		InitDbgMsg( new DbgOutStderr() );
-		InitDbgMsg( new DbgOutLog( "log.txt" ) );
+		InitDbgMsg( new DbgOutStderr() );
+//		InitDbgMsg( new DbgOutLog( "log.txt" ) );
 
-        Source* src = new Source( in_file );
+        Source* src = new Source( 0, in_file );
         src->debugmode();
 
-        Resampler* rsmp = new Resampler( 48000 );
+        Resampler* rsmp = new Resampler( 1, 48000 );
 //        rsmp->debugmode();
         src->connect( rsmp );
 
-        Output* output = new Output( out_file );
+        Output* output = new Output( 2, out_file );
 //        output->debugmode();
         rsmp->connect( output );
 
@@ -62,7 +62,7 @@ int main( int argc, char* argv[] )
 		std::cerr << "\nResult:\n" << src->get_result() << std::endl;
 
         delete src;
-		ClearDbgMsg();
+		ResetDbgMsg();
     }
     catch( const std::string& err ){
 

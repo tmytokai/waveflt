@@ -6,8 +6,8 @@
 #include "storageio.h"
 
 
-Source::Source( const std::string& _filename )
-    : IOModule( "Source", _filename )
+Source::Source( const unsigned int _id, const std::string& _filename )
+    : IOModule( "Source", _id, _filename )
 {
     reset();
 }
@@ -51,7 +51,7 @@ void Source::init()
 {
 	if( dbgmsg ) (*dbgmsg << "init" ).flush();
 
-    assert( !io ); io = new StorageIO( filename );
+    assert( !io ); io = new StorageIO( get_id(), filename );
     if( dbgmsg ) io->debugmode();
     io->open( IOMODE_READ );
 

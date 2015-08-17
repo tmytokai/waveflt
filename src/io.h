@@ -19,8 +19,8 @@ class IO
 {
 private:
 
-	const unsigned int id;
 	const std::string name;
+	const unsigned int id;
 
   protected:
 
@@ -31,8 +31,8 @@ private:
 
   public:
 
-    IO( const std::string& _name, const std::string& _target)
-		: id(0), name(_name), target(_target), mode(IOMODE_INIT), dbgmsg(NULL){}
+    IO( const std::string& _name, const unsigned int _id, const std::string& _target)
+		: name(_name), id(_id), target(_target), mode(IOMODE_INIT), dbgmsg(NULL){}
 	virtual ~IO(){
 		if( dbgmsg ) delete dbgmsg;
 		dbgmsg = NULL;

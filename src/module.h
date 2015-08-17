@@ -20,8 +20,8 @@ class Module
 {
   private:
 
-    const unsigned int id;
     const std::string name;
+    const unsigned int id;
 
   protected:
 
@@ -46,8 +46,8 @@ class Module
 
   public:
 
-    Module( const std::string& _name )
-        : id(0), name(_name), prev(NULL), next(NULL), over(false), mute(false),event_no(0), event_start_point(0), event_end_point(0), total_processed_points(0), dbg(false),dbgmsg(NULL){}
+    Module( const std::string& _name, const unsigned int _id )
+        :  name(_name), id(_id), prev(NULL), next(NULL), over(false), mute(false),event_no(0), event_start_point(0), event_end_point(0), total_processed_points(0), dbg(false),dbgmsg(NULL){}
 	virtual ~Module(){
 		if( next ) delete next;
 		next = NULL;

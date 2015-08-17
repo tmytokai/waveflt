@@ -10,7 +10,7 @@ class Source : public IOModule
 {
   public:
 
-    Source( const std::string& _filename );
+    Source( const unsigned int _id, const std::string& _filename );
     virtual ~Source();
 
     // Override

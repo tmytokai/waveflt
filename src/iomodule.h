@@ -17,7 +17,7 @@ class IOModule : public Module
 
   public:
 
-    IOModule( const std::string& _name, const std::string& _filename ) : Module(_name), filename(_filename), io(NULL){}
+    IOModule( const std::string& _name, const unsigned int _id, const std::string& _filename ) : Module(_name,_id), filename(_filename), io(NULL){}
     virtual ~IOModule(){}
 
     const unsigned int get_max_points() const { return data.max_points; }

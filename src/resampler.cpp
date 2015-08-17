@@ -62,8 +62,8 @@ void calc_fir_coefficient( double * h, unsigned int lng, double rate, double db,
 /////////////////////////////
 
 
-Resampler::Resampler( const unsigned int _rate )
-    : Module( "Resampler" ), rate(_rate), fir(NULL)
+Resampler::Resampler( const unsigned int _id, const unsigned int _rate )
+    : Module( "Resampler", _id ), rate(_rate), fir(NULL)
 {
     reset();
 }

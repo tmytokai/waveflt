@@ -44,13 +44,13 @@ void ResetDbgMsg();
 class DbgMsg
 {
 private:
-	const unsigned int id;
 	const std::string name;
+	const unsigned int id;
 
 	std::string msg;
 
 public:
-	DbgMsg( const std::string _name, const int _id );
+	DbgMsg( const std::string _name, const unsigned int _id );
 	~DbgMsg();
 
 	DbgMsg& operator << ( const std::string _msg );

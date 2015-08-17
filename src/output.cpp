@@ -7,8 +7,8 @@
 #include "storageio.h"
 
 
-Output::Output( const std::string& _filename )
-    : IOModule( "Output", _filename)
+Output::Output( const unsigned int _id, const std::string& _filename )
+    : IOModule( "Output", _id, _filename)
 {
     reset();
 }
@@ -67,7 +67,7 @@ void Output::init()
 
     clear_buffer();
 
-    assert( !io ); io = new StorageIO( filename );
+    assert( !io ); io = new StorageIO( get_id(), filename );
     if( dbg ) io->debugmode();
 }
 

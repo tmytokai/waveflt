@@ -6,8 +6,8 @@
 #include "storageio.h"
 
 
-StorageIO::StorageIO( const std::string& _target )
-    : IO( "StorageIO", _target), fp(NULL)
+StorageIO::StorageIO( const unsigned int _id, const std::string& _target )
+    : IO( "StorageIO", _id, _target), fp(NULL)
 {}
 
 

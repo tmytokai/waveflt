@@ -50,7 +50,7 @@ void DbgOutStderr::write( const std::string msg )
 DbgOutLog::DbgOutLog( const std::string& logfile )
 : DbgOutBase()
 {
-	io = new StorageIO( logfile );
+	io = new StorageIO( 0, logfile );
 	io->open( IOMODE_WRITE );
 }
 
@@ -72,7 +72,7 @@ void DbgOutLog::write( const std::string msg )
 }
 
 
-DbgMsg::DbgMsg( const std::string _name, const int _id )
+DbgMsg::DbgMsg( const std::string _name, const unsigned int _id )
 : name(_name), id(_id)
 {
 	msg.clear();
