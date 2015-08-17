@@ -11,7 +11,7 @@
 DoubleBuffer::DoubleBuffer()
     : dbg(false), raw(NULL)
 {
-    reset_all();
+    reset();
 }
 
 
@@ -19,7 +19,7 @@ DoubleBuffer::~DoubleBuffer()
 {
     if( dbg ) fprintf( stderr, "\n[debug] DoubleBuffer::~DoubleBuffer\n" );
 
-    reset_all();
+    reset();
 }
 
 
@@ -57,9 +57,9 @@ const DoubleBuffer& DoubleBuffer::operator << ( const DoubleBuffer& buffer )
 }
 
 
-void DoubleBuffer::reset_all()
+void DoubleBuffer::reset()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] DoubleBuffer::reset_all\n" );
+    if( dbg ) fprintf( stderr, "reset" );
 
     max_points = 0;
     points = 0;
@@ -78,9 +78,9 @@ void DoubleBuffer::reset_all()
 }
 
 
-void DoubleBuffer::clear_all_buffer()
+void DoubleBuffer::clear_buffer()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] DoubleBuffer::clear_all_buffer: max_points = %d\n", max_points);
+    if( dbg ) fprintf( stderr, "clear_buffer: max_points = %d", max_points);
 
     points = 0;
 	over = false;

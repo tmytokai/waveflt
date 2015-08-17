@@ -25,20 +25,20 @@ class IOModule : public Module
     const double* get_data( const unsigned int ch ) { return data[ch]; }
 
 	// Override
-	virtual void reset_all(){
+	virtual void reset(){
 
-		Module::reset_all();
+		Module::reset();
 
 		if( io ) delete io;
 		io = NULL;
-		data.reset_all();
+		data.reset();
 	}
 
-	virtual void clear_all_buffer(){
+	virtual void clear_buffer(){
 
-		Module::clear_all_buffer();
+		Module::clear_buffer();
 
-		data.clear_all_buffer();
+		data.clear_buffer();
 	}
 };
 

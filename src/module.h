@@ -71,7 +71,7 @@ class Module
     virtual void connect( Module* _next ){ next = _next; next->connected( this ); }
     virtual void connected( Module* _prev ){ prev = _prev; }
 
-	virtual void reset_all(){
+	virtual void reset(){
 		over = false;
 		mute = false;
 		event_no = 0;
@@ -80,7 +80,7 @@ class Module
 		event.clear();
 		total_processed_points = 0;
 	}
-	virtual void clear_all_buffer(){
+	virtual void clear_buffer(){
 		over = false;
 		mute = false;
 	}

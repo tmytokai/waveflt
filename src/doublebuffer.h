@@ -37,8 +37,8 @@ class DoubleBuffer
     unsigned char* get_raw(){ return raw; }
     const DoubleBuffer& operator << ( const DoubleBuffer& buffer ); // copy buffer
 
-    void reset_all();
-    void clear_all_buffer();
+    void reset();
+    void clear_buffer();
     void init( const WaveFormat& _format, const int _max_points, const bool use_data, const bool use_raw );
     const unsigned int read_raw( IO* io, const unsigned int _points_read );
     const unsigned int write_raw( IO* io );

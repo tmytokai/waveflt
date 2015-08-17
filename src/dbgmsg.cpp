@@ -25,7 +25,7 @@ void InitDbgMsg( DbgOutBase* _dbgout )
 }
 
 
-void ClearDbgMsg()
+void ResetDbgMsg()
 {
 	if( dbgout ) delete dbgout;
 	dbgout = NULL;
@@ -72,12 +72,10 @@ void DbgOutLog::write( const std::string msg )
 }
 
 
-DbgMsg::DbgMsg( const std::string _name, const int id )
+DbgMsg::DbgMsg( const std::string _name, const int _id )
+: name(_name), id(_id)
 {
-	const unsigned int n = 1024;
-	char tmp[n];
-	snprintf( tmp, n, "%s(ID_%d)", _name.c_str(), id );
-	name = tmp;
+	msg.clear();
 }
 
 
@@ -104,7 +102,11 @@ DbgMsg& DbgMsg::operator << ( const unsigned int a )
 
 void DbgMsg::flush()
 {
-	msg = "[DBG: " + name + "] " + msg;
+	const unsigned int n = 1024;
+	char tmp[n];
+	snprintf( tmp, n, "[DBG: %s(ID_%d)]", name.c_str(), id );
+
+	msg = tmp + msg;
 	getDbgOut()->write( msg );
 	msg.clear();
 }

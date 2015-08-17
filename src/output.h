@@ -19,8 +19,8 @@ class Output : public IOModule
     virtual void connect( Module* _next );
 
     // Override
-    virtual void reset_all();
-    virtual void clear_all_buffer();
+    virtual void reset();
+    virtual void clear_buffer();
     virtual void init();
     virtual const std::string get_config() const;
     virtual void start();

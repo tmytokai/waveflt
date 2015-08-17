@@ -38,17 +38,19 @@ public:
 
 DbgOutBase* getDbgOut();
 void InitDbgMsg( DbgOutBase* _dbgout );
-void ClearDbgMsg();
+void ResetDbgMsg();
 
 
 class DbgMsg
 {
-protected:
-	std::string name;
+private:
+	const unsigned int id;
+	const std::string name;
+
 	std::string msg;
 
 public:
-	DbgMsg( const std::string _name, const int id );
+	DbgMsg( const std::string _name, const int _id );
 	~DbgMsg();
 
 	DbgMsg& operator << ( const std::string _msg );

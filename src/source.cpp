@@ -1,6 +1,5 @@
 // source class
 
-#include <stdio.h>
 #include <assert.h>
 
 #include "source.h"
@@ -10,7 +9,7 @@
 Source::Source( const std::string& _filename )
     : IOModule( "Source", _filename )
 {
-    reset_all();
+    reset();
 }
 
 
@@ -18,7 +17,7 @@ Source::~Source()
 {
 	if( dbgmsg ) (*dbgmsg << "~Source" ).flush();
 
-    reset_all();
+    reset();
 }
 
 
@@ -30,20 +29,20 @@ void Source::connected( Module* )
 
 
 // Override
-void Source::reset_all()
+void Source::reset()
 {
-	if( dbgmsg ) (*dbgmsg << "reset_all" ).flush();
+	if( dbgmsg ) (*dbgmsg << "reset" ).flush();
 
-	IOModule::reset_all();
+	IOModule::reset();
 }
 
 
 // Override
-void Source::clear_all_buffer()
+void Source::clear_buffer()
 {
-	if( dbgmsg ) (*dbgmsg << "clear_all_buffer" ).flush();
+	if( dbgmsg ) (*dbgmsg << "clear_buffer" ).flush();
 
-	IOModule::clear_all_buffer();
+	IOModule::clear_buffer();
 }
 
 
@@ -73,7 +72,7 @@ void Source::init()
     if( dbg ) data.debugmode();
     data.init( input_format, max_points, use_data, true);
 
-    clear_all_buffer();
+    clear_buffer();
 
 	// setup default events
     if( !event.size() ){
@@ -147,7 +146,7 @@ void Source::start()
 
     if( next ) next->start();
 
-    clear_all_buffer();
+    clear_buffer();
     total_processed_points = 0;
 
     event_no = 0;
@@ -196,7 +195,7 @@ void Source::requested( const unsigned int points_required )
 {
 	if( dbgmsg ) (*dbgmsg << "requested : required = " << points_required << " points" ).flush();
 
-    data.clear_all_buffer();
+    data.clear_buffer();
 
     if( is_over() || !points_required ){
 		data.over = is_over();

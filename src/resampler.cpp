@@ -65,7 +65,7 @@ void calc_fir_coefficient( double * h, unsigned int lng, double rate, double db,
 Resampler::Resampler( const unsigned int _rate )
     : Module( "Resampler" ), rate(_rate), fir(NULL)
 {
-    reset_all();
+    reset();
 }
 
 
@@ -73,18 +73,18 @@ Resampler::~Resampler()
 {
     if( dbg ) fprintf( stderr, "\n[debug] Resampler::~Resampler\n");
 
-    reset_all();
+    reset();
 }
 
 
 // Override
-void Resampler::reset_all()
+void Resampler::reset()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] Resampler::reset_all\n");
+    if( dbg ) fprintf( stderr, "reset");
 
-	Module::reset_all();
+	Module::reset();
 
-    data.reset_all();
+    data.reset();
 
     up = 0;
     down = 0;
@@ -97,7 +97,7 @@ void Resampler::reset_all()
     shift_before = 0;
     shift_after = 0;
 
-    pastdata.reset_all();
+    pastdata.reset();
     pastdata_offset = 0;
 
     if( fir ){
@@ -109,14 +109,14 @@ void Resampler::reset_all()
 
 
 // Override
-void Resampler::clear_all_buffer()
+void Resampler::clear_buffer()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] Resampler::clear_all_buffer\n" );
+    if( dbg ) fprintf( stderr, "clear_buffer" );
 
-	Module::clear_all_buffer();
+	Module::clear_buffer();
 
-    data.clear_all_buffer();
-    pastdata.clear_all_buffer();
+    data.clear_buffer();
+    pastdata.clear_buffer();
     pastdata_offset = 0;
 }
 
@@ -153,7 +153,7 @@ void Resampler::init()
     pastdata.init(  output_format, ( convolution_size-1 ) + data.max_points, true, false );
     pastdata_offset = 0;
 
-    clear_all_buffer();
+    clear_buffer();
 
     // polyphase decomposition of FIR coefficients
     double *h = (double*)malloc(sizeof(double)*length);
@@ -207,7 +207,7 @@ void Resampler::start()
 
     over = false;
     shift_before = shift_after = group_delay/down;
-    clear_all_buffer();
+    clear_buffer();
 }
 
 
@@ -224,7 +224,7 @@ void Resampler::requested( const unsigned int _points_required )
 
     if( dbg ) fprintf( stderr, "\n[debug] Resampler::requested : required = %d\n", points_required );
 
-	data.clear_all_buffer();
+	data.clear_buffer();
 
 	if( is_over() ){
 		data.over = true;
@@ -252,7 +252,7 @@ void Resampler::received( Module* sender, DoubleBuffer& _data )
 
 	if( _data.mute ){
 
-		if( !is_mute() ) clear_all_buffer();
+		if( !is_mute() ) clear_buffer();
 		mute = true;
 		if( next ) return next->received( this, data );
 		return;

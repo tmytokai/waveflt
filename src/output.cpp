@@ -10,7 +10,7 @@
 Output::Output( const std::string& _filename )
     : IOModule( "Output", _filename)
 {
-    reset_all();
+    reset();
 }
 
 
@@ -18,7 +18,7 @@ Output::~Output()
 {
     if( dbg ) fprintf( stderr, "\n[debug] Output::~Output : %s\n", filename.c_str() );
 
-    reset_all();
+    reset();
 }
 
 
@@ -30,20 +30,20 @@ void Output::connect( Module* _next )
 
 
 // Override
-void Output::reset_all()
+void Output::reset()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] Output::reset_all : %s\n", filename.c_str() );
+    if( dbg ) fprintf( stderr, "reset" );
 
-	IOModule::reset_all();
+	IOModule::reset();
 }
 
 
 // Override
-void Output::clear_all_buffer()
+void Output::clear_buffer()
 {
-    if( dbg ) fprintf( stderr, "\n[debug] Output::clear_all_buffer : %s\n", filename.c_str() );
+    if( dbg ) fprintf( stderr, "clear_buffer" );
 
-	IOModule::clear_all_buffer();
+	IOModule::clear_buffer();
 }
 
 
@@ -65,7 +65,7 @@ void Output::init()
     if( dbg ) data.debugmode();
     data.init( output_format, max_points, use_data, true );
 
-    clear_all_buffer();
+    clear_buffer();
 
     assert( !io ); io = new StorageIO( filename );
     if( dbg ) io->debugmode();
@@ -97,7 +97,7 @@ void Output::start()
 
     total_processed_points = 0;
 
-    clear_all_buffer();
+    clear_buffer();
 
     assert(io);{
         io->open( IOMODE_WRITE );
@@ -132,7 +132,7 @@ void Output::received( Module* sender, DoubleBuffer& _data )
 
 	if( _data.mute ){
 
-		if( !is_mute() ) clear_all_buffer();
+		if( !is_mute() ) clear_buffer();
 		mute = true;
 	}
 	
@@ -148,7 +148,7 @@ void Output::received( Module* sender, DoubleBuffer& _data )
     else if( data.is_full() ){
 
         total_processed_points += data.write_raw( io );
-        clear_all_buffer();
+        clear_buffer();
     }
 }
 
