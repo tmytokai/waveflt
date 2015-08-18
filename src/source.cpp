@@ -1,5 +1,6 @@
 // source class
 
+#include <stdio.h>
 #include <assert.h>
 
 #include "source.h"

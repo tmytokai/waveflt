@@ -8,7 +8,7 @@
 
 #include "waveformat.h"
 #include "eventdata.h"
-#include "dbgmsgbase.h"
+#include "dbgmsg.h"
 
 #ifdef WIN32
 #define snprintf _snprintf

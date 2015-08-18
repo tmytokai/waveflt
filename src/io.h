@@ -5,7 +5,7 @@
 
 #include <string>
 
-#include "dbgmsgbase.h"
+#include "dbgmsg.h"
 
 enum
 {

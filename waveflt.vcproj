@@ -207,6 +207,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\dbgout.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\doublebuffer.cpp"
 				>
 			</File>
@@ -704,7 +708,11 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath=".\src\dbgmsgbase.h"
+				RelativePath=".\src\dbgmsg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\dbgout.h"
 				>
 			</File>
 			<File
