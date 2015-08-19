@@ -14,17 +14,19 @@ int main( int argc, char* argv[] )
 
     try{
 
-//	InitDbgMsg( new DbgOutStderr() );
-	InitDbgMsg( new DbgOutLog( "log.txt" ) );
+	InitDbgMsg( new DbgOutStderr() );
+//	InitDbgMsg( new DbgOutLog( "log.txt" ) );
 
-        Source* src = new Source( 0, in_file );
-        src->debugmode();
+        Host* host = new Host();
 
-        Resampler* rsmp = new Resampler( 1, 48000 );
+        Source* src = new Source( host, in_file );
+//        src->debugmode();
+
+        Resampler* rsmp = new Resampler( host, 48000 );
 //        rsmp->debugmode();
         src->connect( rsmp );
 
-        Output* output = new Output( 2, out_file );
+        Output* output = new Output( host, out_file );
 //        output->debugmode();
         rsmp->connect( output );
 
@@ -59,10 +61,11 @@ int main( int argc, char* argv[] )
         src->start();
         do{ output->process(); } while( !(output->is_over()) );
 
-		std::cerr << "\nResult:\n" << src->get_result() << std::endl;
+        std::cerr << "\nResult:\n" << src->get_result() << std::endl;
 
-        delete src;
-		ResetDbgMsg();
+        delete host;
+
+        ResetDbgMsg();
     }
     catch( const std::string& err ){
 

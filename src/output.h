@@ -10,7 +10,7 @@ class Output : public IOModule
 {
   public:
 
-    Output( const unsigned int _id, const std::string& _filename );
+    Output( Host* host, const std::string& _filename );
     virtual ~Output();
 
     void process(){ requested( data.left() ); }

@@ -34,7 +34,7 @@ class Resampler : public Module
 
   public:
 
-    Resampler( const unsigned int _id, const unsigned int _rate );
+    Resampler( Host* host, const unsigned int _rate );
     virtual ~Resampler();
 
     // Override

@@ -7,8 +7,8 @@
 #include "storageio.h"
 
 
-Output::Output( const unsigned int _id, const std::string& _filename )
-    : IOModule( "Output", _id, _filename)
+Output::Output( Host* host, const std::string& _filename )
+    : IOModule( host, "Output", _filename)
 {
     reset();
 }

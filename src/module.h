@@ -8,6 +8,7 @@
 
 #include "waveformat.h"
 #include "eventdata.h"
+#include "host.h"
 #include "dbgmsg.h"
 
 #ifdef WIN32
@@ -42,18 +43,20 @@ class Module
     unsigned long long total_processed_points; // total processed points
 
     bool dbg;
-	DbgMsg* dbgmsg;
+    DbgMsg* dbgmsg;
 
   public:
 
-    Module( const std::string& _name, const unsigned int _id )
-        :  name(_name), id(_id), prev(NULL), next(NULL), over(false), mute(false),event_no(0), event_start_point(0), event_end_point(0), total_processed_points(0), dbg(false),dbgmsg(NULL){}
-	virtual ~Module(){
-		if( next ) delete next;
-		next = NULL;
-		if( dbgmsg ) delete dbgmsg;
-		dbgmsg = NULL;
-	}
+    Module( Host* host, const std::string& _name )
+        :  name(_name), id(host->get_id()), prev(NULL), next(NULL), over(false), mute(false),event_no(0), event_start_point(0), event_end_point(0), total_processed_points(0), dbg(false),dbgmsg(NULL)
+    {
+        host->regist(this);
+    }
+
+    virtual ~Module(){
+        if( dbgmsg ) delete dbgmsg;
+        dbgmsg = NULL;
+    }
 
     const unsigned int get_id() const { return id; }
     const std::string& get_name() const { return name; }
@@ -66,7 +69,7 @@ class Module
 
     void set_event( const std::vector<EventData>& _event ){ event = _event; }
 
-    void debugmode(){ if( !dbgmsg ) dbgmsg = new DbgMsg( name, id ); }
+    void debugmode(){ if( !dbgmsg ) dbgmsg = new DbgMsg( name, id ); dbg = true; }
 
     virtual void connect( Module* _next ){ next = _next; next->connected( this ); }
     virtual void connected( Module* _prev ){ prev = _prev; }
