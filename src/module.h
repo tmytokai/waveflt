@@ -33,7 +33,7 @@ class Module
     WaveFormat output_format;
 
     bool over;
-	bool mute;
+    bool mute;
 
     unsigned int event_no;
     unsigned long long event_start_point; // point at which the current event started

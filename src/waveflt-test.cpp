@@ -30,7 +30,7 @@ int main( int argc, char* argv[] )
 //        output->debugmode();
         rsmp->connect( output );
 
-        src->init();
+        host->init();
 
         std::vector<EventData> event;
         EventData eventdata;
@@ -56,12 +56,12 @@ int main( int argc, char* argv[] )
 
         src->set_event(event);
 
-        std::cerr << src->get_config() << std::endl;
+        std::cerr << "\nConfig:\n" << host->get_config() << std::endl;
 
-        src->start();
+        host->start();
         do{ output->process(); } while( !(output->is_over()) );
 
-        std::cerr << "\nResult:\n" << src->get_result() << std::endl;
+        std::cerr << "\nResult:\n" << host->get_result() << std::endl;
 
         delete host;
 

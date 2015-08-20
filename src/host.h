@@ -4,6 +4,7 @@
 #define _HOST_H
 
 #include <vector>
+#include <string>
 
 class Module;
 
@@ -11,6 +12,7 @@ class Host
 {
   private:
 
+    std::vector<Module*> sources;
     std::vector<Module*> modules;
     unsigned int id;
     
@@ -21,6 +23,11 @@ class Host
 
     const unsigned int get_id() const { return id; }
     void regist( Module* module );
+
+    void init();
+    const std::string get_config();
+    void start();
+    const std::string get_result();
 };
 
 #endif
