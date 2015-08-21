@@ -6,6 +6,7 @@
 struct EventData
 {
     std::string message;
+    double seconds;
     unsigned long long points;
     std::string meta_data;
 };

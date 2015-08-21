@@ -22,39 +22,37 @@ int main( int argc, char* argv[] )
         Source* src = new Source( host, in_file );
 //        src->debugmode();
 
-        Resampler* rsmp = new Resampler( host, 48000 );
-//        rsmp->debugmode();
-        src->connect( rsmp );
-
-        Output* output = new Output( host, out_file );
-//        output->debugmode();
-        rsmp->connect( output );
-
-        host->init();
-
-        std::vector<EventData> event;
         EventData eventdata;
 
         eventdata.message = "delete";
-        eventdata.points = (unsigned int)(src->get_input_format().rate()*1);
-        event.push_back( eventdata );
+        eventdata.seconds = 1.0;
+        src->add_event( eventdata );
 
         eventdata.message = "read";
-        eventdata.points = (unsigned int)(src->get_input_format().rate()*1);
-        event.push_back( eventdata );
+        eventdata.seconds = 1.0;
+        src->add_event( eventdata );
 
         eventdata.message = "mute";
-        eventdata.points = (unsigned int)(src->get_input_format().rate()*1);
-        event.push_back( eventdata );
+        eventdata.seconds = 1.0;
+        src->add_event( eventdata );
 
         eventdata.message = "read";
-        eventdata.points = -1;
-        event.push_back( eventdata );
+        eventdata.seconds = -1;
+        src->add_event( eventdata );
 
         eventdata.message = "end";
-        event.push_back( eventdata );
+        eventdata.seconds = 0;
+        src->add_event( eventdata );
 
-        src->set_event(event);
+//        Resampler* rsmp = new Resampler( host, 48000 );
+//        rsmp->debugmode();
+//        src->connect( rsmp );
+
+        Output* output = new Output( host, out_file );
+//        output->debugmode();
+        src->connect( output );
+
+        host->init();
 
         std::cerr << "\nConfig:\n" << host->get_config() << std::endl;
 

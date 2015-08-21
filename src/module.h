@@ -38,7 +38,7 @@ class Module
     unsigned int event_no;
     unsigned long long event_start_point; // point at which the current event started
     unsigned long long event_end_point;   // point at which the current event ends
-    std::vector<EventData> event;
+    std::vector<EventData> events;
 
     unsigned long long total_processed_points; // total processed points
 
@@ -65,9 +65,9 @@ class Module
     const WaveFormat& get_output_format() const { return output_format; }
 
     const bool is_over() const { return over; }
-	const bool is_mute() const { return mute; }
+    const bool is_mute() const { return mute; }
 
-    void set_event( const std::vector<EventData>& _event ){ event = _event; }
+    void add_event( const EventData& _eventdata ){ events.push_back(_eventdata ); }
 
     void debugmode(){ if( !dbgmsg ) dbgmsg = new DbgMsg( name, id ); dbg = true; }
 
@@ -80,7 +80,7 @@ class Module
 		event_no = 0;
 		event_start_point = 0;
 		event_end_point = 0;
-		event.clear();
+		events.clear();
 		total_processed_points = 0;
 	}
 	virtual void clear_buffer(){

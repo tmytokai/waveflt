@@ -75,16 +75,33 @@ void Source::init()
 
     clear_buffer();
 
-	// setup default events
-    if( !event.size() ){
+    // setup events
+    if( !events.size() ){  // default events
 
         EventData eventdata;
         eventdata.message = "read";
         eventdata.points = input_format.get_data_points();
-        event.push_back( eventdata );
+        events.push_back( eventdata );
 
         eventdata.message = "end";
-        event.push_back( eventdata );
+        events.push_back( eventdata );
+    }
+    else{
+
+        unsigned long long points_tmp = 0;
+        std::vector<EventData>::iterator it_event = events.begin();
+        for(; it_event != events.end(); ++it_event ){
+
+            if( (*it_event).seconds != -1 ){
+
+                (*it_event).points = (unsigned long long)( (*it_event).seconds * input_format.rate() );
+                if( (*it_event).message == "read" || (*it_event).message == "delete" ) points_tmp += (*it_event).points;
+            }
+            else{
+
+                (*it_event).points = input_format.get_data_points() - points_tmp;
+            }
+        }
     }
 }
 
@@ -105,26 +122,26 @@ const std::string Source::get_config() const
     cfg += tmpstr;
     cfg += "\n";
 
-    if( event.size() ){
+    if( events.size() ){
 
         unsigned long long total_points = 0;
         unsigned long long points_tmp = 0;
         bool endless = false;
-        for( unsigned int i = 0; i < event.size(); ++i ){
+        for( unsigned int i = 0; i < events.size(); ++i ){
 
-            if( event[i].message == "end" ) break;
+            if( events[i].message == "end" ) break;
 
             snprintf( tmpstr, n, "        %.2lf - ", (double)points_tmp/input_format.rate());
             cfg += tmpstr;
-            if(event[i].points != (unsigned long long)(-1) ){
-                points_tmp += event[i].points;
-                if( event[i].message == "read" ) total_points += event[i].points;
+            if(events[i].points != (unsigned long long)(-1) ){
+                points_tmp += events[i].points;
+                if( events[i].message == "read" || events[i].message == "mute" ) total_points += events[i].points;
                 snprintf( tmpstr, n, "%.2lf (%.2lf sec)"
-                          , (double)points_tmp/input_format.rate(), (double)event[i].points/input_format.rate() );
+                          , (double)points_tmp/input_format.rate(), (double)events[i].points/input_format.rate() );
                 cfg += tmpstr;
             }
             else endless = true;
-            cfg += " : " + event[i].message + " \n";
+            cfg += " : " + events[i].message + " \n";
         }
         if( !endless ){
             snprintf( tmpstr, n,"        total %.2lf sec\n", (double)total_points/input_format.rate());
@@ -159,29 +176,29 @@ void Source::start()
 void Source::exec_event()
 {
     if( is_over() ) return;
-    if( !event.size() ) return;
-    if( event_no == event.size() ) return;
+    if( !events.size() ) return;
+    if( event_no == events.size() ) return;
 
-	if( dbgmsg ) (*dbgmsg << "exec_event : event_no = " << event_no << " event = " << event[event_no].message ).flush();
+	if( dbgmsg ) (*dbgmsg << "exec_event : event_no = " << event_no << " event = " << events[event_no].message ).flush();
 
     event_start_point = total_processed_points;
-    event_end_point = event_start_point + event[event_no].points;
+    event_end_point = event_start_point + events[event_no].points;
 
-    if( event[event_no].message == "read" ) mute = false;
+    if( events[event_no].message == "read" ) mute = false;
 
-    else if( event[event_no].message == "delete" ){
+    else if( events[event_no].message == "delete" ){
     
         unsigned long long seek_offset = input_format.get_offset();
         for( unsigned int i = 0; i <= event_no ; ++i ){
-            if( event[i].message == "read" || event[i].message == "delete" ) seek_offset += event[i].points*input_format.block();
+            if( events[i].message == "read" || events[i].message == "delete" ) seek_offset += events[i].points*input_format.block();
         }
         assert( io ); io->seek( seek_offset );
-        total_processed_points += event[event_no].points;
+        total_processed_points += events[event_no].points;
     }
 
-    else if( event[event_no].message == "end" ) over = true;
+    else if( events[event_no].message == "end" ) over = true;
 	    
-	else if( event[event_no].message == "mute" ) mute = true;
+	else if( events[event_no].message == "mute" ) mute = true;
 
     if( total_processed_points == event_end_point ){
 
