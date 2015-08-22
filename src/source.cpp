@@ -25,7 +25,7 @@ Source::~Source()
 // Override
 void Source::connected( Module* )
 {
-    throw std::string( "cannot connect other modules to the source." );
+    throw std::string( "cannot connect the source module to other modules." );
 }
 
 
@@ -115,7 +115,7 @@ const std::string Source::get_config() const
     const size_t n = 1024;
     char tmpstr[n];
 
-    snprintf( tmpstr, n, "%s(ID_%d): %s, %d Hz, %d Ch, %d bits, %.2lf sec"
+    snprintf( tmpstr, n, "%s(ID_%d): %s, %d (Hz), %d (Ch), %d (Bits), total length = %.2lf sec"
               , get_name().c_str(), get_id(), io->get_target().c_str()
               , input_format.rate(), input_format.channels(), input_format.bits()
               , (double)input_format.get_data_points()/input_format.rate() );
@@ -124,18 +124,18 @@ const std::string Source::get_config() const
 
     if( events.size() ){
 
-        unsigned long long total_points = 0;
+        unsigned long long read_points_tmp = 0;
         unsigned long long points_tmp = 0;
         bool endless = false;
         for( unsigned int i = 0; i < events.size(); ++i ){
 
             if( events[i].message == "end" ) break;
 
-            snprintf( tmpstr, n, "        %.2lf - ", (double)points_tmp/input_format.rate());
+            snprintf( tmpstr, n, "%.2lf - ", (double)points_tmp/input_format.rate());
             cfg += tmpstr;
             if(events[i].points != (unsigned long long)(-1) ){
                 points_tmp += events[i].points;
-                if( events[i].message == "read" || events[i].message == "mute" ) total_points += events[i].points;
+                if( events[i].message == "read" || events[i].message == "mute" ) read_points_tmp += events[i].points;
                 snprintf( tmpstr, n, "%.2lf (%.2lf sec)"
                           , (double)points_tmp/input_format.rate(), (double)events[i].points/input_format.rate() );
                 cfg += tmpstr;
@@ -144,13 +144,13 @@ const std::string Source::get_config() const
             cfg += " : " + events[i].message + " \n";
         }
         if( !endless ){
-            snprintf( tmpstr, n,"        total %.2lf sec\n", (double)total_points/input_format.rate());
+            snprintf( tmpstr, n,"total read size = %.2lf sec\n", (double)read_points_tmp/input_format.rate());
             cfg += tmpstr;
         }
     }
 
     if( next ){
-        cfg += "=> " + next->get_config();
+        cfg += "\n=> " + next->get_config();
     }
 
     return cfg;
@@ -166,6 +166,7 @@ void Source::start()
 
     clear_buffer();
     total_processed_points = 0;
+    total_read_points = 0;
 
     event_no = 0;
     exec_event();
@@ -211,12 +212,12 @@ void Source::exec_event()
 // Override
 void Source::requested( const unsigned int points_required )
 {
-	if( dbgmsg ) (*dbgmsg << "requested : required = " << points_required << " points" ).flush();
+    if( dbgmsg ) (*dbgmsg << "requested : required = " << points_required << " points" ).flush();
 
     data.clear_buffer();
 
     if( is_over() || !points_required ){
-		data.over = is_over();
+        data.over = is_over();
         if( next ) return next->received( this, data );
         return;
     }
@@ -226,13 +227,14 @@ void Source::requested( const unsigned int points_required )
     else points_read = (unsigned int)( event_end_point - total_processed_points );
     if( points_read > points_required ) points_read = points_required;
 
-	if( dbgmsg ) (*dbgmsg << "requested : read = " << points_read << " / " << data.max_points << " points").flush();
+    if( dbgmsg ) (*dbgmsg << "requested : read = " << points_read << " / " << data.max_points << " points").flush();
 
-	if( !mute ) points_read = data.read_raw( io, points_read );
-	else data.points = points_read;
+    if( !mute ) points_read = data.read_raw( io, points_read );
+    else data.points = points_read;
     total_processed_points += points_read;
+    total_read_points += points_read;
 
-	if( dbgmsg ) (*dbgmsg << "requested : read(actual) " << points_read << " points" ).flush();
+    if( dbgmsg ) (*dbgmsg << "requested : read(actual) " << points_read << " points" ).flush();
 
     if( next ) next->received( this, data );
 
@@ -253,7 +255,18 @@ void Source::received( Module* sender, DoubleBuffer& data )
 // Override
 const std::string Source::get_result() const
 {
-    if( next ) return next->get_result();
+    std::string result;
+    const size_t n = 1024;
+    char tmpstr[n];
 
-	return std::string();
+    snprintf( tmpstr, n, "%s(ID_%d): %s, total read size = %.2lf sec"
+              , get_name().c_str(), get_id(), filename.c_str(), (double)total_read_points/input_format.rate());
+    result += tmpstr;
+    result += "\n";
+
+    if( next ){
+        result += "\n=> " + next->get_result();
+    }
+
+    return result;
 }

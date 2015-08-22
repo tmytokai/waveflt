@@ -8,6 +8,10 @@
 
 class Source : public IOModule
 {
+  private:
+
+    unsigned long long total_read_points; // total read points
+
   public:
 
     Source( Host* host, const std::string& _filename );

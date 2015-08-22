@@ -159,7 +159,7 @@ const std::string Output::get_result() const
 	const size_t n = 1024;
 	char result[n];
 
-    snprintf(result, n, "%s(ID_%d): %s, total output %.2lf sec"
+    snprintf(result, n, "%s(ID_%d): %s, total output size = %.2lf sec"
 		, get_name().c_str(), get_id(), filename.c_str(), (double)total_processed_points/output_format.rate());
 	
 	return result;

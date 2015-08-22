@@ -192,7 +192,7 @@ const std::string Resampler::get_config() const
 	cfg += tmpstr;
 
     if( next ){
-        cfg += "=> " + next->get_config();
+        cfg += "\n=> " + next->get_config();
     }
 
     return cfg;
@@ -208,6 +208,7 @@ void Resampler::start()
     over = false;
     shift_before = shift_after = group_delay/down;
     clear_buffer();
+    total_processed_points = 0;
 }
 
 
@@ -250,21 +251,21 @@ void Resampler::received( Module* sender, DoubleBuffer& _data )
 
     assert( prev == sender );
 
-	if( _data.mute ){
+    if( _data.mute ){
 
-		if( !is_mute() ) clear_buffer();
-		mute = true;
-		if( next ) return next->received( this, data );
-		return;
-	}
-	mute = false;
+        if( !is_mute() ) clear_buffer();
+        mute = true;
+        if( next ) return next->received( this, data );
+        return;
+    }
+    mute = false;
 
     bool exec_shift_after = false;
-	if( !input_points && _data.over ){
+    if( !input_points && _data.over ){
 
         if( shift_after == 0 ){
             over = true;
-			data.over = true;
+            data.over = true;
             if( next ) return next->received( this, data );
             return;
         }
@@ -328,6 +329,7 @@ void Resampler::received( Module* sender, DoubleBuffer& _data )
         fprintf( stderr, "data.points = %d, data_max_points = %d\n\n", data.points, data.max_points );
     }
 
+    total_processed_points += data.points;
     if( next ) return next->received( this, data );
 }
 
@@ -335,10 +337,20 @@ void Resampler::received( Module* sender, DoubleBuffer& _data )
 // Override
 const std::string Resampler::get_result() const
 {
-    if( dbg ) fprintf( stderr, "\n[debug] Resampler::show_result\n");
-    if( next ) return next->get_result();
+    std::string result;
+    const size_t n = 1024;
+    char tmpstr[n];
 
-	return std::string();
+    snprintf( tmpstr, n, "%s(ID_%d): total processed size = %.2lf sec"
+              , get_name().c_str(), get_id(), (double)total_processed_points/output_format.rate());
+    result += tmpstr;
+    result += "\n";
+
+    if( next ){
+        result += "\n=> " + next->get_result();
+    }
+
+    return result;
 }
 
 
