@@ -44,22 +44,25 @@ int main( int argc, char* argv[] )
         eventdata.seconds = 0;
         src->add_event( eventdata );
 
-        Resampler* rsmp = new Resampler( host, 48000 );
+//        Resampler* rsmp = new Resampler( host, 48000 );
 //        rsmp->debugmode();
-        src->connect( rsmp );
+//        src->connect( rsmp );
 
         Output* output = new Output( host, out_file );
 //        output->debugmode();
-        rsmp->connect( output );
+        src->connect( output );
 
         host->init();
 
-        std::cerr << "\n[CONFIG]\n\n" << host->get_config() << std::endl;
+        std::cerr << "\n[CONFIG]\n\n" << host->get_config() << std::endl << std::endl;
 
         host->start();
-        do{ output->process(); } while( !(output->is_over()) );
+        do{
+            output->process();
+            std::cerr << "\015" << output->get_status();
+        } while( !(output->is_over()) );
 
-        std::cerr << "\n[RESULT]\n\n" << host->get_result() << std::endl;
+        std::cerr << "\n\n[RESULT]\n\n" << host->get_result() << std::endl;
 
         delete host;
 

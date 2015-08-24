@@ -253,6 +253,13 @@ void Source::received( Module* sender, DoubleBuffer& data )
 
 
 // Override
+const std::string Source::get_status() const
+{
+    return std::string();
+}
+
+
+// Override
 const std::string Source::get_result() const
 {
     std::string result;

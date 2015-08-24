@@ -154,13 +154,26 @@ void Output::received( Module* sender, DoubleBuffer& _data )
 
 
 // Override
+const std::string Output::get_status() const
+{
+    const size_t n = 1024;
+    char status[n];
+
+    snprintf(status, n, "%s(ID_%d): %.2lf sec"
+             , get_name().c_str(), get_id(), (double)total_processed_points/output_format.rate());
+	
+    return status;
+}
+
+
+// Override
 const std::string Output::get_result() const
 {
-	const size_t n = 1024;
-	char result[n];
+    const size_t n = 1024;
+    char result[n];
 
     snprintf(result, n, "%s(ID_%d): %s, total output size = %.2lf sec"
-		, get_name().c_str(), get_id(), filename.c_str(), (double)total_processed_points/output_format.rate());
+             , get_name().c_str(), get_id(), filename.c_str(), (double)total_processed_points/output_format.rate());
 	
-	return result;
+    return result;
 }

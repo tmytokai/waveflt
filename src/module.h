@@ -93,6 +93,7 @@ class Module
     virtual void exec_event() = 0;
     virtual void requested( const unsigned int points_required ) = 0;
     virtual void received( Module* sender, DoubleBuffer& data ) = 0;
+    virtual const std::string get_status() const = 0;
     virtual const std::string get_result() const = 0;
 };
 

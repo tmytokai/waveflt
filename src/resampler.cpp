@@ -335,6 +335,13 @@ void Resampler::received( Module* sender, DoubleBuffer& _data )
 
 
 // Override
+const std::string Resampler::get_status() const
+{
+    return std::string();
+}
+
+
+// Override
 const std::string Resampler::get_result() const
 {
     std::string result;

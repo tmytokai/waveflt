@@ -27,6 +27,7 @@ class Output : public IOModule
     virtual void exec_event();
     virtual void requested( const unsigned int points_required );
     virtual void received( Module* sender, DoubleBuffer& data );
+    virtual const std::string get_status() const;
     virtual const std::string get_result() const;
 };
 
