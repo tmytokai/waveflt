@@ -74,23 +74,24 @@ class Module
     virtual void connect( Module* _next ){ next = _next; next->connected( this ); }
     virtual void connected( Module* _prev ){ prev = _prev; }
 
-	virtual void reset(){
-		over = false;
-		mute = false;
-		event_no = 0;
-		event_start_point = 0;
-		event_end_point = 0;
-		events.clear();
-		total_processed_points = 0;
-	}
-	virtual void clear_buffer(){
-		over = false;
-		mute = false;
-	}
+    virtual void reset(){
+        over = false;
+        mute = false;
+        event_no = 0;
+        event_start_point = 0;
+        event_end_point = 0;
+        events.clear();
+        total_processed_points = 0;
+    }
+    virtual void clear_buffer(){
+        over = false;
+        mute = false;
+    }
     virtual void init() = 0;
     virtual const std::string get_config() const = 0;
     virtual void start() = 0;
     virtual void exec_event() = 0;
+    virtual void process() = 0;
     virtual void requested( const unsigned int points_required ) = 0;
     virtual void received( Module* sender, DoubleBuffer& data ) = 0;
     virtual const std::string get_status() const = 0;

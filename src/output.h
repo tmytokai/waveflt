@@ -13,8 +13,6 @@ class Output : public IOModule
     Output( Host* host, const std::string& _filename );
     virtual ~Output();
 
-    void process(){ requested( data.left() ); }
-
     // Override
     virtual void connect( Module* _next );
 
@@ -25,6 +23,7 @@ class Output : public IOModule
     virtual const std::string get_config() const;
     virtual void start();
     virtual void exec_event();
+    virtual void process(){ requested( data.left() ); }
     virtual void requested( const unsigned int points_required );
     virtual void received( Module* sender, DoubleBuffer& data );
     virtual const std::string get_status() const;

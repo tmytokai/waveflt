@@ -58,12 +58,10 @@ int main( int argc, char* argv[] )
 
         host->start();
         do{
-            output->process();
-            std::cerr << "\015" << output->get_status();
-        } while( !(output->is_over()) );
-
+            host->process();
+            std::cerr << "\015" << host->get_status();
+        } while( !(host->is_over()) );
         std::cerr << "\n\n[RESULT]\n\n" << host->get_result() << std::endl;
-
         delete host;
 
         ResetDbgMsg();

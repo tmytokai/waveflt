@@ -14,6 +14,7 @@ class Host
 
     std::vector<Module*> sources;
     std::vector<Module*> modules;
+    std::vector<Module*> outputs;
     unsigned int id;
     
   public:
@@ -24,9 +25,13 @@ class Host
     const unsigned int get_id() const { return id; }
     void regist( Module* module );
 
+    const bool is_over();
+
     void init();
     const std::string get_config();
     void start();
+    void process();
+    const std::string get_status();
     const std::string get_result();
 };
 
